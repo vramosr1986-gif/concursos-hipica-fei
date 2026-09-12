@@ -1,0 +1,45 @@
+﻿
+=== CONTENIDO src\app ===
+
+Name      
+----      
+admin     
+api       
+juez      
+login     
+resultados
+signup    
+
+
+
+=== CONTENIDO src\app\admin\concursos\[id] ===
+
+FullName                                                                                        Length
+--------                                                                                        ------
+C:\Users\vramo\Documents\concursos-hipica-fei\src\app\admin\concursos\[id]\jornadas                   
+C:\Users\vramo\Documents\concursos-hipica-fei\src\app\admin\concursos\[id]\pruebas                    
+C:\Users\vramo\Documents\concursos-hipica-fei\src\app\admin\concursos\[id]\JornadasSection.tsx  10417 
+C:\Users\vramo\Documents\concursos-hipica-fei\src\app\admin\concursos\[id]\page.tsx             17800 
+C:\Users\vramo\Documents\concursos-hipica-fei\src\app\admin\concursos\[id]\PruebasSection.tsx   14569 
+C:\Users\vramo\Documents\concursos-hipica-fei\src\app\admin\concursos\[id]\jornadas\[jornadaId]       
+C:\Users\vramo\Documents\concursos-hipica-fei\src\app\admin\concursos\[id]\pruebas\[pruebaId]         
+
+
+
+=== CONTENIDO src\app\juez ===
+
+FullName                                                            Length
+--------                                                            ------
+C:\Users\vramo\Documents\concursos-hipica-fei\src\app\juez\page.tsx   8700
+
+
+
+=== CONTENIDO src\components ===
+
+Name               Length
+----               ------
+ConcursoCard.tsx     1730
+Navbar.tsx           5195
+PuntuacionForm.tsx   3353
+
+

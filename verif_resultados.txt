@@ -1,0 +1,398 @@
+﻿
+=== EXISTE /resultados? ===
+True
+
+=== CONTENIDO ===
+'use client';
+
+import { useEffect, useRef, useState, Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
+import { Concurso, Binomio } from '@/types';
+import { concursoService, binomioService, competenciaService } from '@/lib/services';
+import { supabase } from '@/lib/supabase';
+
+interface JornadaGrupo {
+  jornadaId: string;
+  numero: number;
+  fecha: string;
+  items: {
+    competenciaId: string;
+    reprise: { nombre: string; numero: string; fei_numero: string } | null;
+    horaSalida: string;
+    estado: string;
+    puntuaciones: {
+      id: string;
+      letra_juez: string;
+      puntuacion_final: number | null;
+    }[];
+  }[];
+}
+
+function ResultadosContent() {
+  const searchParams = useSearchParams();
+  const concursoInicial = searchParams.get('concurso');
+
+  const [concursos, setConcursos] = useState<Concurso[]>([]);
+  const [concursoSeleccionado, setConcursoSeleccionado] = useState<string>('');
+  const [binomios, setBinomios] = useState<Binomio[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  const [binomioExpandido, setBinomioExpandido] = useState<string | null>(null);
+  const [notasCache, setNotasCache] = useState<{ [binomioId: string]: JornadaGrupo[] }>({});
+  const [notasLoading, setNotasLoading] = useState(false);
+  const [enVivo, setEnVivo] = useState(false);
+
+  const [juecesDisponibles, setJuecesDisponibles] = useState<string[]>([]);
+
+  useEffect(() => {
+    // Eliminamos la carga global de jueces para evitar confusiones entre concursos
+  }, []);
+  const binomioExpandidoRef = useRef<string | null>(null);
+  useEffect(() => {
+    binomioExpandidoRef.current = binomioExpandido;
+  }, [binomioExpandido]);
+
+  useEffect(() => {
+    if (binomioExpandido) {
+      cargarNotas(binomioExpandido);
+    }
+  }, [binomioExpandido]);
+  const cargarNotas = async (binomioId: string) => {
+    setNotasLoading(true);
+    const { data } = await competenciaService.getByBinomio(binomioId);
+
+    const grupos: { [jornadaId: string]: JornadaGrupo } = {};
+
+    (data || []).forEach((comp: any) => {
+      const jornada = comp.jornada_reprise?.jornada;
+      if (!jornada) return;
+
+      if (!grupos[jornada.id]) {
+        grupos[jornada.id] = {
+          jornadaId: jornada.id,
+          numero: jornada.numero,
+          fecha: jornada.fecha,
+          items: [],
+        };
+      }
+
+      grupos[jornada.id].items.push({
+        competenciaId: comp.id,
+        reprise: comp.jornada_reprise?.reprise || null,
+        horaSalida: comp.hora_salida,
+        estado: comp.estado,
+        puntuaciones: comp.puntuaciones || [],
+      });
+    });
+
+    const gruposOrdenados = Object.values(grupos).sort((a, b) => a.numero - b.numero);
+    setNotasCache((prev) => ({ ...prev, [binomioId]: gruposOrdenados }));
+    setNotasLoading(false);
+  };
+
+  const calcularNotaGlobalYDesempate = async (binomioId: string) => {
+    const { data } = await competenciaService.getByBinomio(binomioId);
+    if (!data || data.length === 0) return { total: 0, ultimaNota: 0 };
+
+    let sumaGlobal = 0;
+    let ultimaNota = 0;
+    let maxJornada = -1;
+
+    data.forEach((comp: any) => {
+      const jornada = comp.jornada_reprise?.jornada;
+      if (!jornada) return;
+
+      const puntuaciones = comp.puntuaciones || [];
+      const validas = puntuaciones.filter((p: any) => p.puntuacion_final !== null);
+      
+      if (validas.length > 0) {
+        const mediaReprise = validas.reduce((acc: number, p: any) => acc + p.puntuacion_final, 0) / validas.length;
+        
+        sumaGlobal += mediaReprise;
+
+        if (jornada.numero > maxJornada) {
+          maxJornada = jornada.numero;
+          ultimaNota = mediaReprise;
+        }
+      }
+    });
+
+    return { total: sumaGlobal, ultimaNota };
+  };
+
+  useEffect(() => {
+    const fetchConcursos = async () => {
+      const { data } = await concursoService.getAll();
+      if (data) {
+        setConcursos(data);
+        if (concursoInicial && data.some((c) => c.id === concursoInicial)) {
+          setConcursoSeleccionado(concursoInicial);
+        } else if (data.length > 0) {
+          setConcursoSeleccionado(data[0].id);
+        }
+      }
+    };
+
+    fetchConcursos();
+  }, [concursoInicial]);
+
+  useEffect(() => {
+    if (concursoSeleccionado) {
+      const fetchBinomiosYRanking = async () => {
+        setLoading(true);
+        
+        const { data: juecesData } = await supabase
+          .from('jueces')
+          .select('letra_juez')
+          .order('letra_juez', { ascending: true });
+        
+        if (juecesData) {
+          setJuecesDisponibles(juecesData.map(j => j.letra_juez));
+        }
+
+        const { data: binomiosData } = await binomioService.getByConcurso(concursoSeleccionado);
+        
+        if (binomiosData) {
+          const resultadosPromesas = binomiosData.map(async (binomio) => {
+            const [ranking, { data: comps }] = await Promise.all([
+              calcularNotaGlobalYDesempate(binomio.id),
+              competenciaService.getByBinomio(binomio.id)
+            ]);
+
+            const grupos: { [jornadaId: string]: JornadaGrupo } = {};
+            (comps || []).forEach((comp: any) => {
+              const jornada = comp.jornada_reprise?.jornada;
+              if (!jornada) return;
+              if (!grupos[jornada.id]) {
+                grupos[jornada.id] = {
+                  jornadaId: jornada.id,
+                  numero: jornada.numero,
+                  fecha: jornada.fecha,
+                  items: [],
+                };
+              }
+              grupos[jornada.id].items.push({
+                competenciaId: comp.id,
+                reprise: comp.jornada_reprise?.reprise || null,
+                horaSalida: comp.hora_salida,
+                estado: comp.estado,
+                puntuaciones: comp.puntuaciones || [],
+              });
+            });
+            const notasOrdenadas = Object.values(grupos).sort((a, b) => a.numero - b.numero);
+
+            return { 
+              binomio: { ...binomio, ranking }, 
+              notas: notasOrdenadas 
+            };
+          });
+
+          const resultados = await Promise.all(resultadosPromesas);
+          
+          const binomiosConRanking = resultados.map(r => r.binomio);
+          const nuevoCache: { [binomioId: string]: JornadaGrupo[] } = {};
+          resultados.forEach(r => {
+            const bId = (r.binomio as any).id;
+            nuevoCache[bId] = r.notas;
+          });
+
+          const ordenados = binomiosConRanking.sort((a, b) => {
+            if (b.ranking.total !== a.ranking.total) {
+              return b.ranking.total - a.ranking.total;
+            }
+            return b.ranking.ultimaNota - a.ranking.ultimaNota;
+          });
+          
+          setBinomios(ordenados as any);
+          setNotasCache(nuevoCache);
+        }
+        setBinomioExpandido(null);
+        setLoading(false);
+      };
+
+      fetchBinomiosYRanking();
+    }
+  }, [concursoSeleccionado]);
+
+  useEffect(() => {
+    const channel = supabase
+      .channel('puntuaciones-publico')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'puntuaciones' },
+        () => {
+          const idAbierto = binomioExpandidoRef.current;
+          if (idAbierto) {
+            cargarNotas(idAbierto);
+          }
+        }
+      )
+      .subscribe((status) => {
+        setEnVivo(status === 'SUBSCRIBED');
+      });
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, []);
+
+  return (
+    <div className="container">
+      <div className="flex items-center gap-3 mb-6">
+        <h1 className="text-3xl font-bold">ðŸ“Š Resultados y Notas</h1>
+        <span
+          className={`text-xs px-2 py-1 rounded-full ${
+            enVivo ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'
+          }`}
+        >
+          {enVivo ? 'ðŸŸ¢ En vivo' : 'âšª Conectando...'}
+        </span>
+      </div>
+
+      <div className="card p-6 mb-6">
+        <label className="block text-sm font-bold mb-2">Selecciona un concurso:</label>
+        <select
+          value={concursoSeleccionado}
+          onChange={(e) => setConcursoSeleccionado(e.target.value)}
+          className="input"
+        >
+          {concursos.map((concurso) => (
+            <option key={concurso.id} value={concurso.id}>
+              {concurso.nombre} - {concurso.ubicacion}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      {loading ? (
+        <div className="text-center py-8">Cargando resultados...</div>
+      ) : binomios.length > 0 ? (
+        <div className="table-responsive">
+          <table className="table">
+            <thead>
+              <tr>
+                <th>Dorsal</th>
+                <th>Jinete</th>
+                <th>Caballo</th>
+                <th>Equipo</th>
+                {juecesDisponibles.map(juez => (
+                  <th key={juez}>{juez}</th>
+                ))}
+                <th>Nota Global</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              {binomios.map((binomio) => (
+                <FragmentWrapper key={binomio.id} binomio={binomio} binomioExpandido={binomioExpandido} setBinomioExpandido={setBinomioExpandido} juecesDisponibles={juecesDisponibles} notasCache={notasCache} notasLoading={notasLoading} />
+              ))}
+            </tbody>
+          </table>
+        </div>
+      ) : (
+        <div className="card p-8 text-center">
+          <p className="text-gray-600">
+            No hay binomios registrados en este concurso
+          </p>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// Componente auxiliar para evitar problemas de keys en fragmentos mapeados
+function FragmentWrapper({ binomio, binomioExpandido, setBinomioExpandido, juecesDisponibles, notasCache, notasLoading }: any) {
+  return (
+    <>
+      <tr>
+        <td>{binomio.dorsal}</td>
+        <td>{binomio.nombre_jinete}</td>
+        <td>{binomio.nombre_caballo}</td>
+        <td>{binomio.equipo}</td>
+        {juecesDisponibles.map((juez: string) => {
+          const notas = (notasCache[binomio.id] || []).flatMap((grupo: any) => 
+            grupo.items.flatMap((item: any) => item.puntuaciones)
+          );
+          const notaJuez = notas.find((p: any) => p.letra_juez === juez)?.puntuacion_final;
+          return (
+            <td key={juez} className="text-center">
+              {notaJuez !== null && notaJuez !== undefined ? notaJuez.toFixed(2) : '-'}
+            </td>
+          );
+        })}
+        <td className="font-bold text-blue-600">
+          {binomio.ranking ? binomio.ranking.total.toFixed(2) + '%' : '-'}
+        </td>
+        <td>
+          <button
+            onClick={() => setBinomioExpandido(binomioExpandido === binomio.id ? null : binomio.id)}
+            className="text-primary hover:underline"
+          >
+            {binomioExpandido === binomio.id ? 'Ocultar Notas' : 'Ver Notas'}
+          </button>
+        </td>
+      </tr>
+      {binomioExpandido === binomio.id && (
+        <tr>
+          <td colSpan={6} className="bg-gray-50 p-4">
+            {notasLoading && !notasCache[binomio.id] ? (
+              <p className="text-center py-4">Cargando notas...</p>
+            ) : (notasCache[binomio.id] || []).length > 0 ? (
+              <div className="space-y-4">
+                {(notasCache[binomio.id] || []).map((grupo: any) => (
+                  <div key={grupo.jornadaId} className="card p-4">
+                    <h4 className="font-bold mb-2">
+                      Jornada {grupo.numero} â€” {new Date(grupo.fecha).toLocaleDateString()}
+                    </h4>
+                    {grupo.items.map((item: any) => (
+                      <div key={item.competenciaId} className="mb-3 last:mb-0">
+                        <p className="text-sm font-semibold">
+                          {item.reprise?.nombre || 'Reprise sin asignar'}{' '}
+                          <span className="text-gray-500">({item.estado})</span>
+                        </p>
+                        {item.puntuaciones.length > 0 ? (
+                          <table className="table mt-1">
+                            <thead>
+                              <tr>
+                                <th>Juez</th>
+                                <th>PuntuaciÃ³n Final</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {item.puntuaciones.map((p: any) => (
+                                <tr key={p.id}>
+                                  <td>{p.letra_juez}</td>
+                                  <td className="font-bold">
+                                    {p.puntuacion_final ?? '-'}
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        ) : (
+                          <p className="text-gray-500 text-sm">Sin puntuaciones aÃºn</p>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-center py-4 text-gray-600">
+                Este binomio aÃºn no tiene competencias asignadas
+              </p>
+            )}
+          </td>
+        </tr>
+      )}
+    </>
+  );
+}
+
+export default function ResultadosPage() {
+  return (
+    <Suspense fallback={<div className="container py-8 text-center">Cargando resultados...</div>}>
+      <ResultadosContent />
+    </Suspense>
+  );
+}

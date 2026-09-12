@@ -1,0 +1,26 @@
+﻿
+=== EXISTE /juez/page.tsx? ===
+True
+
+=== EXISTE /juez/prueba? ===
+True
+
+=== EXISTE /juez/prueba/[pruebaId]/page.tsx? ===
+True
+
+=== EXISTE /juez/prueba/[pruebaId]/binomio? ===
+False
+
+=== EXISTE /juez/prueba/[pruebaId]/binomio/[participacionId]/page.tsx? ===
+False
+
+=== ESTRUCTURA COMPLETA DE src\app\juez ===
+
+FullName                                                                              Length
+--------                                                                              ------
+C:\Users\vramo\Documents\concursos-hipica-fei\src\app\juez\prueba                           
+C:\Users\vramo\Documents\concursos-hipica-fei\src\app\juez\page.tsx                   8700  
+C:\Users\vramo\Documents\concursos-hipica-fei\src\app\juez\prueba\[pruebaId]                
+C:\Users\vramo\Documents\concursos-hipica-fei\src\app\juez\prueba\[pruebaId]\page.tsx 7523  
+
+

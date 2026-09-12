@@ -1,0 +1,22 @@
+﻿
+=== POLÍTICAS RLS ===
+ÔöîÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔö¼ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÉ
+Ôöé tablename              Ôöé cmd    Ôöé
+Ôö£ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔö╝ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöñ
+Ôöé competencias           Ôöé DELETE Ôöé
+Ôöé competencias           Ôöé INSERT Ôöé
+Ôöé competencias           Ôöé SELECT Ôöé
+Ôöé competencias           Ôöé UPDATE Ôöé
+Ôöé jornada_reprise_jueces Ôöé DELETE Ôöé
+Ôöé jornada_reprise_jueces Ôöé INSERT Ôöé
+Ôöé jornada_reprise_jueces Ôöé SELECT Ôöé
+Ôöé jornada_reprise_jueces Ôöé UPDATE Ôöé
+Ôöé jornada_reprises       Ôöé DELETE Ôöé
+Ôöé jornada_reprises       Ôöé INSERT Ôöé
+Ôöé jornada_reprises       Ôöé SELECT Ôöé
+Ôöé jornada_reprises       Ôöé UPDATE Ôöé
+Ôöé jornadas               Ôöé DELETE Ôöé
+Ôöé jornadas               Ôöé INSERT Ôöé
+Ôöé jornadas               Ôöé SELECT Ôöé
+Ôöé jornadas               Ôöé UPDATE Ôöé
+ÔööÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔö┤ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÿ

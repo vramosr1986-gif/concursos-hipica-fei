@@ -1,0 +1,911 @@
+﻿=== ESTRUCTURA BINOMIOS ===
+ÔöîÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔö¼ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔö¼ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÉ
+Ôöé column_name         Ôöé data_type                Ôöé is_nullable Ôöé
+Ôö£ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔö╝ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔö╝ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöñ
+Ôöé id                  Ôöé uuid                     Ôöé NO          Ôöé
+Ôöé nombre_jinete       Ôöé text                     Ôöé NO          Ôöé
+Ôöé nombre_caballo      Ôöé text                     Ôöé NO          Ôöé
+Ôöé anio                Ôöé integer                  Ôöé YES         Ôöé
+Ôöé created_at          Ôöé timestamp with time zone Ôöé YES         Ôöé
+Ôöé updated_at          Ôöé timestamp with time zone Ôöé YES         Ôöé
+Ôöé licencia_federativa Ôöé text                     Ôöé YES         Ôöé
+ÔööÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔö┤ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔö┤ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÿ
+
+=== ESTRUCTURA INSCRIPCIONES ===
+ÔöîÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔö¼ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔö¼ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÉ
+Ôöé column_name  Ôöé data_type                Ôöé is_nullable Ôöé
+Ôö£ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔö╝ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔö╝ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöñ
+Ôöé id           Ôöé uuid                     Ôöé NO          Ôöé
+Ôöé binomio_id   Ôöé uuid                     Ôöé NO          Ôöé
+Ôöé concurso_id  Ôöé uuid                     Ôöé NO          Ôöé
+Ôöé dorsal       Ôöé integer                  Ôöé NO          Ôöé
+Ôöé equipo       Ôöé text                     Ôöé YES         Ôöé
+Ôöé orden_salida Ôöé integer                  Ôöé YES         Ôöé
+Ôöé created_at   Ôöé timestamp with time zone Ôöé YES         Ôöé
+Ôöé updated_at   Ôöé timestamp with time zone Ôöé YES         Ôöé
+ÔööÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔö┤ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔö┤ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÿ
+
+=== ESTRUCTURA COMPETENCIAS ===
+ÔöîÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔö¼ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔö¼ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÉ
+Ôöé column_name        Ôöé data_type                Ôöé is_nullable Ôöé
+Ôö£ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔö╝ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔö╝ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöñ
+Ôöé id                 Ôöé uuid                     Ôöé NO          Ôöé
+Ôöé jornada_reprise_id Ôöé uuid                     Ôöé YES         Ôöé
+Ôöé inscripcion_id     Ôöé uuid                     Ôöé YES         Ôöé
+Ôöé orden_salida       Ôöé integer                  Ôöé NO          Ôöé
+Ôöé hora_salida        Ôöé time without time zone   Ôöé NO          Ôöé
+Ôöé estado             Ôöé text                     Ôöé NO          Ôöé
+Ôöé created_at         Ôöé timestamp with time zone Ôöé YES         Ôöé
+Ôöé updated_at         Ôöé timestamp with time zone Ôöé YES         Ôöé
+ÔööÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔö┤ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔö┤ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÿ
+
+=== BINOMIOS ===
+ÔöîÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔö¼ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔö¼ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔö¼ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔö¼ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔö¼ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔö¼ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÉ
+Ôöé id                                   Ôöé nombre_jinete Ôöé nombre_caballo Ôöé anio Ôöé created_at                    Ôöé updated_at                    Ôöé licencia_federativa Ôöé
+Ôö£ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔö╝ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔö╝ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔö╝ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔö╝ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔö╝ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔö╝ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöñ
+Ôöé b00baa8f-bcfe-4d88-a029-18d5953b3c6e Ôöé Magui         Ôöé Brujo          Ôöé 2020 Ôöé 2026-09-12 00:54:15.068813+00 Ôöé 2026-09-12 00:54:15.068813+00 Ôöé 1478                Ôöé
+ÔööÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔö┤ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔö┤ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔö┤ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔö┤ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔö┤ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔö┤ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÿ
+
+=== INSCRIPCIONES ===
+ÔöîÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔö¼ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔö¼ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔö¼ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔö¼ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔö¼ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔö¼ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔö¼ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÉ
+Ôöé id                                   Ôöé binomio_id                           Ôöé concurso_id                          Ôöé dorsal Ôöé equipo Ôöé orden_salida Ôöé created_at                    Ôöé updated_at                    Ôöé
+Ôö£ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔö╝ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔö╝ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔö╝ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔö╝ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔö╝ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔö╝ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔö╝ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöñ
+Ôöé f1d138f4-662b-41ac-bd3d-e94122eaaa10 Ôöé b00baa8f-bcfe-4d88-a029-18d5953b3c6e Ôöé 1701c95a-e82b-4ef8-86c5-a0beaf1bdf1a Ôöé 1      Ôöé NULL   Ôöé 1            Ôöé 2026-09-12 00:56:43.705484+00 Ôöé 2026-09-12 00:56:43.705484+00 Ôöé
+ÔööÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔö┤ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔö┤ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔö┤ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔö┤ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔö┤ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔö┤ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔö┤ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÿ
+
+=== COMPETENCIAS ===
+
+=== ARCHIVO concursos/[id]/page.tsx ===
+'use client';
+
+import { useParams, useRouter } from 'next/navigation';
+import Link from 'next/link';
+import { useEffect, useState } from 'react';
+import { Concurso, Binomio, Juez } from '@/types';
+import { concursoService, binomioService, juezService } from '@/lib/services';
+import { LETRAS_JUECES } from '@/lib/constants';
+import { supabase } from '@/lib/supabase';
+
+interface NuevoBinomioForm {
+  dorsal: string;
+  anio: string;
+  licencia_federativa: string;
+  nombre_jinete: string;
+  nombre_caballo: string;
+  equipo: string;
+}
+
+interface NuevoJuezForm {
+  user_id: string;
+  nombre: string;
+  letra_oficial: string;
+  experiencia: string;
+}
+
+interface UserJuezOption {
+  id: string;
+  nombre: string | null;
+  email: string;
+}
+
+function binomioVacio(): NuevoBinomioForm {
+  return {
+    dorsal: '',
+    anio: '',
+    licencia_federativa: '',
+    nombre_jinete: '',
+    nombre_caballo: '',
+    equipo: '',
+  };
+}
+
+function juezVacio(): NuevoJuezForm {
+  return {
+    user_id: '',
+    nombre: '',
+    letra_oficial: LETRAS_JUECES[0].letra,
+    experiencia: '',
+  };
+}
+
+export default function EditarConcursoPage() {
+  const params = useParams();
+  const router = useRouter();
+  const concursoId = params.id as string;
+
+  const [concurso, setConcurso] = useState<Concurso | null>(null);
+  const [formData, setFormData] = useState({
+    nombre: '',
+    fecha_inicio: '',
+    fecha_fin: '',
+    ubicacion: '',
+    organizador: '',
+  });
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+
+  // Binomios
+  const [binomios, setBinomios] = useState<Binomio[]>([]);
+  const [nuevoBinomio, setNuevoBinomio] = useState<NuevoBinomioForm>(binomioVacio());
+  const [binomioError, setBinomioError] = useState('');
+  const [guardandoBinomio, setGuardandoBinomio] = useState(false);
+
+  // Jueces
+  const [jueces, setJueces] = useState<Juez[]>([]);
+  const [nuevoJuez, setNuevoJuez] = useState<NuevoJuezForm>(juezVacio());
+  const [juezError, setJuezError] = useState('');
+  const [guardandoJuez, setGuardandoJuez] = useState(false);
+  const [usuariosJuez, setUsuariosJuez] = useState<UserJuezOption[]>([]);
+
+  const cargarBinomios = async () => {
+    const { data } = await binomioService.getByConcurso(concursoId);
+    if (data) setBinomios(data);
+  };
+
+  const cargarJueces = async () => {
+    const { data } = await juezService.getByConcurso(concursoId);
+    if (data) setJueces(data);
+  };
+
+  const cargarUsuariosJuez = async () => {
+    const { data } = await supabase
+      .from('profiles')
+      .select('id, nombre, email')
+      .eq('rol', 'juez')
+      .order('nombre');
+    if (data) setUsuariosJuez(data);
+  };
+
+  useEffect(() => {
+    const fetchConcurso = async () => {
+      const { data } = await concursoService.getById(concursoId);
+      if (data) {
+        setConcurso(data);
+        setFormData({
+          nombre: data.nombre,
+          fecha_inicio: data.fecha_inicio,
+          fecha_fin: data.fecha_fin,
+          ubicacion: data.ubicacion || '',
+          organizador: data.organizador || '',
+        });
+      }
+      await Promise.all([cargarBinomios(), cargarJueces(), cargarUsuariosJuez()]);
+      setLoading(false);
+    };
+    fetchConcurso();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [concursoId]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSaving(true);
+    const { error } = await concursoService.update(concursoId, formData);
+    setSaving(false);
+    if (!error) {
+      router.push('/admin/concursos');
+    }
+  };
+
+  // --- Binomios ---
+  const handleAddBinomio = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setBinomioError('');
+
+    if (!nuevoBinomio.nombre_jinete.trim() || !nuevoBinomio.nombre_caballo.trim()) {
+      setBinomioError('Jinete y caballo son obligatorios');
+      return;
+    }
+
+    setGuardandoBinomio(true);
+    try {
+      const dorsalNum = nuevoBinomio.dorsal.trim()
+        ? parseInt(nuevoBinomio.dorsal, 10)
+        : binomios.length + 1;
+      const anioNum = nuevoBinomio.anio.trim() ? parseInt(nuevoBinomio.anio, 10) : undefined;
+
+      const res = await fetch('/api/binomios', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          concurso_id: concursoId,
+          dorsal: dorsalNum,
+          anio: anioNum,
+          licencia_federativa: nuevoBinomio.licencia_federativa.trim() || undefined,
+          nombre_jinete: nuevoBinomio.nombre_jinete.trim(),
+          nombre_caballo: nuevoBinomio.nombre_caballo.trim(),
+          equipo: nuevoBinomio.equipo.trim() || undefined,
+          orden_salida: binomios.length + 1,
+        }),
+      });
+
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        setBinomioError(body.error || 'No se pudo guardar el binomio');
+        return;
+      }
+
+      setNuevoBinomio(binomioVacio());
+      await cargarBinomios();
+    } finally {
+      setGuardandoBinomio(false);
+    }
+  };
+
+  const handleDeleteBinomio = async (id: string) => {
+    if (!confirm('Â¿Eliminar este binomio?')) return;
+    const res = await fetch(`/api/binomios?id=${id}`, { method: 'DELETE' });
+    if (res.ok) {
+      setBinomios(binomios.filter((b) => b.id !== id));
+    } else {
+      const body = await res.json().catch(() => ({}));
+      setBinomioError(body.error || 'No se pudo eliminar el binomio');
+    }
+  };
+
+  // --- Jueces ---
+  const handleJuezUserSelect = (userId: string) => {
+    const user = usuariosJuez.find((u) => u.id === userId);
+    setNuevoJuez({
+      ...nuevoJuez,
+      user_id: userId,
+      nombre: user?.nombre || user?.email || '',
+    });
+  };
+
+  const handleAddJuez = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setJuezError('');
+
+    if (!nuevoJuez.user_id) {
+      setJuezError('Debes seleccionar un juez');
+      return;
+    }
+
+    setGuardandoJuez(true);
+    try {
+      const res = await fetch('/api/jueces', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          concurso_id: concursoId,
+          user_id: nuevoJuez.user_id,
+          nombre: nuevoJuez.nombre,
+          letra_oficial: nuevoJuez.letra_oficial,
+          experiencia: nuevoJuez.experiencia.trim() || undefined,
+        }),
+      });
+
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        setJuezError(body.error || 'No se pudo guardar el juez');
+        return;
+      }
+
+      setNuevoJuez(juezVacio());
+      await cargarJueces();
+    } finally {
+      setGuardandoJuez(false);
+    }
+  };
+
+  const handleDeleteJuez = async (id: string) => {
+    if (!confirm('Â¿Eliminar este juez del concurso?')) return;
+    const res = await fetch(`/api/jueces?id=${id}`, { method: 'DELETE' });
+    if (res.ok) {
+      setJueces(jueces.filter((j) => j.id !== id));
+    } else {
+      const body = await res.json().catch(() => ({}));
+      setJuezError(body.error || 'No se pudo eliminar el juez');
+    }
+  };
+
+  if (loading) return <div className="container py-8">Cargando...</div>;
+  if (!concurso) return <div className="container py-8">Concurso no encontrado</div>;
+
+  return (
+    <div className="container">
+      <Link href="/admin/concursos" className="text-primary mb-4 inline-block">â† Volver</Link>
+      <h1 className="text-3xl font-bold mb-6">Editar Concurso</h1>
+
+      <div className="card p-6 max-w-2xl mb-8">
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="block font-bold mb-2">Nombre</label>
+            <input
+              type="text"
+              value={formData.nombre}
+              onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
+              className="input w-full"
+              required
+            />
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block font-bold mb-2">Fecha Inicio</label>
+              <input
+                type="date"
+                value={formData.fecha_inicio}
+                onChange={(e) => setFormData({ ...formData, fecha_inicio: e.target.value })}
+                className="input w-full"
+                required
+              />
+            </div>
+            <div>
+              <label className="block font-bold mb-2">Fecha Fin</label>
+              <input
+                type="date"
+                value={formData.fecha_fin}
+                onChange={(e) => setFormData({ ...formData, fecha_fin: e.target.value })}
+                className="input w-full"
+                required
+              />
+            </div>
+          </div>
+          <div>
+            <label className="block font-bold mb-2">UbicaciÃ³n</label>
+            <input
+              type="text"
+              value={formData.ubicacion}
+              onChange={(e) => setFormData({ ...formData, ubicacion: e.target.value })}
+              className="input w-full"
+            />
+          </div>
+          <div>
+            <label className="block font-bold mb-2">Organizador</label>
+            <input
+              type="text"
+              value={formData.organizador}
+              onChange={(e) => setFormData({ ...formData, organizador: e.target.value })}
+              className="input w-full"
+            />
+          </div>
+          <button type="submit" className="btn btn-primary" disabled={saving}>
+            {saving ? 'Guardando...' : 'Guardar Cambios'}
+          </button>
+        </form>
+      </div>
+
+      {/* BINOMIOS */}
+      <div className="card p-6 max-w-2xl mb-8">
+        <h2 className="text-xl font-bold mb-4">Binomios</h2>
+
+        {binomioError && (
+          <div className="mb-4 p-3 bg-danger text-white rounded text-sm">{binomioError}</div>
+        )}
+
+        {binomios.length > 0 ? (
+          <div className="table-responsive mb-6">
+            <table className="table">
+              <thead>
+                <tr>
+                  <th>NÂº</th>
+                  <th>AÃ±o</th>
+                  <th>Licencia</th>
+                  <th>Jinete</th>
+                  <th>Caballo</th>
+                  <th>Equipo</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                {binomios.map((b) => (
+                  <tr key={b.id}>
+                    <td>{b.dorsal}</td>
+                    <td>{b.anio ?? '-'}</td>
+                    <td>{b.licencia_federativa || '-'}</td>
+                    <td>{b.nombre_jinete}</td>
+                    <td>{b.nombre_caballo}</td>
+                    <td>{b.equipo || '-'}</td>
+                    <td>
+                      <button
+                        onClick={() => handleDeleteBinomio(b.id)}
+                        className="text-danger text-sm hover:underline"
+                      >
+                        ðŸ—‘ Eliminar
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <p className="text-gray-600 mb-6">No hay binomios registrados todavÃ­a</p>
+        )}
+
+        <h3 className="font-bold mb-2">AÃ±adir binomio</h3>
+        <form onSubmit={handleAddBinomio} className="space-y-2">
+          <div className="grid grid-cols-2 gap-2">
+            <input
+              type="number"
+              placeholder="NÂº (dorsal)"
+              value={nuevoBinomio.dorsal}
+              onChange={(e) => setNuevoBinomio({ ...nuevoBinomio, dorsal: e.target.value })}
+              className="input"
+            />
+            <input
+              type="number"
+              placeholder="AÃ±o"
+              value={nuevoBinomio.anio}
+              onChange={(e) => setNuevoBinomio({ ...nuevoBinomio, anio: e.target.value })}
+              className="input"
+            />
+          </div>
+          <input
+            type="text"
+            placeholder="Licencia federativa"
+            value={nuevoBinomio.licencia_federativa}
+            onChange={(e) => setNuevoBinomio({ ...nuevoBinomio, licencia_federativa: e.target.value })}
+            className="input w-full"
+          />
+          <input
+            type="text"
+            placeholder="Jinete"
+            value={nuevoBinomio.nombre_jinete}
+            onChange={(e) => setNuevoBinomio({ ...nuevoBinomio, nombre_jinete: e.target.value })}
+            className="input w-full"
+          />
+          <input
+            type="text"
+            placeholder="Caballo"
+            value={nuevoBinomio.nombre_caballo}
+            onChange={(e) => setNuevoBinomio({ ...nuevoBinomio, nombre_caballo: e.target.value })}
+            className="input w-full"
+          />
+          <input
+            type="text"
+            placeholder="Equipo (opcional)"
+            value={nuevoBinomio.equipo}
+            onChange={(e) => setNuevoBinomio({ ...nuevoBinomio, equipo: e.target.value })}
+            className="input w-full"
+          />
+          <button
+            type="submit"
+            disabled={guardandoBinomio}
+            className="btn btn-secondary disabled:opacity-50"
+          >
+            {guardandoBinomio ? 'AÃ±adiendo...' : '+ AÃ±adir binomio'}
+          </button>
+        </form>
+      </div>
+
+      {/* JUECES */}
+      <div className="card p-6 max-w-2xl mb-8">
+        <h2 className="text-xl font-bold mb-4">Jueces</h2>
+
+        {juezError && (
+          <div className="mb-4 p-3 bg-danger text-white rounded text-sm">{juezError}</div>
+        )}
+
+        {jueces.length > 0 ? (
+          <div className="table-responsive mb-6">
+            <table className="table">
+              <thead>
+                <tr>
+                  <th>Letra</th>
+                  <th>Nombre</th>
+                  <th>Experiencia</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                {jueces.map((j) => (
+                  <tr key={j.id}>
+                    <td className="font-bold">{j.letra_oficial}</td>
+                    <td>{j.nombre}</td>
+                    <td>{j.experiencia || '-'}</td>
+                    <td>
+                      <button
+                        onClick={() => handleDeleteJuez(j.id)}
+                        className="text-danger text-sm hover:underline"
+                      >
+                        ðŸ—‘ Eliminar
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <p className="text-gray-600 mb-6">No hay jueces asignados todavÃ­a</p>
+        )}
+
+        <h3 className="font-bold mb-2">AÃ±adir juez</h3>
+        <form onSubmit={handleAddJuez} className="space-y-2">
+          <select
+            value={nuevoJuez.user_id}
+            onChange={(e) => handleJuezUserSelect(e.target.value)}
+            className="input w-full"
+            required
+          >
+            <option value="">-- Elegir juez --</option>
+            {usuariosJuez.map((u) => (
+              <option key={u.id} value={u.id}>
+                {u.nombre || u.email}
+              </option>
+            ))}
+          </select>
+          <div className="grid grid-cols-2 gap-2">
+            <select
+              value={nuevoJuez.letra_oficial}
+              onChange={(e) => setNuevoJuez({ ...nuevoJuez, letra_oficial: e.target.value })}
+              className="input"
+            >
+              {LETRAS_JUECES.map((l) => (
+                <option key={l.letra} value={l.letra}>
+                  {l.letra} â€” {l.posicion}
+                </option>
+              ))}
+            </select>
+            <input
+              type="text"
+              placeholder="Experiencia (opcional)"
+              value={nuevoJuez.experiencia}
+              onChange={(e) => setNuevoJuez({ ...nuevoJuez, experiencia: e.target.value })}
+              className="input"
+            />
+          </div>
+          <button
+            type="submit"
+            disabled={guardandoJuez || !nuevoJuez.user_id}
+            className="btn btn-secondary disabled:opacity-50"
+          >
+            {guardandoJuez ? 'AÃ±adiendo...' : '+ AÃ±adir juez'}
+          </button>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+=== ARCHIVO concursos/nuevo/page.tsx ===
+'use client';
+
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { concursoService } from '@/lib/services';
+import { supabase } from '@/lib/supabase';
+
+interface BinomioRow {
+  key: string;
+  dorsal: string;
+  anio: string;
+  licencia_federativa: string;
+  nombre_jinete: string;
+  nombre_caballo: string;
+}
+
+interface JuezRow {
+  key: string;
+  user_id: string;
+  nombre: string;
+  letra: string;
+}
+
+interface UserOption {
+  id: string;
+  nombre_completo: string;
+}
+
+function nuevaFilaBinomio(): BinomioRow {
+  return {
+    key: crypto.randomUUID(),
+    dorsal: '',
+    anio: '',
+    licencia_federativa: '',
+    nombre_jinete: '',
+    nombre_caballo: '',
+  };
+}
+
+function nuevaFilaJuez(): JuezRow {
+  return {
+    key: crypto.randomUUID(),
+    user_id: '',
+    nombre: '',
+    letra: '',
+  };
+}
+
+export default function NuevoConcursoPage() {
+  const router = useRouter();
+  const [formData, setFormData] = useState({
+    nombre: '',
+    fecha_inicio: '',
+    fecha_fin: '',
+    ubicacion: '',
+    organizador: '',
+  });
+  const [binomios, setBinomios] = useState<BinomioRow[]>([nuevaFilaBinomio()]);
+  const [jueces, setJueces] = useState<JuezRow[]>([nuevaFilaJuez()]);
+  const [juecesDisponibles, setJuecesDisponibles] = useState<UserOption[]>([]);
+  const [juecesError, setJuecesError] = useState('');
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    const cargarJueces = async () => {
+      setJuecesError('');
+      try {
+        // Traer usuarios con rol 'juez' desde profiles
+        const { data, error: dbError } = await supabase
+          .from('profiles')
+          .select('id, nombre, email')
+          .eq('rol', 'juez')
+          .order('nombre');
+
+        if (dbError) {
+          throw new Error(dbError.message);
+        }
+
+        setJuecesDisponibles(
+          (data || []).map((u) => ({
+            id: u.id,
+            nombre_completo: u.nombre || u.email,
+          }))
+        );
+      } catch (err) {
+        setJuecesError(
+          err instanceof Error ? err.message : 'No se pudo cargar el catálogo de jueces'
+        );
+      }
+    };
+    cargarJueces();
+  }, []);
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setFormData({
+      ...formData,
+      [e.target.name]: e.target.value,
+    });
+  };
+
+  const handleBinomioChange = (
+    key: string,
+    campo: keyof Omit<BinomioRow, 'key'>,
+    valor: string
+  ) => {
+    setBinomios((prev) =>
+      prev.map((b) => (b.key === key ? { ...b, [campo]: valor } : b))
+    );
+  };
+
+  const handleAddBinomio = () => {
+    setBinomios((prev) => [...prev, nuevaFilaBinomio()]);
+  };
+
+  const handleRemoveBinomio = (key: string) => {
+    setBinomios((prev) => prev.filter((b) => b.key !== key));
+  };
+
+  const handleJuezChange = (
+    key: string,
+    campo: keyof Omit<JuezRow, 'key'>,
+    valor: string
+  ) => {
+    setJueces((prev) =>
+      prev.map((j) => (j.key === key ? { ...j, [campo]: valor } : j))
+    );
+  };
+
+  const handleJuezUserSelect = (key: string, userId: string) => {
+    const user = juecesDisponibles.find((u) => u.id === userId);
+    setJueces((prev) =>
+      prev.map((j) =>
+        j.key === key
+          ? { ...j, user_id: userId, nombre: user?.nombre_completo || '' }
+          : j
+      )
+    );
+  };
+
+  const handleAddJuez = () => {
+    setJueces((prev) => [...prev, nuevaFilaJuez()]);
+  };
+
+  const handleRemoveJuez = (key: string) => {
+    setJueces((prev) => prev.filter((j) => j.key !== key));
+  };
+
+  const filaEstaVacia = (b: BinomioRow) =>
+    !b.dorsal.trim() &&
+    !b.anio.trim() &&
+    !b.nombre_jinete.trim() &&
+    !b.nombre_caballo.trim();
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError('');
+
+    try {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      if (!user) {
+        setError('Debes iniciar sesión para crear un concurso');
+        setLoading(false);
+        return;
+      }
+
+      // 1. Crear el concurso
+      const { data: concurso, error: concursoError } = await concursoService.create({
+        ...formData,
+        created_by: user.id,
+      });
+
+      if (concursoError || !concurso) {
+        setError(concursoError?.message || 'No se pudo crear el concurso');
+        setLoading(false);
+        return;
+      }
+
+      // 2. Crear los binomios no vacíos
+      const filasValidas = binomios.filter((b) => !filaEstaVacia(b));
+      for (let i = 0; i < filasValidas.length; i++) {
+        const b = filasValidas[i];
+        if (!b.nombre_jinete.trim() || !b.nombre_caballo.trim()) continue;
+
+        const dorsalNum = b.dorsal.trim() ? parseInt(b.dorsal, 10) : i + 1;
+        const anioNum = b.anio.trim() ? parseInt(b.anio, 10) : undefined;
+
+        await fetch('/api/binomios', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            concurso_id: concurso.id,
+            dorsal: dorsalNum,
+            anio: anioNum,
+            licencia_federativa: b.licencia_federativa.trim() || null,
+            nombre_jinete: b.nombre_jinete.trim(),
+            nombre_caballo: b.nombre_caballo.trim(),
+          }),
+        });
+      }
+
+      // 3. Crear los jueces
+      const juecesValidos = jueces.filter((j) => j.user_id && j.letra.trim());
+      for (const j of juecesValidos) {
+        await fetch('/api/jueces', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            concurso_id: concurso.id,
+            user_id: j.user_id,
+            nombre: j.nombre,
+            letra_oficial: j.letra.trim().toUpperCase(),
+          }),
+        });
+      }
+
+      router.push(`/admin/concursos/${concurso.id}`);
+    } catch (err: any) {
+      setError(err.message || 'Error inesperado al guardar');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="container">
+      <div className="max-w-4xl mx-auto">
+        <h1 className="text-3xl font-bold mb-6">Nuevo Concurso</h1>
+
+        {error && <div className="p-4 mb-6 bg-danger text-white rounded">{error}</div>}
+
+        <form onSubmit={handleSubmit} className="card p-6 space-y-8">
+          <div className="grid md:grid-cols-2 gap-4">
+            <div className="flex flex-col">
+              <label className="block text-sm font-bold mb-2">Nombre del Concurso</label>
+              <input type="text" name="nombre" value={formData.nombre} onChange={handleChange} className="input" required />
+            </div>
+            <div className="flex flex-col">
+              <label className="block text-sm font-bold mb-2">Organizador</label>
+              <input type="text" name="organizador" value={formData.organizador} onChange={handleChange} className="input" required />
+            </div>
+            <div className="flex flex-col">
+              <label className="block text-sm font-bold mb-2">Fecha de Inicio</label>
+              <input type="date" name="fecha_inicio" value={formData.fecha_inicio} onChange={handleChange} className="input" required />
+            </div>
+            <div className="flex flex-col">
+              <label className="block text-sm font-bold mb-2">Fecha de Fin</label>
+              <input type="date" name="fecha_fin" value={formData.fecha_fin} onChange={handleChange} className="input" required />
+            </div>
+            <div className="md:col-span-2 flex flex-col">
+              <label className="block text-sm font-bold mb-2">Ubicación</label>
+              <input type="text" name="ubicacion" value={formData.ubicacion} onChange={handleChange} className="input" required />
+            </div>
+          </div>
+
+          <hr />
+
+          <div className="space-y-4">
+            <div className="flex justify-between items-center">
+              <h2 className="text-xl font-bold">Jueces</h2>
+              <button type="button" onClick={handleAddJuez} className="btn btn-secondary text-sm">+ Añadir Juez</button>
+            </div>
+            {juecesError && <p className="text-sm text-danger">{juecesError}</p>}
+            <div className="space-y-4">
+              {jueces.map((j) => (
+                <div key={j.key} className="border rounded p-4 grid grid-cols-1 md:grid-cols-3 gap-3 relative">
+                  <div className="flex flex-col">
+                    <label className="text-xs font-bold mb-1">Seleccionar Juez</label>
+                    <select
+                      value={j.user_id}
+                      onChange={(e) => handleJuezUserSelect(j.key, e.target.value)}
+                      className="input"
+                    >
+                      <option value="">-- Elegir Juez --</option>
+                      {juecesDisponibles.map((u) => (
+                        <option key={u.id} value={u.id}>{u.nombre_completo}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="flex flex-col">
+                    <label className="text-xs font-bold mb-1">Nombre (en acta)</label>
+                    <input
+                      type="text"
+                      value={j.nombre}
+                      onChange={(e) => handleJuezChange(j.key, 'nombre', e.target.value)}
+                      className="input"
+                    />
+                  </div>
+                  <div className="flex flex-col">
+                    <label className="text-xs font-bold mb-1">Letra Oficial</label>
+                    <input
+                      type="text"
+                      placeholder="Ej: C"
+                      value={j.letra}
+                      onChange={(e) => handleJuezChange(j.key, 'letra', e.target.value)}
+                      className="input"
+                    />
+                  </div>
+                  {jueces.length > 1 && (
+                    <button type="button" onClick={() => handleRemoveJuez(j.key)} className="text-danger text-sm absolute -top-2 -right-2">✕</button>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <hr />
+
+          <div className="space-y-4">
+            <div className="flex justify-between items-center">
+              <h2 className="text-xl font-bold">Binomios</h2>
+              <button type="button" onClick={handleAddBinomio} className="btn btn-secondary text-sm">+ Añadir binomio</button>
+            </div>
+            <div className="space-y-3">
+              {binomios.map((b) => (
+                <div key={b.key} className="border rounded p-4 space-y-2 relative">
+                  <div className="grid grid-cols-2 gap-2">
+                    <input type="number" placeholder="Nº (dorsal)" value={b.dorsal} onChange={(e) => handleBinomioChange(b.key, 'dorsal', e.target.value)} className="input" />
+                    <input type="number" placeholder="Año" value={b.anio} onChange={(e) => handleBinomioChange(b.key, 'anio', e.target.value)} className="input" />
+                  </div>
+                  <input
+                    type="text"
+                    placeholder="Licencia federativa"
+                    value={b.licencia_federativa}
+                    onChange={(e) => handleBinomioChange(b.key, 'licencia_federativa', e.target.value)}
+                    className="input w-full"
+                  />
+                  <input type="text" placeholder="Jinete" value={b.nombre_jinete} onChange={(e) => handleBinomioChange(b.key, 'nombre_jinete', e.target.value)} className="input" />
+                  <input type="text" placeholder="Caballo" value={b.nombre_caballo} onChange={(e) => handleBinomioChange(b.key, 'nombre_caballo', e.target.value)} className="input" />
+                  {binomios.length > 1 && (
+                    <button type="button" onClick={() => handleRemoveBinomio(b.key)} className="text-danger text-sm">✕ Eliminar</button>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <button type="submit" disabled={loading} className="w-full btn btn-primary disabled:opacity-50">
+            {loading ? 'Guardando...' : 'Guardar Concurso'}
+          </button>
+        </form>
+      </div>
+    </div>
+  );
+}

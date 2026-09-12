@@ -1,0 +1,101 @@
+﻿
+=== ARCHIVOS QUE USAN 'jornadas' ===
+
+Path                                                                                           LineNumber
+----                                                                                           ----------
+C:\Users\vramo\Documents\concursos-hipica-fei\src\app\admin\concursos\[id]\JornadasSection.tsx          7
+C:\Users\vramo\Documents\concursos-hipica-fei\src\app\admin\concursos\[id]\JornadasSection.tsx         18
+C:\Users\vramo\Documents\concursos-hipica-fei\src\app\admin\concursos\[id]\JornadasSection.tsx         31
+C:\Users\vramo\Documents\concursos-hipica-fei\src\app\admin\concursos\[id]\JornadasSection.tsx         32
+C:\Users\vramo\Documents\concursos-hipica-fei\src\app\admin\concursos\[id]\JornadasSection.tsx         38
+C:\Users\vramo\Documents\concursos-hipica-fei\src\app\admin\concursos\[id]\JornadasSection.tsx         45
+C:\Users\vramo\Documents\concursos-hipica-fei\src\app\admin\concursos\[id]\JornadasSection.tsx         51
+C:\Users\vramo\Documents\concursos-hipica-fei\src\app\admin\concursos\[id]\JornadasSection.tsx         58
+C:\Users\vramo\Documents\concursos-hipica-fei\src\app\admin\concursos\[id]\JornadasSection.tsx         59
+C:\Users\vramo\Documents\concursos-hipica-fei\src\app\admin\concursos\[id]\JornadasSection.tsx         62
+C:\Users\vramo\Documents\concursos-hipica-fei\src\app\admin\concursos\[id]\JornadasSection.tsx         64
+C:\Users\vramo\Documents\concursos-hipica-fei\src\app\admin\concursos\[id]\JornadasSection.tsx         66
+C:\Users\vramo\Documents\concursos-hipica-fei\src\app\admin\concursos\[id]\JornadasSection.tsx         69
+C:\Users\vramo\Documents\concursos-hipica-fei\src\app\admin\concursos\[id]\JornadasSection.tsx         71
+C:\Users\vramo\Documents\concursos-hipica-fei\src\app\admin\concursos\[id]\JornadasSection.tsx         78
+C:\Users\vramo\Documents\concursos-hipica-fei\src\app\admin\concursos\[id]\JornadasSection.tsx         82
+C:\Users\vramo\Documents\concursos-hipica-fei\src\app\admin\concursos\[id]\JornadasSection.tsx         87
+C:\Users\vramo\Documents\concursos-hipica-fei\src\app\admin\concursos\[id]\JornadasSection.tsx         94
+C:\Users\vramo\Documents\concursos-hipica-fei\src\app\admin\concursos\[id]\JornadasSection.tsx        102
+C:\Users\vramo\Documents\concursos-hipica-fei\src\app\admin\concursos\[id]\JornadasSection.tsx        103
+C:\Users\vramo\Documents\concursos-hipica-fei\src\app\admin\concursos\[id]\JornadasSection.tsx        107
+C:\Users\vramo\Documents\concursos-hipica-fei\src\app\admin\concursos\[id]\JornadasSection.tsx        110
+C:\Users\vramo\Documents\concursos-hipica-fei\src\app\admin\concursos\[id]\JornadasSection.tsx        112
+C:\Users\vramo\Documents\concursos-hipica-fei\src\app\admin\concursos\[id]\JornadasSection.tsx        113
+C:\Users\vramo\Documents\concursos-hipica-fei\src\app\admin\concursos\[id]\JornadasSection.tsx        114
+C:\Users\vramo\Documents\concursos-hipica-fei\src\app\admin\concursos\[id]\JornadasSection.tsx        121
+C:\Users\vramo\Documents\concursos-hipica-fei\src\app\admin\concursos\[id]\JornadasSection.tsx        123
+C:\Users\vramo\Documents\concursos-hipica-fei\src\app\admin\concursos\[id]\JornadasSection.tsx        130
+C:\Users\vramo\Documents\concursos-hipica-fei\src\app\admin\concursos\[id]\JornadasSection.tsx        136
+C:\Users\vramo\Documents\concursos-hipica-fei\src\app\admin\concursos\[id]\JornadasSection.tsx        139
+C:\Users\vramo\Documents\concursos-hipica-fei\src\app\admin\concursos\[id]\JornadasSection.tsx        146
+C:\Users\vramo\Documents\concursos-hipica-fei\src\app\admin\concursos\[id]\JornadasSection.tsx        152
+C:\Users\vramo\Documents\concursos-hipica-fei\src\app\admin\concursos\[id]\JornadasSection.tsx        154
+C:\Users\vramo\Documents\concursos-hipica-fei\src\app\admin\concursos\[id]\JornadasSection.tsx        167
+C:\Users\vramo\Documents\concursos-hipica-fei\src\app\admin\concursos\[id]\JornadasSection.tsx        172
+C:\Users\vramo\Documents\concursos-hipica-fei\src\app\admin\concursos\[id]\JornadasSection.tsx        182
+C:\Users\vramo\Documents\concursos-hipica-fei\src\app\admin\concursos\[id]\JornadasSection.tsx        185
+C:\Users\vramo\Documents\concursos-hipica-fei\src\app\admin\concursos\[id]\JornadasSection.tsx        186
+C:\Users\vramo\Documents\concursos-hipica-fei\src\app\admin\concursos\[id]\JornadasSection.tsx        192
+C:\Users\vramo\Documents\concursos-hipica-fei\src\app\admin\concursos\[id]\JornadasSection.tsx        194
+C:\Users\vramo\Documents\concursos-hipica-fei\src\app\admin\concursos\[id]\JornadasSection.tsx        210
+C:\Users\vramo\Documents\concursos-hipica-fei\src\app\admin\concursos\[id]\JornadasSection.tsx        212
+C:\Users\vramo\Documents\concursos-hipica-fei\src\app\admin\concursos\[id]\JornadasSection.tsx        228
+C:\Users\vramo\Documents\concursos-hipica-fei\src\app\admin\concursos\[id]\JornadasSection.tsx        230
+C:\Users\vramo\Documents\concursos-hipica-fei\src\app\admin\concursos\[id]\JornadasSection.tsx        231
+C:\Users\vramo\Documents\concursos-hipica-fei\src\app\admin\concursos\[id]\JornadasSection.tsx        246
+C:\Users\vramo\Documents\concursos-hipica-fei\src\app\admin\concursos\[id]\JornadasSection.tsx        248
+C:\Users\vramo\Documents\concursos-hipica-fei\src\app\admin\concursos\[id]\JornadasSection.tsx        249
+C:\Users\vramo\Documents\concursos-hipica-fei\src\app\admin\concursos\[id]\JornadasSection.tsx        272
+C:\Users\vramo\Documents\concursos-hipica-fei\src\app\admin\concursos\[id]\JornadasSection.tsx        279
+C:\Users\vramo\Documents\concursos-hipica-fei\src\app\admin\concursos\[id]\JornadasSection.tsx        281
+C:\Users\vramo\Documents\concursos-hipica-fei\src\app\admin\concursos\[id]\JornadasSection.tsx        282
+C:\Users\vramo\Documents\concursos-hipica-fei\src\app\admin\concursos\[id]\JornadasSection.tsx        284
+C:\Users\vramo\Documents\concursos-hipica-fei\src\app\admin\concursos\[id]\JornadasSection.tsx        300
+C:\Users\vramo\Documents\concursos-hipica-fei\src\app\admin\concursos\[id]\JornadasSection.tsx        317
+C:\Users\vramo\Documents\concursos-hipica-fei\src\app\admin\concursos\[id]\JornadasSection.tsx        323
+C:\Users\vramo\Documents\concursos-hipica-fei\src\app\api\jornadas\route.ts                             9
+C:\Users\vramo\Documents\concursos-hipica-fei\src\app\api\jornadas\route.ts                            37
+C:\Users\vramo\Documents\concursos-hipica-fei\src\app\page.tsx                                         27
+C:\Users\vramo\Documents\concursos-hipica-fei\src\lib\services.ts                                       2
+C:\Users\vramo\Documents\concursos-hipica-fei\src\lib\services.ts                                      48
+C:\Users\vramo\Documents\concursos-hipica-fei\src\lib\services.ts                                      49
+C:\Users\vramo\Documents\concursos-hipica-fei\src\lib\services.ts                                      52
+C:\Users\vramo\Documents\concursos-hipica-fei\src\lib\services.ts                                      56
+C:\Users\vramo\Documents\concursos-hipica-fei\src\lib\services.ts                                      59
+C:\Users\vramo\Documents\concursos-hipica-fei\src\lib\services.ts                                      61
+C:\Users\vramo\Documents\concursos-hipica-fei\src\lib\services.ts                                      62
+C:\Users\vramo\Documents\concursos-hipica-fei\src\lib\services.ts                                      65
+C:\Users\vramo\Documents\concursos-hipica-fei\src\lib\services.ts                                      69
+C:\Users\vramo\Documents\concursos-hipica-fei\src\lib\services.ts                                     195
+C:\Users\vramo\Documents\concursos-hipica-fei\src\lib\services.ts                                     206
+C:\Users\vramo\Documents\concursos-hipica-fei\src\lib\services.ts                                     211
+C:\Users\vramo\Documents\concursos-hipica-fei\src\types\index.ts                                       23
+C:\Users\vramo\Documents\concursos-hipica-fei\src\types\index.ts                                       25
+C:\Users\vramo\Documents\concursos-hipica-fei\src\types\index.ts                                       63
+C:\Users\vramo\Documents\concursos-hipica-fei\src\types\index.ts                                       86
+C:\Users\vramo\Documents\concursos-hipica-fei\src\types\index.ts                                       88
+C:\Users\vramo\Documents\concursos-hipica-fei\src\types\index.ts                                      111
+
+
+
+=== TABLAS jornadas EN BD ===
+ÔöîÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÉ
+Ôöé table_name             Ôöé
+Ôö£ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöñ
+Ôöé jornada_reprises       Ôöé
+Ôöé jornadas               Ôöé
+Ôöé jornada_reprise_jueces Ôöé
+ÔööÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÿ
+
+=== CONTENIDO DE jornadas ===
+ÔöîÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÉ
+Ôöé total Ôöé
+Ôö£ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöñ
+Ôöé 0     Ôöé
+ÔööÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÿ

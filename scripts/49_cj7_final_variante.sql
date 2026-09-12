@@ -1,0 +1,35 @@
+﻿INSERT INTO reprises (numero, nombre, codigo, categoria, nivel, tipo, anio, tiempo_orientativo, edad_minima_caballo, total_maximo, reprise_oficial, descripcion, multiplicador, desviacion, fei_numero)
+VALUES ('49', 'Final Caballos Jovenes 7 años', 'RFHE-2022-CJ7-FIN2', 'Caballos Jovenes', '7 años Final', 'final', 2022, '5''15"', 7, 330, 'FINAL CABALLOS JOVENES 7 AÑOS 2022', 'Reprise final caballos jovenes 7 años (variante)', 1, 0, 'RFHE-2022-CJ7-FIN2');
+
+INSERT INTO ejercicios_reprise (reprise_id, numero_orden, letra, descripcion, coeficiente, tipo)
+VALUES
+((SELECT id FROM reprises WHERE codigo = 'RFHE-2022-CJ7-FIN2'), 1, 'A X XC', 'Entrada al galope reunido. Parada-inmovilidad y saludo. Partir al trote reunido. Trote reunido', 1, 'movimiento'),
+((SELECT id FROM reprises WHERE codigo = 'RFHE-2022-CJ7-FIN2'), 2, 'C HXF F', 'Pista a mano izquierda. Cambio de mano al trote medio. Trote reunido', 1, 'movimiento'),
+((SELECT id FROM reprises WHERE codigo = 'RFHE-2022-CJ7-FIN2'), 3, 'FAK', 'Transiciones en H y F. El trote reunido', 1, 'movimiento'),
+((SELECT id FROM reprises WHERE codigo = 'RFHE-2022-CJ7-FIN2'), 4, 'KE', 'Espalda adentro a la derecha', 1, 'movimiento'),
+((SELECT id FROM reprises WHERE codigo = 'RFHE-2022-CJ7-FIN2'), 5, 'EX XB', 'Media vuelta a la derecha (10 m). Media vuelta a la izquierda (10 m)', 1, 'movimiento'),
+((SELECT id FROM reprises WHERE codigo = 'RFHE-2022-CJ7-FIN2'), 6, 'BG G C', 'Apoyo a la izquierda. Seguir la línea central. Pista a la derecha', 1, 'movimiento'),
+((SELECT id FROM reprises WHERE codigo = 'RFHE-2022-CJ7-FIN2'), 7, 'RS SHCM', 'Medio círculo a la derecha (20 m). Dejando al caballo estirarse con riendas largas. Trote reunido. Recoger las riendas', 2, 'movimiento'),
+((SELECT id FROM reprises WHERE codigo = 'RFHE-2022-CJ7-FIN2'), 8, 'MXK K', 'Trote largo. Trote reunido', 1, 'movimiento'),
+((SELECT id FROM reprises WHERE codigo = 'RFHE-2022-CJ7-FIN2'), 9, 'KAF', 'Transiciones en M y K. El trote reunido', 1, 'movimiento'),
+((SELECT id FROM reprises WHERE codigo = 'RFHE-2022-CJ7-FIN2'), 10, 'FB', 'Espalda adentro a la izquierda', 1, 'movimiento'),
+((SELECT id FROM reprises WHERE codigo = 'RFHE-2022-CJ7-FIN2'), 11, 'BX XE', 'Media vuelta a la izquierda (10 m). Media vuelta a la derecha (10 m)', 1, 'movimiento'),
+((SELECT id FROM reprises WHERE codigo = 'RFHE-2022-CJ7-FIN2'), 12, 'EG G', 'Apoyo a la derecha. Seguir la línea central', 1, 'movimiento'),
+((SELECT id FROM reprises WHERE codigo = 'RFHE-2022-CJ7-FIN2'), 13, 'Antes de C C CH', 'Paso medio. Pista a la izquierda. Paso medio', 1, 'movimiento'),
+((SELECT id FROM reprises WHERE codigo = 'RFHE-2022-CJ7-FIN2'), 14, 'HIB', 'Paso Largo', 2, 'movimiento'),
+((SELECT id FROM reprises WHERE codigo = 'RFHE-2022-CJ7-FIN2'), 15, 'BPL(V)', 'Paso reunido', 2, 'movimiento'),
+((SELECT id FROM reprises WHERE codigo = 'RFHE-2022-CJ7-FIN2'), 16, 'Entre L y V L(P)', 'Media pirueta a la derecha. Seguir al paso reunido', 1, 'movimiento'),
+((SELECT id FROM reprises WHERE codigo = 'RFHE-2022-CJ7-FIN2'), 17, 'Entre L y P L(P)', 'Media pirueta a la izquierda. Seguir al paso reunido', 1, 'movimiento'),
+((SELECT id FROM reprises WHERE codigo = 'RFHE-2022-CJ7-FIN2'), 18, 'Entre L y V VKA', 'Partir al galope a la izquierda. Galope reunido', 1, 'movimiento'),
+((SELECT id FROM reprises WHERE codigo = 'RFHE-2022-CJ7-FIN2'), 19, 'A DE E', 'Doblar a lo largo. Apoyo a la izquierda. Cambio de pie en el aire', 1, 'movimiento'),
+((SELECT id FROM reprises WHERE codigo = 'RFHE-2022-CJ7-FIN2'), 20, 'EG C', 'Apoyo a la derecha. Pista a la derecha', 1, 'movimiento'),
+((SELECT id FROM reprises WHERE codigo = 'RFHE-2022-CJ7-FIN2'), 21, 'MXK', 'Galope largo', 1, 'movimiento'),
+((SELECT id FROM reprises WHERE codigo = 'RFHE-2022-CJ7-FIN2'), 22, 'K KAF', 'Galope reunido y cambio de pie en el aire. Galope reunido', 1, 'movimiento'),
+((SELECT id FROM reprises WHERE codigo = 'RFHE-2022-CJ7-FIN2'), 23, 'F(X) Entre F y X', 'Proceder hacia X a galope reunido. Media pirueta a la izquierda', 1, 'movimiento'),
+((SELECT id FROM reprises WHERE codigo = 'RFHE-2022-CJ7-FIN2'), 24, 'FA A AK', 'Galope en trocado. Cambio de pie en el aire. Galope reunido', 1, 'movimiento'),
+((SELECT id FROM reprises WHERE codigo = 'RFHE-2022-CJ7-FIN2'), 25, 'K(X) Entre K y X', 'Avanzar hacia X a galope reunido. Media pirueta a la derecha', 1, 'movimiento'),
+((SELECT id FROM reprises WHERE codigo = 'RFHE-2022-CJ7-FIN2'), 26, 'KA A AF', 'Galope en trocado. Cambio de pie en el aire. Galope reunido', 1, 'movimiento'),
+((SELECT id FROM reprises WHERE codigo = 'RFHE-2022-CJ7-FIN2'), 27, 'FS', 'Sobre la diagonal corta 3 cambios de pie cada 4 trancos', 1, 'movimiento'),
+((SELECT id FROM reprises WHERE codigo = 'RFHE-2022-CJ7-FIN2'), 28, 'SR', 'Medio círculo a la derecha (20 m). Ceder las riendas y retomarlas durante 3 trancos', 1, 'movimiento'),
+((SELECT id FROM reprises WHERE codigo = 'RFHE-2022-CJ7-FIN2'), 29, 'RK', 'Diagonal corta con 3 cambios de pie cada 3 trancos. Galope reunido', 1, 'movimiento'),
+((SELECT id FROM reprises WHERE codigo = 'RFHE-2022-CJ7-FIN2'), 30, 'A X', 'Doblar en la línea central. Parada - inmovilidad - saludo', 1, 'movimiento');

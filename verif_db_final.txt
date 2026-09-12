@@ -1,0 +1,67 @@
+﻿
+=== CONTENIDO DE db/ ===
+
+Name                        Length
+----                        ------
+00_limpiar_todo.sql           1899
+01_estructura.sql             6511
+02_funciones.sql              1766
+03_politicas_rls.sql          9172
+04_permisos.sql               1164
+05_seed_usuarios.sql          1529
+06_seed_reprises.sql        166437
+07_seed_datos.sql             7705
+08_seed_participaciones.sql   4414
+README.md                     3529
+recrear_bd.ps1                2943
+
+
+
+=== ¿Existe db\00_limpiar_todo.sql? ===
+True
+
+=== Tamaño de db\06_seed_reprises.sql ===
+
+Name                 Length
+----                 ------
+06_seed_reprises.sql 166437
+
+
+
+--- Ultimas 20 lineas de db\06_seed_reprises.sql ---
+((SELECT id FROM reprises WHERE codigo = 'RFHE-2022-CJ7-FIN2'), 27, 'FS', 'Sobre la diagonal corta 3 cambios de pie cada 4 trancos', 1, 'movimiento'),
+((SELECT id FROM reprises WHERE codigo = 'RFHE-2022-CJ7-FIN2'), 28, 'SR', 'Medio círculo a la derecha (20 m). Ceder las riendas y retomarlas durante 3 trancos', 1, 'movimiento'),
+((SELECT id FROM reprises WHERE codigo = 'RFHE-2022-CJ7-FIN2'), 29, 'RK', 'Diagonal corta con 3 cambios de pie cada 3 trancos. Galope reunido', 1, 'movimiento'),
+((SELECT id FROM reprises WHERE codigo = 'RFHE-2022-CJ7-FIN2'), 30, 'A X', 'Doblar en la línea central. Parada - inmovilidad - saludo', 1, 'movimiento');
+
+
+
+
+-- ============================================
+-- VERIFICACION
+-- ============================================
+SELECT 
+  'reprises' AS tabla,
+  COUNT(*)::text AS total
+FROM reprises
+UNION ALL
+SELECT 
+  'ejercicios_reprise',
+  COUNT(*)::text
+FROM ejercicios_reprise;
+
+=== TOTAL DE ARCHIVOS DE MIGRACION EN RAIZ ===
+
+Count
+-----
+   46
+
+
+
+=== TOTAL DE ARCHIVOS EN scripts/ ===
+
+Count
+-----
+   43
+
+

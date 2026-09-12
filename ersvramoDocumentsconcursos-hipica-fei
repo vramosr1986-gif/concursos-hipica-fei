@@ -1,0 +1,505 @@
+[33mcommit ba53ee44d178f30ce1c3802c9a00a1688a1c9151[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m)[m
+Author: vramosr1986-gif <vramosr1986@gmail.com>
+Date:   Sun Sep 13 01:42:43 2026 +0200
+
+    feat: scripts de backup/restore de BBDD y .gitignore
+
+[33mcommit a075c3952e82686f7f1a96f85dcd51eb446fe93b[m
+Author: vramosr1986-gif <vramosr1986@gmail.com>
+Date:   Sun Sep 13 01:42:15 2026 +0200
+
+    feat: scripts de backup y restore de la BBDD
+
+[33mcommit 5c65587321a7d3d94f2f9207401ea4e2336e1b79[m
+Author: vramosr1986-gif <vramosr1986@gmail.com>
+Date:   Sun Sep 13 01:35:36 2026 +0200
+
+    Sistema completo de resultados con equipos, detalle por ejercicio y realtime
+
+[33mcommit 98bb8c21530739bb5c18bcfc2b4d531ff79b27eb[m
+Author: vramosr1986-gif <vramosr1986@gmail.com>
+Date:   Sun Sep 13 00:57:23 2026 +0200
+
+    Sistema de categorias RFHE completo: niveles, categorias, filtros y validacion
+
+[33mcommit cd0b8426bba964c031459adffedec42dc2061aa5[m
+Author: vramosr1986-gif <vramosr1986@gmail.com>
+Date:   Sat Sep 12 20:04:30 2026 +0200
+
+    Add database migration and seed files
+
+[33mcommit aae29e44b0fa7ffaae068f2497a788dfb13dcc3d[m
+Merge: 967cbeb d48d626 c0915b0
+Author: vramosr1986-gif <vramosr1986@gmail.com>
+Date:   Sat Sep 12 19:06:58 2026 +0200
+
+    cline checkpoint session=1789150778495_fbqv5 run=35
+
+[33mcommit c0915b01d53220ecd5f3b6cda7e391c18c8d596a[m
+Author: vramosr1986-gif <vramosr1986@gmail.com>
+Date:   Sat Sep 12 19:06:58 2026 +0200
+
+    untracked files on cline checkpoint
+
+[33mcommit 691a26304b2f87563da102f2e487ecbe498a29c5[m
+Merge: 967cbeb de04348 a7bcdae
+Author: vramosr1986-gif <vramosr1986@gmail.com>
+Date:   Sat Sep 12 18:57:12 2026 +0200
+
+    cline checkpoint session=1789150778495_fbqv5 run=34
+
+[33mcommit a7bcdaed7e8d5711e4199747af420b9ac82c6c2a[m
+Author: vramosr1986-gif <vramosr1986@gmail.com>
+Date:   Sat Sep 12 18:57:11 2026 +0200
+
+    untracked files on cline checkpoint
+
+[33mcommit bafe128d88eebcfe18ef9b01abd53d9d5f8a6695[m
+Merge: 967cbeb 7c157f7 7ce564d
+Author: vramosr1986-gif <vramosr1986@gmail.com>
+Date:   Sat Sep 12 00:29:51 2026 +0200
+
+    cline checkpoint session=1789150778495_fbqv5 run=33
+
+[33mcommit 7ce564db5f300b931d53f563784de21fe7b2c16b[m
+Author: vramosr1986-gif <vramosr1986@gmail.com>
+Date:   Sat Sep 12 00:29:51 2026 +0200
+
+    untracked files on cline checkpoint
+
+[33mcommit 67d187c78443a86fec23d9cb3a3d77e0b0a881ec[m
+Merge: 967cbeb f48f172 2f75ffc
+Author: vramosr1986-gif <vramosr1986@gmail.com>
+Date:   Fri Sep 11 21:04:07 2026 +0200
+
+    cline checkpoint session=1789150778495_fbqv5 run=24
+
+[33mcommit 2f75ffcc3104a060f67535df55093ceb0e087450[m
+Author: vramosr1986-gif <vramosr1986@gmail.com>
+Date:   Fri Sep 11 21:04:06 2026 +0200
+
+    untracked files on cline checkpoint
+
+[33mcommit 9bf77456999597ba59ff28496c7c1fa5fb6dab3e[m
+Merge: 967cbeb 4b2687b 915f3ac
+Author: vramosr1986-gif <vramosr1986@gmail.com>
+Date:   Fri Sep 11 21:03:30 2026 +0200
+
+    cline checkpoint session=1789150778495_fbqv5 run=23
+
+[33mcommit 915f3ac60e161bc3371bd577536470fcb54292d0[m
+Author: vramosr1986-gif <vramosr1986@gmail.com>
+Date:   Fri Sep 11 21:03:30 2026 +0200
+
+    untracked files on cline checkpoint
+
+[33mcommit 2bb10ca8b39c00dc4ca642ab7eb2e51cada25596[m
+Merge: 967cbeb 41987e5 4d05134
+Author: vramosr1986-gif <vramosr1986@gmail.com>
+Date:   Fri Sep 11 20:53:57 2026 +0200
+
+    cline checkpoint session=1789150778495_fbqv5 run=22
+
+[33mcommit 4d05134e4b2e34497ce8d3d410f0b2fd8d5a53f2[m
+Author: vramosr1986-gif <vramosr1986@gmail.com>
+Date:   Fri Sep 11 20:53:57 2026 +0200
+
+    untracked files on cline checkpoint
+
+[33mcommit 95a3fe15ed2a7ab25fa8c64e2dd6eba3076b6db6[m
+Merge: 967cbeb 4d21e0d 9fe3f8c
+Author: vramosr1986-gif <vramosr1986@gmail.com>
+Date:   Fri Sep 11 20:52:20 2026 +0200
+
+    cline checkpoint session=1789150778495_fbqv5 run=21
+
+[33mcommit 9fe3f8c33a39516394a0b4044deb33af72146d9e[m
+Author: vramosr1986-gif <vramosr1986@gmail.com>
+Date:   Fri Sep 11 20:52:19 2026 +0200
+
+    untracked files on cline checkpoint
+
+[33mcommit ea5751ff8671842eca34adba8d9a98327bf46f59[m
+Merge: 967cbeb b7eb880 c64df7b
+Author: vramosr1986-gif <vramosr1986@gmail.com>
+Date:   Fri Sep 11 20:50:31 2026 +0200
+
+    cline checkpoint session=1789150778495_fbqv5 run=20
+
+[33mcommit c64df7bf0763f97b6e5559218b8374be1c377d28[m
+Author: vramosr1986-gif <vramosr1986@gmail.com>
+Date:   Fri Sep 11 20:50:30 2026 +0200
+
+    untracked files on cline checkpoint
+
+[33mcommit 1a6af99c177af6291407f2b0f33548240e03eb7f[m
+Merge: 967cbeb d16fca3 7141973
+Author: vramosr1986-gif <vramosr1986@gmail.com>
+Date:   Fri Sep 11 20:49:21 2026 +0200
+
+    cline checkpoint session=1789150778495_fbqv5 run=19
+
+[33mcommit 71419734443ec30d63e9b60a9051961f4ae0de4c[m
+Author: vramosr1986-gif <vramosr1986@gmail.com>
+Date:   Fri Sep 11 20:49:21 2026 +0200
+
+    untracked files on cline checkpoint
+
+[33mcommit a8b8af3e43917c459e29ee6ff4ff2bb786ed7afa[m
+Merge: 967cbeb cd1246e c069dfd
+Author: vramosr1986-gif <vramosr1986@gmail.com>
+Date:   Fri Sep 11 20:48:53 2026 +0200
+
+    cline checkpoint session=1789150778495_fbqv5 run=18
+
+[33mcommit c069dfdc2eb43fee6392c1a42d01a030d423279d[m
+Author: vramosr1986-gif <vramosr1986@gmail.com>
+Date:   Fri Sep 11 20:48:52 2026 +0200
+
+    untracked files on cline checkpoint
+
+[33mcommit 175a4f294607ae8344a7849221c1b3ae38cf161d[m
+Merge: 967cbeb c6d89d9 6b24100
+Author: vramosr1986-gif <vramosr1986@gmail.com>
+Date:   Fri Sep 11 20:47:23 2026 +0200
+
+    cline checkpoint session=1789150778495_fbqv5 run=17
+
+[33mcommit 6b241005c466d0f28c804eab0e09f57435e7c3b7[m
+Author: vramosr1986-gif <vramosr1986@gmail.com>
+Date:   Fri Sep 11 20:47:23 2026 +0200
+
+    untracked files on cline checkpoint
+
+[33mcommit 3f7a8d1e3fa7561206990c2ccadc6132a249d253[m
+Merge: 967cbeb 6ef196e bc24f84
+Author: vramosr1986-gif <vramosr1986@gmail.com>
+Date:   Fri Sep 11 20:45:26 2026 +0200
+
+    cline checkpoint session=1789150778495_fbqv5 run=16
+
+[33mcommit bc24f8491c0eb686b6c832c800d301feb7571ca8[m
+Author: vramosr1986-gif <vramosr1986@gmail.com>
+Date:   Fri Sep 11 20:45:26 2026 +0200
+
+    untracked files on cline checkpoint
+
+[33mcommit e241866216c28013ca5995aa5621c9092c444ca1[m
+Merge: 967cbeb d4343be 5080700
+Author: vramosr1986-gif <vramosr1986@gmail.com>
+Date:   Fri Sep 11 20:43:21 2026 +0200
+
+    cline checkpoint session=1789150778495_fbqv5 run=15
+
+[33mcommit 50807003f85caf173cd0900a346695aa65e3f918[m
+Author: vramosr1986-gif <vramosr1986@gmail.com>
+Date:   Fri Sep 11 20:43:21 2026 +0200
+
+    untracked files on cline checkpoint
+
+[33mcommit 17a77da7d75ba43daf93b27f86a8f24cb7989e01[m
+Merge: 967cbeb 0c0d0bb 331bc98
+Author: vramosr1986-gif <vramosr1986@gmail.com>
+Date:   Fri Sep 11 20:41:24 2026 +0200
+
+    cline checkpoint session=1789150778495_fbqv5 run=14
+
+[33mcommit 331bc98b9f56054aa351170619a10e3b2e72dbe0[m
+Author: vramosr1986-gif <vramosr1986@gmail.com>
+Date:   Fri Sep 11 20:41:23 2026 +0200
+
+    untracked files on cline checkpoint
+
+[33mcommit 221af193432f396b1dfe21dd6765d6bc952edd70[m
+Merge: 967cbeb 2164e8c 460fa1d
+Author: vramosr1986-gif <vramosr1986@gmail.com>
+Date:   Fri Sep 11 20:38:42 2026 +0200
+
+    cline checkpoint session=1789150778495_fbqv5 run=13
+
+[33mcommit 460fa1dd5a9aa433b07cd4da411a7dc74382e8b2[m
+Author: vramosr1986-gif <vramosr1986@gmail.com>
+Date:   Fri Sep 11 20:38:41 2026 +0200
+
+    untracked files on cline checkpoint
+
+[33mcommit 20246171a7037a1dbbf1182b83ad222b4d23adc1[m
+Merge: 967cbeb ac23ae1 89d6d84
+Author: vramosr1986-gif <vramosr1986@gmail.com>
+Date:   Fri Sep 11 20:37:38 2026 +0200
+
+    cline checkpoint session=1789150778495_fbqv5 run=12
+
+[33mcommit 89d6d842bf0735683fb50ffc8bedf9a32351e09d[m
+Author: vramosr1986-gif <vramosr1986@gmail.com>
+Date:   Fri Sep 11 20:37:37 2026 +0200
+
+    untracked files on cline checkpoint
+
+[33mcommit c5c5f5c83410164ce4a334d010b914d76c7d4d1e[m
+Merge: 967cbeb 89c5ba8 9c0f942
+Author: vramosr1986-gif <vramosr1986@gmail.com>
+Date:   Fri Sep 11 20:34:50 2026 +0200
+
+    cline checkpoint session=1789150778495_fbqv5 run=11
+
+[33mcommit 9c0f9421922cb5aae2afcb692ec2edfd4e03185e[m
+Author: vramosr1986-gif <vramosr1986@gmail.com>
+Date:   Fri Sep 11 20:34:50 2026 +0200
+
+    untracked files on cline checkpoint
+
+[33mcommit b1d0012b0be2a4c0bcb3877380d72ab3e1f6886d[m
+Merge: 967cbeb fddcb35 699c3b5
+Author: vramosr1986-gif <vramosr1986@gmail.com>
+Date:   Fri Sep 11 20:34:31 2026 +0200
+
+    cline checkpoint session=1789150778495_fbqv5 run=10
+
+[33mcommit 699c3b5d1dc5277511575d8203d2bb4aca1be076[m
+Author: vramosr1986-gif <vramosr1986@gmail.com>
+Date:   Fri Sep 11 20:34:30 2026 +0200
+
+    untracked files on cline checkpoint
+
+[33mcommit 3085c7562489c2fb19f14980b10f5b065c492824[m
+Merge: 967cbeb f4b6dd9 07d4ead
+Author: vramosr1986-gif <vramosr1986@gmail.com>
+Date:   Fri Sep 11 20:32:35 2026 +0200
+
+    cline checkpoint session=1789150778495_fbqv5 run=9
+
+[33mcommit 07d4ead6298733dd7710f4a87e1c113593bbb3c0[m
+Author: vramosr1986-gif <vramosr1986@gmail.com>
+Date:   Fri Sep 11 20:32:35 2026 +0200
+
+    untracked files on cline checkpoint
+
+[33mcommit a04fa549a19aabd8b104f442fc3f33423e737909[m
+Merge: 967cbeb c78f608 f848176
+Author: vramosr1986-gif <vramosr1986@gmail.com>
+Date:   Fri Sep 11 20:32:20 2026 +0200
+
+    cline checkpoint session=1789150778495_fbqv5 run=8
+
+[33mcommit f8481769f87d402bb382d51b1078a0b6a61290cb[m
+Author: vramosr1986-gif <vramosr1986@gmail.com>
+Date:   Fri Sep 11 20:32:20 2026 +0200
+
+    untracked files on cline checkpoint
+
+[33mcommit 9749062167be5151962bfc48956df9acf2275aeb[m
+Merge: 967cbeb f44e83d 70d28c8
+Author: vramosr1986-gif <vramosr1986@gmail.com>
+Date:   Fri Sep 11 20:31:15 2026 +0200
+
+    cline checkpoint session=1789150778495_fbqv5 run=7
+
+[33mcommit 70d28c80463ffd669dfe4b6247048aca5d4884fb[m
+Author: vramosr1986-gif <vramosr1986@gmail.com>
+Date:   Fri Sep 11 20:31:15 2026 +0200
+
+    untracked files on cline checkpoint
+
+[33mcommit 2919fd55d4e06a4590549c535f6049f65a312810[m
+Merge: 967cbeb 1a3e081 cbd354e
+Author: vramosr1986-gif <vramosr1986@gmail.com>
+Date:   Fri Sep 11 20:28:56 2026 +0200
+
+    cline checkpoint session=1789150778495_fbqv5 run=6
+
+[33mcommit cbd354e0588c54cab621fcc56a0392eb1775c60a[m
+Author: vramosr1986-gif <vramosr1986@gmail.com>
+Date:   Fri Sep 11 20:28:56 2026 +0200
+
+    untracked files on cline checkpoint
+
+[33mcommit 5785533ce86f639ef81a9568888afdbc063b5310[m
+Merge: 967cbeb 81c3a79 bf0857d
+Author: vramosr1986-gif <vramosr1986@gmail.com>
+Date:   Fri Sep 11 20:28:20 2026 +0200
+
+    cline checkpoint session=1789150778495_fbqv5 run=5
+
+[33mcommit bf0857d3db3f3c010107fa9e695b31328d51637c[m
+Author: vramosr1986-gif <vramosr1986@gmail.com>
+Date:   Fri Sep 11 20:28:20 2026 +0200
+
+    untracked files on cline checkpoint
+
+[33mcommit 0e8da57165898273e107c739aaea98675a47c261[m
+Merge: 967cbeb e9b3d90 e13808d
+Author: vramosr1986-gif <vramosr1986@gmail.com>
+Date:   Fri Sep 11 20:26:41 2026 +0200
+
+    cline checkpoint session=1789150778495_fbqv5 run=4
+
+[33mcommit e13808d05a774318b07f3b51a7d85e7885bfc4c8[m
+Author: vramosr1986-gif <vramosr1986@gmail.com>
+Date:   Fri Sep 11 20:26:41 2026 +0200
+
+    untracked files on cline checkpoint
+
+[33mcommit cdebf7631ed6d6f3239fc96fdf6547347f6ea31d[m
+Merge: 967cbeb a66d08d c262182
+Author: vramosr1986-gif <vramosr1986@gmail.com>
+Date:   Fri Sep 11 20:25:14 2026 +0200
+
+    cline checkpoint session=1789150778495_fbqv5 run=3
+
+[33mcommit c26218252fdb1a2f439ce519a93b3d0c5fba1360[m
+Author: vramosr1986-gif <vramosr1986@gmail.com>
+Date:   Fri Sep 11 20:25:14 2026 +0200
+
+    untracked files on cline checkpoint
+
+[33mcommit 9fcd69677adb88315e01b647a6d4a468bdec56e2[m
+Merge: 967cbeb faddfea 7a47a6f
+Author: vramosr1986-gif <vramosr1986@gmail.com>
+Date:   Fri Sep 11 20:22:51 2026 +0200
+
+    cline checkpoint session=1789150778495_fbqv5 run=2
+
+[33mcommit 7a47a6f67ed2fb0729fee19fe5f93136eb0f812c[m
+Author: vramosr1986-gif <vramosr1986@gmail.com>
+Date:   Fri Sep 11 20:22:51 2026 +0200
+
+    untracked files on cline checkpoint
+
+[33mcommit f84c57d7ed0a2d1504e7e5a4e9dfceb78a101c19[m
+Merge: 967cbeb eae38ea 254dd17
+Author: vramosr1986-gif <vramosr1986@gmail.com>
+Date:   Fri Sep 11 20:19:41 2026 +0200
+
+    cline checkpoint session=1789150778495_fbqv5 run=1
+
+[33mcommit 254dd17feb8190386418b518e97389f5177fbb67[m
+Author: vramosr1986-gif <vramosr1986@gmail.com>
+Date:   Fri Sep 11 20:19:41 2026 +0200
+
+    untracked files on cline checkpoint
+
+[33mcommit a6ca06b85170307b5808052fb5a1b6044477d236[m
+Merge: 967cbeb bef84cb 805bb2b
+Author: vramosr1986-gif <vramosr1986@gmail.com>
+Date:   Fri Sep 11 20:18:53 2026 +0200
+
+    cline checkpoint session=1789117655925_go5ll run=9
+
+[33mcommit 805bb2ba1bcafe7dcbc83b5568d787a5bdf0c4cd[m
+Author: vramosr1986-gif <vramosr1986@gmail.com>
+Date:   Fri Sep 11 20:18:53 2026 +0200
+
+    untracked files on cline checkpoint
+
+[33mcommit 967cbebed041808a613ee63b6490a5bd20a10534[m
+Author: vramosr1986-gif <vramosr1986@gmail.com>
+Date:   Fri Sep 11 11:59:44 2026 +0200
+
+    feat: añadir licencia_federativa a binomios con control de duplicados
+
+[33mcommit 6b081e9bd353d2e3a5e10f229eb6e0c470d55458[m
+Merge: 6f30001 e1a0439 e79f5df
+Author: vramosr1986-gif <vramosr1986@gmail.com>
+Date:   Fri Sep 11 11:53:12 2026 +0200
+
+    cline checkpoint session=1789117655925_go5ll run=7
+
+[33mcommit e79f5df6d255ab0e6170fd70307848e1ce6be534[m
+Author: vramosr1986-gif <vramosr1986@gmail.com>
+Date:   Fri Sep 11 11:53:11 2026 +0200
+
+    untracked files on cline checkpoint
+
+[33mcommit 5aa5fa8302165c72e5c976423a7d12e4682432b4[m
+Merge: 6f30001 006f9dd c295b5e
+Author: vramosr1986-gif <vramosr1986@gmail.com>
+Date:   Fri Sep 11 11:52:14 2026 +0200
+
+    cline checkpoint session=1788965539749_hclw7 run=1
+
+[33mcommit c295b5e43056aa054cee97ac3b1219f5ba77439a[m
+Author: vramosr1986-gif <vramosr1986@gmail.com>
+Date:   Fri Sep 11 11:52:12 2026 +0200
+
+    untracked files on cline checkpoint
+
+[33mcommit dcef564598c081ecdff25976baa0f2b590a9e24c[m
+Merge: 6f30001 6936156 53ed285
+Author: vramosr1986-gif <vramosr1986@gmail.com>
+Date:   Fri Sep 11 11:44:24 2026 +0200
+
+    cline checkpoint session=1789117655925_go5ll run=6
+
+[33mcommit 53ed28513194d846fdc7025f9c6bab1a912773f5[m
+Author: vramosr1986-gif <vramosr1986@gmail.com>
+Date:   Fri Sep 11 11:44:23 2026 +0200
+
+    untracked files on cline checkpoint
+
+[33mcommit 73e0d0b82ae9381d4c5bd030c265e23d63b23aad[m
+Merge: 6f30001 e9b4111 d572721
+Author: vramosr1986-gif <vramosr1986@gmail.com>
+Date:   Fri Sep 11 11:23:48 2026 +0200
+
+    cline checkpoint session=1789117655925_go5ll run=5
+
+[33mcommit d572721c0008ab582c3cc808d2d7c3d8f019fd9b[m
+Author: vramosr1986-gif <vramosr1986@gmail.com>
+Date:   Fri Sep 11 11:23:46 2026 +0200
+
+    untracked files on cline checkpoint
+
+[33mcommit 51f2acecabeb1187e0e2a801410a76e41c8fff8b[m
+Merge: 6f30001 c110e28 acd39c1
+Author: vramosr1986-gif <vramosr1986@gmail.com>
+Date:   Fri Sep 11 11:21:46 2026 +0200
+
+    cline checkpoint session=1789117655925_go5ll run=4
+
+[33mcommit acd39c12aaa67195f80b0d221f81f6cd57370935[m
+Author: vramosr1986-gif <vramosr1986@gmail.com>
+Date:   Fri Sep 11 11:21:45 2026 +0200
+
+    untracked files on cline checkpoint
+
+[33mcommit 2f8a6f64308ed21ad53285f2b378655ac9a3fe19[m
+Merge: 6f30001 7d97986 cd6556a
+Author: vramosr1986-gif <vramosr1986@gmail.com>
+Date:   Fri Sep 11 11:10:31 2026 +0200
+
+    cline checkpoint session=1789117655925_go5ll run=3
+
+[33mcommit cd6556a82b65f86f884a9dc628a8e51188a522aa[m
+Author: vramosr1986-gif <vramosr1986@gmail.com>
+Date:   Fri Sep 11 11:10:29 2026 +0200
+
+    untracked files on cline checkpoint
+
+[33mcommit d2ff20532fe5fca164287ec5b50c00c81901e502[m
+Merge: 6f30001 787bcde bc26901
+Author: vramosr1986-gif <vramosr1986@gmail.com>
+Date:   Fri Sep 11 11:09:01 2026 +0200
+
+    cline checkpoint session=1789117655925_go5ll run=2
+
+[33mcommit bc26901f9ae3206ae17aade5b3f4f2025d694977[m
+Author: vramosr1986-gif <vramosr1986@gmail.com>
+Date:   Fri Sep 11 11:09:00 2026 +0200
+
+    untracked files on cline checkpoint
+
+[33mcommit 408a662aa2c856b0470b87b45762ceccee42b102[m
+Merge: 6f30001 0f45544 6966edc
+Author: vramosr1986-gif <vramosr1986@gmail.com>
+Date:   Fri Sep 11 11:07:44 2026 +0200
+
+    cline checkpoint session=1789117655925_go5ll run=1
+
+[33mcommit 6966edcd844dc64e1e0d7050ed4a3370eba9c6cd[m
+Author: vramosr1986-gif <vramosr1986@gmail.com>
+Date:   Fri Sep 11 11:07:42 2026 +0200
+
+    untracked files on cline checkpoint
+
+[33mcommit 

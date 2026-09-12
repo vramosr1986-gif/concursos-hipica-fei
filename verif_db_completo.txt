@@ -1,0 +1,68 @@
+﻿
+=== CONTENIDO DE db/ ===
+
+Name                        Length
+----                        ------
+00_limpiar_todo.sql           1899
+01_estructura.sql             6511
+02_funciones.sql              1766
+03_politicas_rls.sql          9172
+04_permisos.sql               1164
+05_seed_usuarios.sql          1529
+06_seed_reprises.sql        166437
+07_seed_datos.sql             7705
+08_seed_participaciones.sql   4414
+README.md                     3529
+recrear_bd.ps1                2943
+
+
+
+=== ¿Existe db\00_limpiar_todo.sql? ===
+True
+
+=== Tamaño de db\06_seed_reprises.sql ===
+
+Name                 Length
+----                 ------
+06_seed_reprises.sql 166437
+
+
+
+=== Contiene 'SELECT COUNT' al final? ===
+
+  COUNT(*)::text AS total
+  COUNT(*)::text
+
+
+
+=== Politicas publicas en db\03_politicas_rls.sql ===
+
+DROP POLICY IF EXISTS "reprises_select_public" ON reprises;
+CREATE POLICY "reprises_select_public" ON reprises
+FOR SELECT TO public USING (true);
+DROP POLICY IF EXISTS "ejercicios_select_public" ON ejercicios_reprise;
+CREATE POLICY "ejercicios_select_public" ON ejercicios_reprise
+FOR SELECT TO public USING (true);
+DROP POLICY IF EXISTS "binomios_select_public" ON binomios;
+CREATE POLICY "binomios_select_public" ON binomios
+FOR SELECT TO public USING (true);
+DROP POLICY IF EXISTS "concursos_select_public" ON concursos;
+CREATE POLICY "concursos_select_public" ON concursos
+FOR SELECT TO public USING (true);
+DROP POLICY IF EXISTS "inscripciones_select_public" ON inscripciones;
+CREATE POLICY "inscripciones_select_public" ON inscripciones
+FOR SELECT TO public USING (true);
+DROP POLICY IF EXISTS "pruebas_select_public" ON pruebas;
+CREATE POLICY "pruebas_select_public" ON pruebas
+FOR SELECT TO public USING (true);
+DROP POLICY IF EXISTS "prueba_jueces_select_public" ON prueba_jueces;
+CREATE POLICY "prueba_jueces_select_public" ON prueba_jueces
+FOR SELECT TO public USING (true);
+DROP POLICY IF EXISTS "participaciones_select_public" ON participaciones;
+CREATE POLICY "participaciones_select_public" ON participaciones
+FOR SELECT TO public USING (true);
+DROP POLICY IF EXISTS "puntuaciones_select_public" ON puntuaciones;
+CREATE POLICY "puntuaciones_select_public" ON puntuaciones
+FOR SELECT TO public USING (true);
+
+

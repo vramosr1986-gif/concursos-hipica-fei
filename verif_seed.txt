@@ -1,0 +1,88 @@
+﻿
+=== ARCHIVOS EN scripts/ ===
+
+Name                              Length
+----                              ------
+07_infantiles_individual.sql        3429
+08_juveniles_individual.sql         4753
+09_juveniles_0_preliminar.sql       4114
+10_juveniles_0_individual.sql       3818
+11_juveniles_0_equipos.sql          4656
+12_juveniles_equipos.sql            4550
+13_jovenes_jinetes_preliminar.sql   3682
+14_jovenes_jinetes_equipos.sql      4384
+15_jovenes_jinetes_individual.sql   4373
+16_4_anos_preliminar.sql            3013
+17_4_anos_final.sql                 4441
+18_4_anos_experimental.sql          1779
+19_5_anos_preliminar.sql            3408
+20_5_anos_final.sql                 1526
+21_6_anos_preliminar.sql            3667
+22_6_anos_final.sql                 5537
+23_7_anos_final.sql                 5101
+24_clasica_1.sql                    4479
+25_clasica_2.sql                    3844
+26_clasica_3.sql                    4202
+27_promocion_2.sql                  2963
+28_rider_1a.sql                     3023
+29_rider_1b.sql                     3133
+30_rider_1c.sql                     3526
+31_rider_2a.sql                     3928
+32_rider_2b.sql                     4370
+33_rider_2c.sql                     3482
+34_rider_3a.sql                     3964
+35_rider_3b.sql                     4077
+36_rider_3c.sql                     3603
+37_rider_3d.sql                     4363
+38_intermedia_i.sql                 3956
+39_intermedia_ii.sql                4380
+40_intermedia_a.sql                 4485
+41_intermedia_b.sql                 4279
+42_gran_premio.sql                  4849
+43_gran_premio_especial.sql         5134
+44_gran_premio_u25.sql              4586
+45_ap_preliminar.sql                2032
+46_ap_final.sql                     2020
+47_benjamines_1.sql                 2809
+48_benjamines_2.sql                 2861
+49_cj7_final_variante.sql           5160
+create-users.mjs                    2345
+seed-competencias.mjs               6122
+seed.mjs                            4384
+
+
+
+=== package.json (scripts) ===
+
+>   "scripts": {
+      "dev": "next dev",
+      "build": "next build",
+      "start": "next start",
+      "lint": "next lint",
+      "type-check": "tsc --noEmit",
+      "db:push": "supabase db push",
+      "db:pull": "supabase db pull"
+    },
+    "dependencies": {
+      "@supabase/supabase-js": "^2.45.0",
+      "@types/node": "^20.9.0",
+      "@types/react": "^18.2.31",
+      "@types/react-dom": "^18.2.14",
+      "autoprefixer": "^10.4.16",
+      "axios": "^1.6.2",
+
+
+
+=== .env.local ===
+
+NEXT_PUBLIC_SUPABASE_URL=https://irrdaheiicjnirodcbgu.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlycmRha
+GVpaWNqbmlyb2RjYmd1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODg3NzUxMjEsImV4cCI6MjEwNDM1MTEyMX0._un58ICOtScrytZ6eJBGC
+sUeTV3yFg7ROCzfuKXqDjo
+SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlycmRhaGVpa
+WNqbmlyb2RjYmd1Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4ODc3NTEyMSwiZXhwIjoyMTA0MzUxMTIxfQ.rcbe73zIItG7Jj
+EQg1v4xz2J-2m98qxp83Ro8B1WPxU
+
+
+
+=== tsx/ts-node instalado? ===

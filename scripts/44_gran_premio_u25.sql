@@ -1,0 +1,36 @@
+﻿INSERT INTO reprises (numero, nombre, codigo, categoria, nivel, tipo, anio, tiempo_orientativo, edad_minima_caballo, total_maximo, reprise_oficial, descripcion, multiplicador, desviacion, fei_numero)
+VALUES ('44', 'Gran Premio U25', 'RFHE-2022-GPU25', 'Gran Premio', 'Gran Premio U25', 'individual', 2022, '6''00"', 8, 320, 'GRAN PREMIO U25 16-25 2022', 'Reprise Gran Premio U25', 1, 0, 'RFHE-2022-GPU25');
+
+INSERT INTO ejercicios_reprise (reprise_id, numero_orden, letra, descripcion, coeficiente, tipo)
+VALUES
+((SELECT id FROM reprises WHERE codigo = 'RFHE-2022-GPU25'), 1, 'A X XC', 'Entrada al galope reunido. Parada - inmovilidad - saludo. Partir al trote reunido. Trote reunido', 1, 'movimiento'),
+((SELECT id FROM reprises WHERE codigo = 'RFHE-2022-GPU25'), 2, 'C MXK KA', 'Pista a mano derecha. Trote largo. Trote reunido', 1, 'movimiento'),
+((SELECT id FROM reprises WHERE codigo = 'RFHE-2022-GPU25'), 3, 'Transiciones', 'Transiciones en M y K', 1, 'movimiento'),
+((SELECT id FROM reprises WHERE codigo = 'RFHE-2022-GPU25'), 4, 'A Entre D & G C', 'Doblar a lo largo. 4 apoyos de 5 m a cada lado de la línea central empezando a la izquierda y acabando a la derecha. Pista a la derecha', 2, 'movimiento'),
+((SELECT id FROM reprises WHERE codigo = 'RFHE-2022-GPU25'), 5, 'CMR R', 'Trote reunido. Transición a Passage', 1, 'movimiento'),
+((SELECT id FROM reprises WHERE codigo = 'RFHE-2022-GPU25'), 6, 'RI', 'Semicírculo a la derecha de 10m diámetro, en passage', 1, 'movimiento'),
+((SELECT id FROM reprises WHERE codigo = 'RFHE-2022-GPU25'), 7, 'I', 'Piaffe 8 a 10 batidas', 1, 'movimiento'),
+((SELECT id FROM reprises WHERE codigo = 'RFHE-2022-GPU25'), 8, 'I', 'Transiciones Passage-Piaffe-Passage', 1, 'movimiento'),
+((SELECT id FROM reprises WHERE codigo = 'RFHE-2022-GPU25'), 9, 'IS', 'Semicírculo a la izquierda de 10m diámetro, en passage', 1, 'movimiento'),
+((SELECT id FROM reprises WHERE codigo = 'RFHE-2022-GPU25'), 10, 'SP', 'Trote Medio', 1, 'movimiento'),
+((SELECT id FROM reprises WHERE codigo = 'RFHE-2022-GPU25'), 11, 'PFD', 'Passage', 1, 'movimiento'),
+((SELECT id FROM reprises WHERE codigo = 'RFHE-2022-GPU25'), 12, 'D', 'Piaffe 8 a 10 batidas', 1, 'movimiento'),
+((SELECT id FROM reprises WHERE codigo = 'RFHE-2022-GPU25'), 13, 'D', 'Transiciones Passage-Piaffe-Passage', 1, 'movimiento'),
+((SELECT id FROM reprises WHERE codigo = 'RFHE-2022-GPU25'), 14, 'DKV', 'Passage', 1, 'movimiento'),
+((SELECT id FROM reprises WHERE codigo = 'RFHE-2022-GPU25'), 15, 'VXR', 'Paso Largo', 2, 'movimiento'),
+((SELECT id FROM reprises WHERE codigo = 'RFHE-2022-GPU25'), 16, 'RHC', 'Paso Reunido', 2, 'movimiento'),
+((SELECT id FROM reprises WHERE codigo = 'RFHE-2022-GPU25'), 17, 'C', 'Partir al galope reunido a la derecha. Galope reunido', 1, 'movimiento'),
+((SELECT id FROM reprises WHERE codigo = 'RFHE-2022-GPU25'), 18, 'MXK', 'Galope Largo', 1, 'movimiento'),
+((SELECT id FROM reprises WHERE codigo = 'RFHE-2022-GPU25'), 19, 'K', 'Galope reunido y cambio de pie en el aire. Galope reunido', 1, 'movimiento'),
+((SELECT id FROM reprises WHERE codigo = 'RFHE-2022-GPU25'), 20, 'PX', 'Apoyar a la izquierda. Continuar por la línea del centro', 1, 'movimiento'),
+((SELECT id FROM reprises WHERE codigo = 'RFHE-2022-GPU25'), 21, 'I', 'Pirueta a la izquierda', 1, 'movimiento'),
+((SELECT id FROM reprises WHERE codigo = 'RFHE-2022-GPU25'), 22, 'HXF', 'En la diagonal, 9 cambios de pie en el aire cada dos trancos. Galope reunido', 1, 'movimiento'),
+((SELECT id FROM reprises WHERE codigo = 'RFHE-2022-GPU25'), 23, 'VX', 'Apoyar a la derecha. Continuar por la línea del centro', 1, 'movimiento'),
+((SELECT id FROM reprises WHERE codigo = 'RFHE-2022-GPU25'), 24, 'I', 'Pirueta a la derecha', 1, 'movimiento'),
+((SELECT id FROM reprises WHERE codigo = 'RFHE-2022-GPU25'), 25, 'MXK', 'En la diagonal 15 cambios de pie en el aire al trancó. Galope reunido', 1, 'movimiento'),
+((SELECT id FROM reprises WHERE codigo = 'RFHE-2022-GPU25'), 26, 'A DL', 'Doblar a lo largo. Trote reunido', 1, 'movimiento'),
+((SELECT id FROM reprises WHERE codigo = 'RFHE-2022-GPU25'), 27, 'LX', 'Passage', 1, 'movimiento'),
+((SELECT id FROM reprises WHERE codigo = 'RFHE-2022-GPU25'), 28, 'X', 'Piaffe 8 a 10 batidas', 1, 'movimiento'),
+((SELECT id FROM reprises WHERE codigo = 'RFHE-2022-GPU25'), 29, 'X', 'Transiciones passage -piaffe - passage', 1, 'movimiento'),
+((SELECT id FROM reprises WHERE codigo = 'RFHE-2022-GPU25'), 30, 'XG', 'Passage', 1, 'movimiento'),
+((SELECT id FROM reprises WHERE codigo = 'RFHE-2022-GPU25'), 31, 'G', 'Parada - inmovilidad - saludo', 1, 'movimiento');

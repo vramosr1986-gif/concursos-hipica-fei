@@ -1,0 +1,66 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  .admin-page-container {
+    @apply min-h-screen bg-slate-50 text-slate-900 p-4 md:p-8 font-sans;
+  }
+}
+
+@layer components {
+  /* Forzamos el estilo en contenedores blancos comunes del admin */
+  .admin-page-container div[class*="bg-white"] {
+    @apply rounded-2xl shadow-sm border border-slate-200 p-6 transition-all duration-200 hover:shadow-md !important;
+  }
+
+  /* Forzamos inputs, selects y date pickers */
+  .admin-page-container input, 
+  .admin-page-container select {
+    @apply w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl transition-all duration-200 
+           placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary focus:bg-white text-slate-700 !important;
+  }
+
+  /* Botones Primarios */
+  .admin-page-container button[class*="bg-blue-600"],
+  .admin-page-container button[class*="bg-primary"] {
+    @apply inline-flex items-center justify-center px-4 py-2 rounded-xl font-semibold transition-all duration-200 
+           bg-primary text-white hover:bg-primary-dark shadow-sm hover:shadow-md active:scale-95 !important;
+  }
+
+  /* Botones Secundarios */
+  .admin-page-container button[class*="bg-white"],
+  .admin-page-container button[class*="border-gray-300"] {
+    @apply inline-flex items-center justify-center px-4 py-2 rounded-xl font-semibold transition-all duration-200 
+           bg-white text-slate-700 border border-slate-200 hover:bg-slate-50 active:scale-95 !important;
+  }
+
+  /* Tablas Modernas */
+  .admin-page-container table {
+    @apply w-full border-collapse text-sm !important;
+  }
+
+  .admin-page-container th {
+    @apply bg-slate-50 p-4 text-left font-semibold text-slate-600 border-b border-slate-200 uppercase tracking-wider !important;
+  }
+
+  .admin-page-container td {
+    @apply p-4 border-b border-slate-100 text-slate-700 !important;
+  }
+
+  .admin-page-container tr:hover td {
+    @apply bg-slate-50/50 transition-colors !important;
+  }
+
+  /* Links */
+  .admin-page-container a[class*="text-blue-600"] {
+    @apply text-primary hover:text-primary-dark font-medium transition-colors !important;
+  }
+
+  /* Títulos */
+  .admin-page-container h1, 
+  .admin-page-container h2, 
+  .admin-page-container h3 {
+    @apply text-slate-900 tracking-tight font-bold !important;
+  }
+}

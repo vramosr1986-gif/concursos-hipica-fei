@@ -1,0 +1,42 @@
+# Backups de BBDD (contienen datos sensibles)
+backups/
+
+# Backups temporales de archivos
+backup_*/
+
+# Dumps temporales
+dump_*.txt
+*.bak
+
+# Dependencias
+node_modules/
+.pnp
+.pnp.js
+
+# Build de Next.js
+.next/
+out/
+build/
+dist/
+
+# Variables de entorno (NUNCA subir)
+.env
+.env.local
+.env*.local
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+*.log
+
+# Sistema operativo
+.DS_Store
+Thumbs.db
+
+# Vercel
+.vercel
+
+# TypeScript
+*.tsbuildinfo
+next-env.d.tsbackup_*.txt
