@@ -129,7 +129,7 @@ export function Navbar() {
                 Resultados
               </Link>
 
-              <button
+              <Link href="/ayuda" className={navLink}>Ayuda</Link><button
                 onClick={handleLogout}
                 className="ml-1 rounded-full border border-white/20 px-3 py-2 text-sm font-semibold text-white transition hover:border-[#e8c98d] hover:bg-white/10"
               >
