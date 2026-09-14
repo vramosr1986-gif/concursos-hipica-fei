@@ -53,14 +53,14 @@ export default function Home() {
         <div className="absolute -bottom-40 right-20 size-96 rounded-full bg-[#b88746]/10 blur-3xl" />
         <div className="relative max-w-3xl">
           <p className="mb-5 text-xs font-bold uppercase tracking-[0.28em] text-[#e8c98d]">
-            GESTIÓN COMPLETA DE CONCURSOS DE DOMA
+            Plataforma de competición
           </p>
           <h1 className="max-w-2xl text-4xl font-semibold leading-tight sm:text-5xl lg:text-6xl">
-            Paneles diferenciados para organización, jueces y público.
+            La precisión de la doma, en una gestión impecable.
           </h1>
           <p className="mt-6 max-w-xl text-base leading-7 text-white/75 sm:text-lg">
-            Resultados en tiempo real y clasificaciones por binomio y por equipo.
-
+            Centraliza concursos, binomios y resultados en un espacio pensado para
+            cada persona que hace posible la competición.
           </p>
           <div className="mt-8 flex flex-wrap gap-3">
             <Link href="/resultados" className="btn btn-secondary">
