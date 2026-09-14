@@ -74,6 +74,7 @@ type PruebaConResultados = {
   jueces: ResumenJuez[];
   clasificaciones: Clasificacion[];
   equipos: EquipoClasificado[];
+  es_equipos: boolean;
 };
 
 // ============================================================
@@ -87,9 +88,8 @@ function ResultadosContent() {
   const [loading, setLoading] = useState(true);
   const [loadingDatos, setLoadingDatos] = useState(false);
   const [error, setError] = useState('');
-  const [filtroCategoria, setFiltroCategoria] = useState<string>('');
+const [filtroCategoria, setFiltroCategoria] = useState<string>('');
   const [ordenacion, setOrdenacion] = useState<'media' | 'dorsal' | 'jinete'>('media');
-  const [pestanaActiva, setPestanaActiva] = useState<Record<string, 'individual' | 'equipos'>>({});
   const [expandidos, setExpandidos] = useState<string[]>([]);
 
   useEffect(() => {
@@ -145,9 +145,9 @@ function ResultadosContent() {
 
       try {
         // 1. Cargar pruebas
-        const { data: pruebas, error: pruebasErr } = await supabase
+const { data: pruebas, error: pruebasErr } = await supabase
           .from('pruebas')
-          .select('id, nombre, categoria, fecha, hora_inicio, reprise_id, reprise:reprise_id(nombre)')
+          .select('id, nombre, categoria, fecha, hora_inicio, reprise_id, tipo_prueba:tipo_prueba_id(codigo), reprise:reprise_id(nombre)')
           .eq('concurso_id', concursoSeleccionado)
           .order('fecha', { ascending: true })
           .order('orden', { ascending: true });
@@ -331,37 +331,42 @@ function ResultadosContent() {
             if (original) original.posicion = i + 1;
           });
 
-          // 5. Cargar equipos
-          const { data: equiposData } = await supabase
-            .from('v_clasificacion_equipos')
-            .select('*')
-            .eq('prueba_id', prueba.id)
-            .order('posicion_equipo', { ascending: true })
-            .order('posicion_miembro', { ascending: true });
+// 5. Cargar equipos (solo si la prueba es por equipos)
+          const esEquipos = (prueba as any).tipo_prueba?.codigo === 'EQU';
+          let equipos: EquipoClasificado[] = [];
 
-          const equiposPorId: Record<string, EquipoClasificado> = {};
-          (equiposData || []).forEach((e: any) => {
-            if (!equiposPorId[e.equipo_id]) {
-              equiposPorId[e.equipo_id] = {
-                equipo_id: e.equipo_id,
-                equipo_nombre: e.equipo_nombre,
-                puntuacion_equipo: e.puntuacion_equipo,
-                posicion_equipo: e.posicion_equipo,
-                miembros: [],
-              };
-            }
-            equiposPorId[e.equipo_id].miembros.push({
-              posicion_miembro: e.posicion_miembro,
-              dorsal: e.dorsal,
-              nombre_jinete: e.nombre_jinete,
-              nombre_caballo: e.nombre_caballo,
-              porcentaje: e.porcentaje,
+          if (esEquipos) {
+            const { data: equiposData } = await supabase
+              .from('v_clasificacion_equipos')
+              .select('*')
+              .eq('prueba_id', prueba.id)
+              .order('posicion_equipo', { ascending: true })
+              .order('posicion_miembro', { ascending: true });
+
+            const equiposPorId: Record<string, EquipoClasificado> = {};
+            (equiposData || []).forEach((e: any) => {
+              if (!equiposPorId[e.equipo_id]) {
+                equiposPorId[e.equipo_id] = {
+                  equipo_id: e.equipo_id,
+                  equipo_nombre: e.equipo_nombre,
+                  puntuacion_equipo: e.puntuacion_equipo,
+                  posicion_equipo: e.posicion_equipo,
+                  miembros: [],
+                };
+              }
+              equiposPorId[e.equipo_id].miembros.push({
+                posicion_miembro: e.posicion_miembro,
+                dorsal: e.dorsal,
+                nombre_jinete: e.nombre_jinete,
+                nombre_caballo: e.nombre_caballo,
+                porcentaje: e.porcentaje,
+              });
             });
-          });
 
-          const equipos: EquipoClasificado[] = Object.values(equiposPorId).sort(
-            (a, b) => a.posicion_equipo - b.posicion_equipo
-          );
+            equipos = Object.values(equiposPorId).sort(
+              (a, b) => a.posicion_equipo - b.posicion_equipo
+            );
+          }
 
           resultados.push({
             prueba_id: prueba.id,
@@ -373,6 +378,7 @@ function ResultadosContent() {
             jueces,
             clasificaciones,
             equipos,
+            es_equipos: esEquipos,
           });
         }
 
@@ -528,9 +534,8 @@ function ResultadosContent() {
         <div className="card p-8 text-center text-gray-600">No hay pruebas para mostrar.</div>
       ) : (
         <div className="space-y-8">
-          {pruebasFiltradas.map((prueba) => {
-            const tieneEquipos = prueba.equipos.length > 0;
-            const pestana = pestanaActiva[prueba.prueba_id] || 'individual';
+{pruebasFiltradas.map((prueba) => {
+            const esEquipos = prueba.es_equipos;
             const conPuntuacion = prueba.clasificaciones.filter((c) => c.numJueces > 0);
             const top3Individual = [...conPuntuacion].sort((a, b) => b.media - a.media).slice(0, 3);
             const top3Equipos = prueba.equipos.slice(0, 3);
@@ -576,9 +581,11 @@ function ResultadosContent() {
                         {prueba.reprise_nombre && ' | ' + prueba.reprise_nombre}
                       </p>
                     </div>
-                    <div className="text-right">
-                      <p className="text-xs opacity-75">Binomios</p>
-                      <p className="text-2xl font-bold">{prueba.clasificaciones.length}</p>
+<div className="text-right">
+                      <p className="text-xs opacity-75">{esEquipos ? 'Equipos' : 'Binomios'}</p>
+                      <p className="text-2xl font-bold">
+                        {esEquipos ? prueba.equipos.length : prueba.clasificaciones.length}
+                      </p>
                     </div>
                   </div>
                 </div>
@@ -614,38 +621,8 @@ function ResultadosContent() {
                   </div>
                 )}
 
-                {/* PESTAÑAS */}
-                {tieneEquipos && (
-                  <div className="border-b bg-gray-50 flex">
-                    <button
-                      onClick={() =>
-                        setPestanaActiva({ ...pestanaActiva, [prueba.prueba_id]: 'individual' })
-                      }
-                      className={`px-6 py-3 text-sm font-bold ${
-                        pestana === 'individual'
-                          ? 'text-[#112d24] border-b-2 border-[#112d24] bg-white'
-                          : 'text-gray-600 hover:text-gray-900'
-                      }`}
-                    >
-                      Individual
-                    </button>
-                    <button
-                      onClick={() =>
-                        setPestanaActiva({ ...pestanaActiva, [prueba.prueba_id]: 'equipos' })
-                      }
-                      className={`px-6 py-3 text-sm font-bold ${
-                        pestana === 'equipos'
-                          ? 'text-[#112d24] border-b-2 border-[#112d24] bg-white'
-                          : 'text-gray-600 hover:text-gray-900'
-                      }`}
-                    >
-                      Equipos ({prueba.equipos.length})
-                    </button>
-                  </div>
-                )}
-
-                {/* PESTANA INDIVIDUAL */}
-                {pestana === 'individual' && (
+{/* PESTANA INDIVIDUAL */}
+                {!esEquipos && (
                   <>
                     {top3Individual.length > 0 && (
                       <div className="p-6 bg-gradient-to-b from-gray-50 to-white border-b">
@@ -865,8 +842,8 @@ function ResultadosContent() {
                   </>
                 )}
 
-                {/* PESTANA EQUIPOS */}
-                {pestana === 'equipos' && tieneEquipos && (
+{/* PESTANA EQUIPOS */}
+                {esEquipos && (
                   <>
                     {top3Equipos.length > 0 && (
                       <div className="p-6 bg-gradient-to-b from-teal-50 to-white border-b">

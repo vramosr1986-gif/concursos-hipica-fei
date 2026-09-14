@@ -21,6 +21,8 @@ type Prueba = {
   reprise_nombre: string | null;
   reprise_codigo: string | null;
   es_caballos_jovenes: boolean | null;
+  tipo_prueba_codigo: string | null;
+  tipo_prueba_nombre: string | null;
 };
 
 type JuezAsignado = {
@@ -88,7 +90,7 @@ export default function DetallePruebaPage() {
   const cargarPrueba = async () => {
     const { data, error: dbError } = await supabase
       .from('pruebas')
-      .select('id, concurso_id, nombre, categoria, categoria_edad_id, fecha, hora_inicio, pista, estado, reprise_id, es_caballos_jovenes, reprise:reprise_id(nombre, codigo)')
+      .select('id, concurso_id, nombre, categoria, categoria_edad_id, fecha, hora_inicio, pista, estado, reprise_id, es_caballos_jovenes, reprise:reprise_id(nombre, codigo), tipo_prueba:tipo_prueba_id(codigo, nombre)')
       .eq('id', pruebaId)
       .single();
 
@@ -98,6 +100,8 @@ export default function DetallePruebaPage() {
       ...(data as any),
       reprise_nombre: (data as any).reprise?.nombre || null,
       reprise_codigo: (data as any).reprise?.codigo || null,
+      tipo_prueba_codigo: (data as any).tipo_prueba?.codigo || null,
+      tipo_prueba_nombre: (data as any).tipo_prueba?.nombre || null,
     });
   };
 
@@ -156,7 +160,8 @@ export default function DetallePruebaPage() {
 
   const cargarInscripcionesDisponibles = async (
     esCaballosJovenes: boolean,
-    categoriaEdadId: string | null
+    categoriaEdadId: string | null,
+    esEquipos: boolean
   ) => {
     const { data: inscripciones } = await supabase
       .from('inscripciones')
@@ -215,6 +220,8 @@ export default function DetallePruebaPage() {
         if (categoriaEdadId && i.categoria_edad_id !== categoriaEdadId) continue;
       }
 
+      if (esEquipos && !equipo) continue;
+
       filtradas.push({
         id: i.id,
         dorsal: i.dorsal,
@@ -258,11 +265,12 @@ export default function DetallePruebaPage() {
     if (prueba) {
       cargarInscripcionesDisponibles(
         !!prueba.es_caballos_jovenes,
-        prueba.categoria_edad_id
+        prueba.categoria_edad_id,
+        prueba.tipo_prueba_codigo === 'EQU'
       );
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [prueba?.id, prueba?.es_caballos_jovenes, prueba?.categoria_edad_id]);
+  }, [prueba?.id, prueba?.es_caballos_jovenes, prueba?.categoria_edad_id, prueba?.tipo_prueba_codigo]);
 
   const handleAddJuez = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -332,6 +340,8 @@ export default function DetallePruebaPage() {
         ? parseInt(nuevoBinomio.orden_salida, 10)
         : binomios.length + 1;
 
+const esPruebaEquipos = prueba?.tipo_prueba_codigo === 'EQU';
+
       // Buscar si la inscripcion pertenece a algun equipo
       const { data: equipoMiembro } = await supabase
         .from('equipo_miembros')
@@ -339,7 +349,14 @@ export default function DetallePruebaPage() {
         .eq('inscripcion_id', nuevoBinomio.inscripcion_id)
         .maybeSingle();
 
-      const equipoId = equipoMiembro?.equipo_id || null;
+      // En pruebas por equipos el binomio debe pertenecer a un equipo;
+      // en pruebas individuales nunca se asigna equipo.
+      const equipoId = esPruebaEquipos ? (equipoMiembro?.equipo_id || null) : null;
+
+      if (esPruebaEquipos && !equipoId) {
+        setError('El binomio debe pertenecer a un equipo para participar en una prueba por equipos.');
+        return;
+      }
 
       const { error: dbError } = await supabase
         .from('participaciones')
@@ -399,8 +416,8 @@ export default function DetallePruebaPage() {
   if (loading) return <div className="container py-8">Cargando...</div>;
   if (!prueba) return <div className="container py-8">Prueba no encontrada</div>;
 
-  // Comprobar si la prueba tiene equipos
-  const tieneEquipos = binomios.some((b) => b.equipo_id);
+  // Tipo de prueba: por equipos (EQU) o individual (resto)
+  const esPruebaEquipos = prueba.tipo_prueba_codigo === 'EQU';
 
   return (
     <div className="container max-w-5xl py-8">
@@ -412,7 +429,18 @@ export default function DetallePruebaPage() {
       </Link>
 
       <div className="card p-6 mb-6">
-        <h1 className="text-2xl font-bold mb-2">{prueba.nombre}</h1>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <h1 className="text-2xl font-bold mb-2">{prueba.nombre}</h1>
+          {esPruebaEquipos ? (
+            <span className="px-3 py-1 rounded-full text-xs font-bold bg-teal-100 text-teal-800">
+              Prueba por Equipos
+            </span>
+          ) : (
+            <span className="px-3 py-1 rounded-full text-xs font-bold bg-blue-100 text-blue-800">
+              Prueba Individual
+            </span>
+          )}
+        </div>
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm mt-4">
           <div>
@@ -561,9 +589,14 @@ export default function DetallePruebaPage() {
         <div className="flex items-center justify-between mb-4">
           <div>
             <h2 className="text-xl font-bold">Binomios participantes ({binomios.length})</h2>
-            {tieneEquipos && (
+            {esPruebaEquipos && (
               <p className="text-sm text-teal-700 mt-1">
-                Algunos binomios pertenecen a equipos. Se muestra el equipo en cada uno.
+                Solo pueden inscribirse binomios que pertenezcan a un equipo.
+              </p>
+            )}
+            {!esPruebaEquipos && (
+              <p className="text-sm text-blue-700 mt-1">
+                Los participantes se inscriben individualmente (sin equipos).
               </p>
             )}
           </div>
@@ -652,24 +685,24 @@ export default function DetallePruebaPage() {
           <p className="text-gray-600">No hay binomios participantes todavia</p>
         ) : (
           <table className="table">
-            <thead>
-              <tr>
-                <th>Orden</th>
-                <th>Dorsal</th>
-                <th>Jinete</th>
-                <th>Caballo</th>
-                {tieneEquipos && <th>Equipo</th>}
-                <th></th>
-              </tr>
-            </thead>
-            <tbody>
-              {binomios.map((b) => (
-                <tr key={b.id}>
-                  <td className="font-bold">{b.orden_salida}</td>
-                  <td>{b.dorsal}</td>
-                  <td>{b.jinete}</td>
-                  <td>{b.caballo}</td>
-                  {tieneEquipos && (
+<thead>
+                <tr>
+                  <th>Orden</th>
+                  <th>Dorsal</th>
+                  <th>Jinete</th>
+                  <th>Caballo</th>
+                  {esPruebaEquipos && <th>Equipo</th>}
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                {binomios.map((b) => (
+                  <tr key={b.id}>
+                    <td className="font-bold">{b.orden_salida}</td>
+                    <td>{b.dorsal}</td>
+                    <td>{b.jinete}</td>
+                    <td>{b.caballo}</td>
+                    {esPruebaEquipos && (
                     <td>
                       {b.equipo_nombre ? (
                         <span className="px-2 py-1 rounded text-xs bg-teal-100 text-teal-800 font-medium">
