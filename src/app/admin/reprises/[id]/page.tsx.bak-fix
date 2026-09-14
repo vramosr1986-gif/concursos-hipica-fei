@@ -184,7 +184,7 @@ export default function DetalleReprisePage() {
             <table className="w-full">
               <thead>
                 <tr className="border-b bg-gray-50">
-                  <th className="text-center p-3 w-16">NÃ‚º</th>
+                  <th className="text-center p-3 w-16">NÃ‚Âº</th>
                   <th className="text-left p-3 w-32">Letra</th>
                   <th className="text-left p-3">Descripción</th>
                   <th className="text-center p-3 w-20">Coef.</th>
@@ -234,7 +234,7 @@ export default function DetalleReprisePage() {
             <table className="w-full">
               <thead>
                 <tr className="border-b bg-gray-50">
-                  <th className="text-center p-3 w-16">NÃ‚º</th>
+                  <th className="text-center p-3 w-16">NÃ‚Âº</th>
                   <th className="text-left p-3 w-32">Código</th>
                   <th className="text-left p-3">Descripción</th>
                   <th className="text-center p-3 w-20">Coef.</th>
@@ -280,7 +280,7 @@ export default function DetalleReprisePage() {
             <table className="w-full">
               <thead>
                 <tr className="border-b bg-purple-50">
-                  <th className="text-center p-3 w-16">NÃ‚º</th>
+                  <th className="text-center p-3 w-16">NÃ‚Âº</th>
                   <th className="text-left p-3 w-32">Código</th>
                   <th className="text-left p-3">Descripción</th>
                   <th className="text-center p-3 w-20">Coef.</th>

@@ -947,7 +947,7 @@ function ResultadosContent() {
                                     <tr className={idx === 0 ? colorPuesto(eq.posicion_equipo) : ''}>
                                       {idx === 0 && (
                                         <td className="text-center font-bold align-top" rowSpan={eq.miembros.length}>
-                                          {medallaEmoji(eq.posicion_equipo)} {eq.posicion_equipo}º
+                                          {medallaEmoji(eq.posicion_equipo)} {eq.posicion_equipo}Âº
                                         </td>
                                       )}
                                       {idx === 0 && (
@@ -978,7 +978,7 @@ function ResultadosContent() {
                                     {abiertoEq && participacionDetalle && (
                                       <tr>
                                         <td colSpan={7} className="bg-blue-50 p-4">
-                                          <h4 className="font-bold mb-2">Detalle por ejercicio · {m.nombre_jinete} / {m.nombre_caballo}</h4>
+                                          <h4 className="font-bold mb-2">Detalle por ejercicio Â· {m.nombre_jinete} / {m.nombre_caballo}</h4>
                                           <div className="table-responsive">
                                             <table className="table text-sm">
                                               <thead>

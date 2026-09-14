@@ -129,7 +129,7 @@ export default function DetalleReprisePage() {
               )}
               {reprise.anio && (
                 <div>
-                  <strong>Año:</strong>{' '}
+                  <strong>AÃƒÂ±o:</strong>{' '}
                   <span className="text-gray-700">{reprise.anio}</span>
                 </div>
               )}
@@ -145,13 +145,13 @@ export default function DetalleReprisePage() {
                 <div>
                   <strong>Edad mÃƒÂ­nima caballo:</strong>{' '}
                   <span className="text-gray-700">
-                    {reprise.edad_minima_caballo} años
+                    {reprise.edad_minima_caballo} aÃƒÂ±os
                   </span>
                 </div>
               )}
               {reprise.total_maximo && (
                 <div>
-                  <strong>Puntos máximos:</strong>{' '}
+                  <strong>Puntos mÃƒÂ¡ximos:</strong>{' '}
                   <span className="text-gray-700">{reprise.total_maximo}</span>
                 </div>
               )}
@@ -184,9 +184,9 @@ export default function DetalleReprisePage() {
             <table className="w-full">
               <thead>
                 <tr className="border-b bg-gray-50">
-                  <th className="text-center p-3 w-16">NÃ‚º</th>
+                  <th className="text-center p-3 w-16">NÃ‚Âº</th>
                   <th className="text-left p-3 w-32">Letra</th>
-                  <th className="text-left p-3">Descripción</th>
+                  <th className="text-left p-3">DescripciÃƒÂ³n</th>
                   <th className="text-center p-3 w-20">Coef.</th>
                   <th className="text-center p-3 w-20">Punt. Max</th>
                 </tr>
@@ -234,9 +234,9 @@ export default function DetalleReprisePage() {
             <table className="w-full">
               <thead>
                 <tr className="border-b bg-gray-50">
-                  <th className="text-center p-3 w-16">NÃ‚º</th>
-                  <th className="text-left p-3 w-32">Código</th>
-                  <th className="text-left p-3">Descripción</th>
+                  <th className="text-center p-3 w-16">NÃ‚Âº</th>
+                  <th className="text-left p-3 w-32">CÃƒÂ³digo</th>
+                  <th className="text-left p-3">DescripciÃƒÂ³n</th>
                   <th className="text-center p-3 w-20">Coef.</th>
                 </tr>
               </thead>
@@ -272,7 +272,7 @@ export default function DetalleReprisePage() {
         <div className="card overflow-hidden mb-6">
           <div className="p-4 border-b bg-purple-50">
             <h2 className="text-xl font-bold text-purple-900">
-              Notas artÃƒÂ­sticas (Kür) ({notasArtisticas.length})
+              Notas artÃƒÂ­sticas (KÃƒÂ¼r) ({notasArtisticas.length})
             </h2>
           </div>
 
@@ -280,9 +280,9 @@ export default function DetalleReprisePage() {
             <table className="w-full">
               <thead>
                 <tr className="border-b bg-purple-50">
-                  <th className="text-center p-3 w-16">NÃ‚º</th>
-                  <th className="text-left p-3 w-32">Código</th>
-                  <th className="text-left p-3">Descripción</th>
+                  <th className="text-center p-3 w-16">NÃ‚Âº</th>
+                  <th className="text-left p-3 w-32">CÃƒÂ³digo</th>
+                  <th className="text-left p-3">DescripciÃƒÂ³n</th>
                   <th className="text-center p-3 w-20">Coef.</th>
                 </tr>
               </thead>

@@ -2,7 +2,7 @@
 export interface LicenciaFederativa {
   id: string;
   concurso_id: string;
-  // Puedes agregar más campos según tu modelo, pero este debe existir en la interfaz.
+  // Puedes agregar mÃƒÂ¡s campos segÃƒÂºn tu modelo, pero este debe existir en la interfaz.
   // Ejemplo:
   // numero_licencia: string;
   // fecha_expedicion: string;
@@ -39,7 +39,7 @@ export interface CalificacionEjercicio {
   updated_at: string;
 }
 
-// Tipos para la aplicación
+// Tipos para la aplicaciÃƒÂ³n
 
 export interface User {
   id: string;
@@ -77,7 +77,7 @@ export interface Reprise {
   nombre: string;
   descripcion?: string;
   fei_numero: string;
-  desviacion: number; // desviación estándar FEI
+  desviacion: number; // desviaciÃƒÂ³n estÃƒÂ¡ndar FEI
   multiplicador: number; // multiplicador por reprise
   nivel?: string;
   created_at: string;

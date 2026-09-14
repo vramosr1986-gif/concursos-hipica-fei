@@ -29,7 +29,7 @@ export function Navbar() {
 
     getUser();
 
-    // Listener para cambios en la sesión
+    // Listener para cambios en la sesiÃ³n
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (_event, session) => {
