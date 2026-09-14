@@ -188,7 +188,7 @@ export default function AdminReprisesPage() {
           href={`/admin/reprises/${r.id}`}
           className="text-primary hover:underline text-sm font-medium"
         >
-          Ver â†’
+          Ver →
         </Link>
       </td>
     </tr>
@@ -280,9 +280,7 @@ export default function AdminReprisesPage() {
                 onChange={(e) => setBusqueda(e.target.value)}
                 className="input flex-1 text-sm"
               />
-              <button type="submit" className="btn btn-primary text-sm px-3">
-                ðŸ”
-              </button>
+              <button type="submit" className="btn btn-primary text-sm px-3">Buscar</button>
             </form>
           </div>
         </div>
@@ -293,7 +291,7 @@ export default function AdminReprisesPage() {
               onClick={() => setVistaAgrupada(!vistaAgrupada)}
               className="text-sm text-gray-600 hover:text-gray-900"
             >
-              {vistaAgrupada ? '📋 Ver lista plana' : 'ðŸ“ Ver agrupado por categoría'}
+              {vistaAgrupada ? '📋 Ver lista plana' : 'Buscar“ Ver agrupado por categoría'}
             </button>
           </div>
 
@@ -412,7 +410,7 @@ export default function AdminReprisesPage() {
                         href={`/admin/reprises/${r.id}`}
                         className="text-primary hover:underline text-sm font-medium"
                       >
-                        Ver â†’
+                        Ver →
                       </Link>
                     </td>
                   </tr>
