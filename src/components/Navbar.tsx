@@ -2,7 +2,19 @@
 
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
+import {
+  LayoutDashboard,
+  CalendarDays,
+  Gavel,
+  ListChecks,
+  Users,
+  LogIn,
+  LogOut,
+  HelpCircle,
+  Trophy,
+} from 'lucide-react';
 import { supabase } from '@/lib/supabase';
+import { HorseIcon } from './icons';
 
 export function Navbar() {
   const [user, setUser] = useState<any>(null);
@@ -60,7 +72,7 @@ export function Navbar() {
   };
 
   const navLink =
-    'rounded-full px-3 py-2 text-sm font-medium text-white/75 transition hover:bg-white/10 hover:text-white';
+    'inline-flex items-center gap-1.5 rounded-full px-3 py-2 text-sm font-medium text-white/75 transition hover:bg-white/10 hover:text-white';
 
   const esAdmin = role === 'admin';
   const esJuez = role === 'juez';
@@ -69,8 +81,8 @@ export function Navbar() {
     <nav className="sticky top-0 z-20 border-b border-white/10 bg-[#112d24]/95 text-white shadow-lg backdrop-blur">
       <div className="mx-auto flex min-h-[4.5rem] max-w-7xl items-center justify-between gap-5 px-5 sm:px-8 lg:px-10">
         <Link href="/" className="group flex items-center gap-3">
-          <span className="flex size-9 items-center justify-center rounded-full border border-[#e8c98d]/60 bg-white/5 text-lg transition group-hover:bg-white/10">
-            C
+          <span className="flex size-9 items-center justify-center rounded-full border border-[#e8c98d]/60 bg-white/5 text-[#e8c98d] transition group-hover:bg-white/10">
+            <HorseIcon size={20} />
           </span>
           <span>
             <span className="block font-serif text-lg leading-none tracking-tight text-white">
@@ -96,22 +108,22 @@ export function Navbar() {
               {esAdmin && (
                 <>
                   <Link href="/admin" className={navLink}>
-                    Panel
+                    <LayoutDashboard className="size-4" aria-hidden="true" /> Panel
                   </Link>
                   <Link href="/admin/concursos" className={navLink}>
-                    Concursos
+                    <CalendarDays className="size-4" aria-hidden="true" /> Concursos
                   </Link>
                   <Link href="/admin/jueces" className={navLink}>
-                    Jueces
+                    <Gavel className="size-4" aria-hidden="true" /> Jueces
                   </Link>
                   <Link href="/admin/binomios" className={navLink}>
-                    Binomios
+                    <HorseIcon size={15} className="shrink-0" /> Binomios
                   </Link>
                   <Link href="/admin/reprises" className={navLink}>
-                    Reprises
+                    <ListChecks className="size-4" aria-hidden="true" /> Reprises
                   </Link>
                   <Link href="/admin/usuarios" className={navLink}>
-                    Usuarios
+                    <Users className="size-4" aria-hidden="true" /> Usuarios
                   </Link>
                 </>
               )}
@@ -120,35 +132,37 @@ export function Navbar() {
               {esJuez && (
                 <>
                   <Link href="/juez" className={navLink}>
-                    Mi Panel
+                    <LayoutDashboard className="size-4" aria-hidden="true" /> Mi Panel
                   </Link>
                 </>
               )}
 
               <Link href="/resultados" className={navLink}>
-                Resultados
+                <Trophy className="size-4" aria-hidden="true" /> Resultados
               </Link>
 
-              <Link href="/ayuda" className={navLink}>Ayuda</Link><button
+              <Link href="/ayuda" className={navLink}>
+                <HelpCircle className="size-4" aria-hidden="true" /> Ayuda
+              </Link><button
                 onClick={handleLogout}
-                className="ml-1 rounded-full border border-white/20 px-3 py-2 text-sm font-semibold text-white transition hover:border-[#e8c98d] hover:bg-white/10"
+                className="ml-1 inline-flex items-center gap-1.5 rounded-full border border-white/20 px-3 py-2 text-sm font-semibold text-white transition hover:border-[#e8c98d] hover:bg-white/10"
               >
-                Salir
+                <LogOut className="size-4" aria-hidden="true" /> Salir
               </button>
             </>
           ) : !loading ? (
             <>
               <Link
                 href="/resultados"
-                className="hidden rounded-full px-3 py-2 text-sm font-medium text-white/75 transition hover:bg-white/10 hover:text-white sm:inline-flex"
+                className="hidden items-center gap-1.5 rounded-full px-3 py-2 text-sm font-medium text-white/75 transition hover:bg-white/10 hover:text-white sm:inline-flex"
               >
-                Resultados
+                <Trophy className="size-4" aria-hidden="true" /> Resultados
               </Link>
               <Link
                 href="/login"
-                className="rounded-full bg-[#b88746] px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:-translate-y-0.5 hover:bg-[#d09d54]"
+                className="inline-flex items-center gap-1.5 rounded-full bg-[#b88746] px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:-translate-y-0.5 hover:bg-[#d09d54]"
               >
-                Acceder
+                <LogIn className="size-4" aria-hidden="true" /> Acceder
               </Link>
             </>
           ) : (

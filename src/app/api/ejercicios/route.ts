@@ -1,7 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase-server';
+import { verificarAdmin } from '@/lib/api-guard';
 
 export async function PUT(request: NextRequest) {
+  const auth = await verificarAdmin(request);
+  if (!auth.ok) {
+    return NextResponse.json({ error: auth.error }, { status: auth.status });
+  }
+
   try {
     const body = await request.json();
     const { id, ...updates } = body;
@@ -25,6 +31,11 @@ export async function PUT(request: NextRequest) {
 }
 
 export async function DELETE(request: NextRequest) {
+  const auth = await verificarAdmin(request);
+  if (!auth.ok) {
+    return NextResponse.json({ error: auth.error }, { status: auth.status });
+  }
+
   try {
     const id = request.nextUrl.searchParams.get('id');
     if (!id) {

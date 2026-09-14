@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase-server';
+import { verificarAdmin } from '@/lib/api-guard';
 
 // GET: obtener reprises
 export async function GET() {
@@ -22,6 +23,11 @@ export async function GET() {
 
 // POST: crear nueva reprise
 export async function POST(request: NextRequest) {
+  const auth = await verificarAdmin(request);
+  if (!auth.ok) {
+    return NextResponse.json({ error: auth.error }, { status: auth.status });
+  }
+
   try {
     const body = await request.json();
 
@@ -43,6 +49,11 @@ export async function POST(request: NextRequest) {
 }
 
 export async function DELETE(request: NextRequest) {
+  const auth = await verificarAdmin(request);
+  if (!auth.ok) {
+    return NextResponse.json({ error: auth.error }, { status: auth.status });
+  }
+
   try {
     const id = request.nextUrl.searchParams.get('id');
     if (!id) {

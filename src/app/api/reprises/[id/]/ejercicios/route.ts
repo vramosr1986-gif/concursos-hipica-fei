@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase-server';
+import { verificarAdmin } from '@/lib/api-guard';
 
 // GET: listar ejercicios de una reprise, ordenados
 export async function GET(_request: NextRequest, { params }: { params: { id: string } }) {
@@ -26,6 +27,11 @@ export async function POST(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
+  const auth = await verificarAdmin(request);
+  if (!auth.ok) {
+    return NextResponse.json({ error: auth.error }, { status: auth.status });
+  }
+
   try {
     const body = await request.json();
 

@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { CalendarDays, MapPin, Building2, ArrowRight } from 'lucide-react';
 import { Concurso } from '@/types';
 
 interface ConcursoCardProps {
@@ -20,16 +21,16 @@ export function ConcursoCard({ concurso }: ConcursoCardProps) {
         <h3 className="font-serif text-2xl font-semibold leading-tight text-[#173b2f]">{concurso.nombre}</h3>
 
         <div className="mt-5 space-y-2.5 text-sm leading-5 text-[#607168]">
-          <p className="flex gap-2"><span className="text-[#b88746]">◷</span><span>{fechaInicio.toLocaleDateString('es-ES')} — {fechaFin.toLocaleDateString('es-ES')}</span></p>
-          <p className="flex gap-2"><span className="text-[#b88746]">⌖</span><span>{concurso.ubicacion || 'Ubicación por confirmar'}</span></p>
-          <p className="flex gap-2"><span className="text-[#b88746]">◇</span><span>{concurso.organizador || 'Organización por confirmar'}</span></p>
+          <p className="flex gap-2"><CalendarDays className="mt-0.5 size-4 text-secondary shrink-0" aria-hidden="true" /><span>{fechaInicio.toLocaleDateString('es-ES')} — {fechaFin.toLocaleDateString('es-ES')}</span></p>
+          <p className="flex gap-2"><MapPin className="mt-0.5 size-4 text-secondary shrink-0" aria-hidden="true" /><span>{concurso.ubicacion || 'Ubicación por confirmar'}</span></p>
+          <p className="flex gap-2"><Building2 className="mt-0.5 size-4 text-secondary shrink-0" aria-hidden="true" /><span>{concurso.organizador || 'Organización por confirmar'}</span></p>
         </div>
 
         <Link
           href={`/resultados?concurso=${concurso.id}`}
           className="mt-7 inline-flex items-center gap-2 text-sm font-bold text-primary transition hover:gap-3 hover:text-dark"
         >
-          Ver detalles <span aria-hidden="true">→</span>
+          Ver detalles <ArrowRight className="size-4" aria-hidden="true" />
         </Link>
       </div>
     </article>

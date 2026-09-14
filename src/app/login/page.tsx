@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { Mail, Lock, LogIn } from 'lucide-react';
 import { authService } from '@/lib/auth';
 
 export default function LoginPage() {
@@ -42,24 +43,30 @@ export default function LoginPage() {
         <form onSubmit={handleLogin} className="space-y-4">
           <div>
             <label className="block text-sm font-bold mb-2">Email</label>
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="input"
-              required
-            />
+            <div className="relative">
+              <Mail className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-[#b88746]" aria-hidden="true" />
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="input pl-10"
+                required
+              />
+            </div>
           </div>
 
           <div>
             <label className="block text-sm font-bold mb-2">Contraseña</label>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="input"
-              required
-            />
+            <div className="relative">
+              <Lock className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-[#b88746]" aria-hidden="true" />
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="input pl-10"
+                required
+              />
+            </div>
           </div>
 
           <button
@@ -67,6 +74,7 @@ export default function LoginPage() {
             disabled={loading}
             className="w-full btn btn-primary disabled:opacity-50"
           >
+            <LogIn className="mr-2 size-4" aria-hidden="true" />
             {loading ? 'Cargando...' : 'Iniciar Sesión'}
           </button>
         </form>

@@ -2,9 +2,11 @@
 
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
+import { Trophy, Gavel, Settings, ArrowRight } from 'lucide-react';
 import { Concurso } from '@/types';
 import { concursoService } from '@/lib/services';
 import { ConcursoCard } from '@/components/ConcursoCard';
+import { HeroIllustration } from '@/components/HeroIllustration';
 
 const panels = [
   {
@@ -13,6 +15,7 @@ const panels = [
     description: 'Consulta clasificaciones, notas y la evolución de cada prueba.',
     href: '/resultados',
     action: 'Ver resultados',
+    Icon: Trophy,
   },
   {
     mark: '02',
@@ -20,6 +23,7 @@ const panels = [
     description: 'Registra valoraciones con el protocolo y criterios FEI.',
     href: '/juez',
     action: 'Acceder al panel',
+    Icon: Gavel,
   },
   {
     mark: '03',
@@ -27,6 +31,7 @@ const panels = [
     description: 'Organiza concursos, jornadas, binomios y equipos de jueces.',
     href: '/admin/concursos',
     action: 'Gestionar concursos',
+    Icon: Settings,
   },
 ];
 
@@ -51,24 +56,30 @@ export default function Home() {
       <section className="relative overflow-hidden rounded-[2rem] border border-[#ddd3c0] bg-[#173b2f] px-6 py-14 text-white shadow-soft sm:px-10 sm:py-20 lg:px-16">
         <div className="absolute -right-24 -top-32 size-80 rounded-full border border-[#e8c98d]/20" />
         <div className="absolute -bottom-40 right-20 size-96 rounded-full bg-[#b88746]/10 blur-3xl" />
-        <div className="relative max-w-3xl">
-          <p className="mb-5 text-xs font-bold uppercase tracking-[0.28em] text-[#e8c98d]">
-            GESTIÓN COMPLETA DE CONCURSOS DE DOMA
-          </p>
-          <h1 className="max-w-2xl text-4xl font-semibold leading-tight sm:text-5xl lg:text-6xl">
-            Paneles diferenciados para organización, jueces y público.
-          </h1>
-          <p className="mt-6 max-w-xl text-base leading-7 text-white/75 sm:text-lg">
-            Resultados en tiempo real y clasificaciones por binomio y por equipo.
+        <div className="relative grid items-center gap-12 lg:grid-cols-[1.05fr_0.95fr]">
+          <div className="max-w-3xl">
+            <p className="mb-5 text-xs font-bold uppercase tracking-[0.28em] text-[#e8c98d]">
+              GESTIÓN COMPLETA DE CONCURSOS DE DOMA
+            </p>
+            <h1 className="max-w-2xl text-4xl font-semibold leading-tight sm:text-5xl lg:text-6xl">
+              Paneles diferenciados para organización, jueces y público.
+            </h1>
+            <p className="mt-6 max-w-xl text-base leading-7 text-white/75 sm:text-lg">
+              Resultados en tiempo real y clasificaciones por binomio y por equipo.
+            </p>
+            <div className="mt-8 flex flex-wrap gap-3">
+              <Link href="/resultados" className="btn btn-secondary">
+                <Trophy className="mr-2 size-4" aria-hidden="true" />
+                Consultar resultados
+              </Link>
+              <Link href="/login" className="btn border border-white/30 text-white hover:border-[#e8c98d] hover:bg-white/10">
+                Acceso profesional
+              </Link>
+            </div>
+          </div>
 
-          </p>
-          <div className="mt-8 flex flex-wrap gap-3">
-            <Link href="/resultados" className="btn btn-secondary">
-              Consultar resultados
-            </Link>
-            <Link href="/login" className="btn border border-white/30 text-white hover:border-[#e8c98d] hover:bg-white/10">
-              Acceso profesional
-            </Link>
+          <div className="hidden lg:block">
+            <HeroIllustration />
           </div>
         </div>
       </section>
@@ -89,11 +100,16 @@ export default function Home() {
         <div className="grid gap-5 md:grid-cols-3">
           {panels.map((panel) => (
             <article key={panel.title} className="card group p-7 hover:-translate-y-1 hover:border-[#c8b087] hover:shadow-soft">
-              <span className="text-sm font-bold tracking-widest text-[#b88746]">{panel.mark}</span>
+              <div className="flex items-center gap-4">
+                <span className="flex size-12 items-center justify-center rounded-full border border-[#e4dfd4] bg-[#f5f1e7] text-[#b88746] transition group-hover:border-[#c8b087] group-hover:bg-[#173b2f] group-hover:text-[#e8c98d]">
+                  <panel.Icon className="size-6" aria-hidden="true" />
+                </span>
+                <span className="text-sm font-bold tracking-widest text-[#b88746]">{panel.mark}</span>
+              </div>
               <h3 className="mt-7 text-2xl font-semibold text-[#173b2f]">{panel.title}</h3>
               <p className="mt-3 min-h-12 text-sm leading-6 text-[#607168]">{panel.description}</p>
               <Link href={panel.href} className="mt-7 inline-flex items-center gap-2 text-sm font-bold text-primary transition group-hover:gap-3">
-                {panel.action} <span aria-hidden="true">→</span>
+                {panel.action} <ArrowRight className="size-4" aria-hidden="true" />
               </Link>
             </article>
           ))}
@@ -107,8 +123,8 @@ export default function Home() {
             <h2 className="mt-2 text-3xl font-semibold text-[#173b2f]">Próximos concursos</h2>
           </div>
           {concursos.length > 0 && (
-            <Link href="/resultados" className="text-sm font-bold text-primary hover:text-dark">
-              Ver todos los resultados →
+            <Link href="/resultados" className="inline-flex items-center gap-1.5 text-sm font-bold text-primary hover:text-dark">
+              Ver todos los resultados <ArrowRight className="size-4" aria-hidden="true" />
             </Link>
           )}
         </div>

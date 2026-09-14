@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase-server';
+import { verificarAdmin, verificarAdminOJuez } from '@/lib/api-guard';
 
 // GET: obtener puntuaciones de una participacion o una prueba
 export async function GET(request: NextRequest) {
@@ -70,6 +71,11 @@ export async function GET(request: NextRequest) {
 
 // POST: crear o actualizar una puntuacion (upsert)
 export async function POST(request: NextRequest) {
+  const auth = await verificarAdminOJuez(request);
+  if (!auth.ok) {
+    return NextResponse.json({ error: auth.error }, { status: auth.status });
+  }
+
   try {
     const body = await request.json();
 
@@ -132,6 +138,11 @@ export async function POST(request: NextRequest) {
 
 // PUT: actualizar una puntuacion existente por id
 export async function PUT(request: NextRequest) {
+  const auth = await verificarAdminOJuez(request);
+  if (!auth.ok) {
+    return NextResponse.json({ error: auth.error }, { status: auth.status });
+  }
+
   try {
     const body = await request.json();
     const { id, ...updates } = body;
@@ -163,6 +174,11 @@ export async function PUT(request: NextRequest) {
 
 // DELETE: eliminar una puntuacion
 export async function DELETE(request: NextRequest) {
+  const auth = await verificarAdmin(request);
+  if (!auth.ok) {
+    return NextResponse.json({ error: auth.error }, { status: auth.status });
+  }
+
   try {
     const id = request.nextUrl.searchParams.get('id');
 

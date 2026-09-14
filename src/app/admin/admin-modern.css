@@ -4,35 +4,50 @@
 
 @layer base {
   .admin-page-container {
-    @apply min-h-screen bg-slate-50 text-slate-900 p-4 md:p-8 font-sans;
+    @apply min-h-screen bg-[#f4f0e6] p-4 text-[#173b2f] md:p-8 font-sans;
+    background:
+      radial-gradient(circle at 8% 0%, rgba(184, 135, 70, 0.10), transparent 22rem),
+      linear-gradient(180deg, #faf8f1 0%, #f4f0e6 100%);
   }
 }
 
 @layer components {
-  /* Forzamos el estilo en contenedores blancos comunes del admin */
+  /* Contenedores blancos comunes del admin -> tarjetas crema */
   .admin-page-container div[class*="bg-white"] {
-    @apply rounded-2xl shadow-sm border border-slate-200 p-6 transition-all duration-200 hover:shadow-md !important;
+    @apply rounded-2xl border border-[#e6dfd2] bg-[#fffdfa] p-6 shadow-[0_10px_30px_rgba(25,55,43,0.06)] transition-all duration-300 hover:shadow-[0_16px_45px_rgba(25,55,43,0.10)] !important;
   }
 
-  /* Forzamos inputs, selects y date pickers */
-  .admin-page-container input, 
-  .admin-page-container select {
-    @apply w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl transition-all duration-200 
-           placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary focus:bg-white text-slate-700 !important;
+  /* Inputs, selects y date pickers */
+  .admin-page-container input,
+  .admin-page-container select,
+  .admin-page-container textarea {
+    @apply w-full rounded-xl border border-[#dcd4c4] bg-[#fffdfa] px-4 py-2 text-[#173b2f] outline-none transition-all duration-200
+           placeholder:text-gray-400 focus:border-primary focus:ring-4 focus:ring-primary/10 !important;
   }
 
   /* Botones Primarios */
   .admin-page-container button[class*="bg-blue-600"],
-  .admin-page-container button[class*="bg-primary"] {
-    @apply inline-flex items-center justify-center px-4 py-2 rounded-xl font-semibold transition-all duration-200 
-           bg-primary text-white hover:bg-primary-dark shadow-sm hover:shadow-md active:scale-95 !important;
+  .admin-page-container button[class*="bg-primary"],
+  .admin-page-container button[class*="bg-green-"],
+  .admin-page-container button[class*="bg-emerald-"],
+  .admin-page-container a[class*="bg-blue-600"] {
+    @apply inline-flex items-center justify-center gap-2 rounded-full px-5 py-2.5 font-semibold transition-all duration-200
+           bg-primary text-white shadow-sm hover:-translate-y-0.5 hover:bg-primary-dark hover:shadow-md active:scale-95 !important;
   }
 
   /* Botones Secundarios */
   .admin-page-container button[class*="bg-white"],
-  .admin-page-container button[class*="border-gray-300"] {
-    @apply inline-flex items-center justify-center px-4 py-2 rounded-xl font-semibold transition-all duration-200 
-           bg-white text-slate-700 border border-slate-200 hover:bg-slate-50 active:scale-95 !important;
+  .admin-page-container button[class*="border-gray-300"],
+  .admin-page-container button[class*="border-slate-"],
+  .admin-page-container a[class*="border-gray-300"] {
+    @apply inline-flex items-center justify-center gap-2 rounded-full border border-[#dcd4c4] bg-[#fffdfa] px-5 py-2.5 font-semibold text-[#173b2f] transition-all duration-200 shadow-sm hover:-translate-y-0.5 hover:bg-[#f6f2e8] active:scale-95 !important;
+  }
+
+  /* Botones Danger */
+  .admin-page-container button[class*="bg-red-"],
+  .admin-page-container a[class*="bg-red-"] {
+    @apply inline-flex items-center justify-center gap-2 rounded-full px-5 py-2.5 font-semibold text-white transition-all duration-200
+           bg-[#b42318] shadow-sm hover:-translate-y-0.5 hover:bg-red-800 active:scale-95 !important;
   }
 
   /* Tablas Modernas */
@@ -41,26 +56,28 @@
   }
 
   .admin-page-container th {
-    @apply bg-slate-50 p-4 text-left font-semibold text-slate-600 border-b border-slate-200 uppercase tracking-wider !important;
+    @apply border-b border-[#eae4d8] bg-[#f4f0e6] p-4 text-left font-bold uppercase tracking-wider text-[#466257] !important;
   }
 
   .admin-page-container td {
-    @apply p-4 border-b border-slate-100 text-slate-700 !important;
+    @apply border-b border-[#f0ece2] p-4 text-[#3c5349] !important;
   }
 
   .admin-page-container tr:hover td {
-    @apply bg-slate-50/50 transition-colors !important;
+    @apply bg-[#faf7f0]/70 transition-colors !important;
   }
 
   /* Links */
-  .admin-page-container a[class*="text-blue-600"] {
-    @apply text-primary hover:text-primary-dark font-medium transition-colors !important;
+  .admin-page-container a[class*="text-blue-600"],
+  .admin-page-container a[class*="text-indigo-"],
+  .admin-page-container a[class*="text-cyan-"] {
+    @apply font-medium text-primary transition-colors hover:text-primary-dark hover:underline !important;
   }
 
   /* Títulos */
-  .admin-page-container h1, 
-  .admin-page-container h2, 
+  .admin-page-container h1,
+  .admin-page-container h2,
   .admin-page-container h3 {
-    @apply text-slate-900 tracking-tight font-bold !important;
+    @apply font-bold tracking-tight text-[#173b2f] !important;
   }
 }
