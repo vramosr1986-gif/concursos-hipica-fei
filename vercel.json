@@ -1,11 +1,3 @@
-cd "C:\Users\vramo\Documents\concursos-hipica-fei"
-
-# 1. Backup del actual
-Copy-Item ".\vercel.json" ".\vercel.json.bak" -Force
-Write-Host "Backup guardado en vercel.json.bak" -ForegroundColor Green
-
-# 2. Escribir el nuevo (manteniendo devCommand, quitando solo lo obsoleto)
-$nuevoContenido = @'
 {
   "buildCommand": "npm run build",
   "outputDirectory": ".next",
@@ -19,11 +11,3 @@ $nuevoContenido = @'
     }
   }
 }
-'@
-
-$utf8NoBom = New-Object System.Text.UTF8Encoding($false)
-[System.IO.File]::WriteAllText("$PWD\vercel.json", $nuevoContenido, $utf8NoBom)
-
-Write-Host ""
-Write-Host "=== NUEVO vercel.json ===" -ForegroundColor Cyan
-Get-Content ".\vercel.json"
