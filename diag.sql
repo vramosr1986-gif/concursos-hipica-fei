@@ -1,0 +1,1 @@
+﻿SELECT pj.letra, pj.juez_id, p.nombre FROM prueba_jueces pj LEFT JOIN profiles p ON p.id = pj.juez_id WHERE pj.prueba_id IN (SELECT id FROM pruebas WHERE nombre = 'Promocion 3 - Jovenes Jinetes') ORDER BY pj.letra;

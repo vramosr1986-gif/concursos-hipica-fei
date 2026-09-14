@@ -252,7 +252,7 @@ export default function PuntuarPruebaPage() {
                 <div className="flex items-center gap-3">
                   {grupo.equipo_id ? (
                     <>
-                      <span className="text-2xl"> </span>
+                      <span className="text-2xl">Ã°Å¸Ââ€ </span>
                       <div>
                         <p className="text-xs text-teal-700 font-bold uppercase">Equipo</p>
                         <h2 className="text-xl font-bold text-teal-900">
@@ -262,7 +262,7 @@ export default function PuntuarPruebaPage() {
                     </>
                   ) : (
                     <>
-                      <span className="text-2xl"></span>
+                      <span className="text-2xl">Ã°Å¸â€˜Â¤</span>
                       <div>
                         <p className="text-xs text-gray-600 font-bold uppercase">Sin equipo</p>
                         <h2 className="text-xl font-bold text-gray-800">
