@@ -106,6 +106,7 @@ type Stats = {
   totalParticipaciones: number;
   totalPruebas: number;
   totalBinomios: number;
+  pruebasCoincidentes: number;
   mediaGlobal: number;
   jueces: JuezStats[];
   ejercicios: EjercicioStats[];
@@ -307,6 +308,7 @@ function calcularStats(pruebas: Prueba[], partes: Participacion[], puntos: Puntu
     totalParticipaciones: partesFiltradas.length,
     totalPruebas: pruebas.length,
     totalBinomios: binomiosUnicos.size,
+    pruebasCoincidentes: pruebas.length,
     mediaGlobal: puntosFiltrados.length ? puntosFiltrados.reduce((a, b) => a + b.nota, 0) / puntosFiltrados.length : 0,
     jueces: juecesStats,
     ejercicios,
@@ -384,15 +386,26 @@ function EstadisticasContent() {
           return;
         }
 
-        const { data: partes, error: errParts } = await supabase
-          .from('participaciones')
-          .select(`
-            id, prueba_id, orden_salida,
-            equipo:equipo_id(nombre),
-            inscripcion:inscripcion_id(dorsal, binomio:binomio_id(id, nombre_jinete, nombre_caballo, anio))
-          `)
-          .in('prueba_id', pruebaIds);
-        if (errParts) throw errParts;
+        const TAM_PARTES = 1000;
+        const participacionesRows: any[] = [];
+        if (pruebaIds.length > 0) {
+          for (let desde = 0; ; desde += TAM_PARTES) {
+            const { data, error } = await supabase
+              .from('participaciones')
+              .select(`
+                id, prueba_id, orden_salida,
+                equipo:equipo_id(nombre),
+                inscripcion:inscripcion_id(dorsal, binomio:binomio_id(id, nombre_jinete, nombre_caballo, anio))
+              `)
+              .in('prueba_id', pruebaIds)
+              .range(desde, desde + TAM_PARTES - 1);
+            if (error) throw error;
+            if (!data || data.length === 0) break;
+            participacionesRows.push(...data);
+            if (data.length < TAM_PARTES) break;
+          }
+        }
+        const partes = participacionesRows;
 
         const participaciones: Participacion[] = (partes || []).map((p: any) => {
           const insc = p.inscripcion;
@@ -410,18 +423,30 @@ function EstadisticasContent() {
           };
         });
 
-        const partIds = participaciones.map((p) => p.id);
-        const { data: puntos, error: errPts } = await supabase
-          .from('puntuaciones')
-          .select(`
-            nota, participacion_id, ejercicio_reprise_id,
-            prueba_juez:prueba_juez_id(letra),
-            ejercicio_reprise:ejercicio_reprise_id(numero_orden, letra, descripcion, coeficiente)
-          `)
-          .in('participacion_id', partIds.length ? partIds : ['00000000-0000-0000-0000-000000000000']);
-        if (errPts) throw errPts;
+        // La API de Supabase limita cada consulta a 1000 filas: paginamos para
+        // no perder puntuaciones (por ejemplo, las de pruebas por equipos).
+        const TAM = 1000;
+        const parteRows: any[] = [];
+        if (pruebaIds.length > 0) {
+          for (let desde = 0; ; desde += TAM) {
+            const { data, error } = await supabase
+              .from('puntuaciones')
+              .select(`
+                nota, participacion_id, ejercicio_reprise_id,
+                prueba_juez:prueba_juez_id(letra),
+                ejercicio_reprise:ejercicio_reprise_id(numero_orden, letra, descripcion, coeficiente)
+              `)
+              .in('participacion_id', (partes || []).map((p: any) => p.id))
+              .range(desde, desde + TAM - 1);
+            if (error) throw error;
+            if (!data || data.length === 0) break;
+            parteRows.push(...data);
+            if (data.length < TAM) break;
+          }
+        }
+        const puntos = parteRows;
 
-        const puntuaciones: Puntuacion[] = (puntos || []).map((p: any) => {
+        const puntuaciones: Puntuacion[] = puntos.map((p: any) => {
           const ej = p.ejercicio_reprise;
           return {
             participacion_id: p.participacion_id,

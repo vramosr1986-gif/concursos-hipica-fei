@@ -215,20 +215,27 @@ try {
           pruebaDeParte[p.id] = p.prueba_id;
         });
 
-        // 4. Cargar puntuaciones de todas las participaciones (1 query)
+        // 4. Cargar puntuaciones de todas las participaciones (1 query paginada)
         let puntuacionesRows: any[] = [];
         if (participacionIds.length > 0) {
-          const { data: puntuaciones } = await supabase
-            .from('puntuaciones')
-            .select(`
-              nota,
-              participacion_id,
-              ejercicio_reprise_id,
-              prueba_juez:prueba_juez_id(id, letra),
-              ejercicio_reprise:ejercicio_reprise_id(coeficiente)
-            `)
-            .in('participacion_id', participacionIds);
-          puntuacionesRows = (puntuaciones || []) as any[];
+          const TAM = 1000;
+          for (let desde = 0; ; desde += TAM) {
+            const { data: puntuaciones, error: errP } = await supabase
+              .from('puntuaciones')
+              .select(`
+                nota,
+                participacion_id,
+                ejercicio_reprise_id,
+                prueba_juez:prueba_juez_id(id, letra),
+                ejercicio_reprise:ejercicio_reprise_id(coeficiente)
+              `)
+              .in('participacion_id', participacionIds)
+              .range(desde, desde + TAM - 1);
+            if (errP) throw errP;
+            if (!puntuaciones || puntuaciones.length === 0) break;
+            puntuacionesRows.push(...(puntuaciones as any[]));
+            if (puntuaciones.length < TAM) break;
+          }
         }
 
         // 5. Cargar metadatos de todos los ejercicios (1 query)

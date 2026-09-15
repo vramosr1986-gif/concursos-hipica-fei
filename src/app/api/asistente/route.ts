@@ -91,14 +91,27 @@ async function construirContexto() {
       .in('prueba_id', pruebaIds);
 
     const participacionIds = (participaciones || []).map((p: any) => p.id);
-    const { data: puntuaciones } = await supabase
-      .from('puntuaciones')
-      .select(
-        'nota, participacion_id, prueba_juez:prueba_juez_id(id, letra), ejercicio_reprise:ejercicio_reprise_id(coeficiente)'
-      )
-      .in('participacion_id', participacionIds);
 
-    const puntos = (puntuaciones || []) as any[];
+    // La API de Supabase limita cada consulta a 1000 filas: paginamos para no
+    // perder puntuaciones al calcular podios y estadisticas.
+    const puntos: any[] = [];
+    if (participacionIds.length > 0) {
+      const TAM = 1000;
+      for (let desde = 0; ; desde += TAM) {
+        const { data: puntuaciones, error: errP } = await supabase
+          .from('puntuaciones')
+          .select(
+            'nota, participacion_id, prueba_juez:prueba_juez_id(id, letra), ejercicio_reprise:ejercicio_reprise_id(coeficiente)'
+          )
+          .in('participacion_id', participacionIds)
+          .range(desde, desde + TAM - 1);
+        if (errP) break;
+        if (!puntuaciones || puntuaciones.length === 0) break;
+        puntos.push(...(puntuaciones as any[]));
+        if (puntuaciones.length < TAM) break;
+      }
+    }
+
     const partes = (participaciones || []) as any[];
 
     for (const prueba of finalizadas) {
