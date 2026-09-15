@@ -291,7 +291,7 @@ try {
           // Clasificaciones de esta prueba
           const clasificaciones: Clasificacion[] = [];
           for (const part of partesPorPrueba[prueba.id] || []) {
-            const puntuaciones = puntosPorPrueba[prueba.id].filter(
+            const puntuaciones = (puntosPorPrueba[prueba.id] || []).filter(
               (p) => p.participacion_id === part.id
             );
 
