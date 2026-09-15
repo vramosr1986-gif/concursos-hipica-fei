@@ -89,6 +89,29 @@ h1, h2, h3, h4 {
   white-space: nowrap;
 }
 
+/* Movil en vertical: tablas mas compactas (menos margen, letra menor, permite salto de linea) */
+@media (max-width: 640px) {
+  .table-responsive th,
+  .table-responsive td,
+  .overflow-x-auto > table th,
+  .overflow-x-auto > table td {
+    padding: 0.4rem 0.5rem !important;
+    font-size: 0.75rem !important;
+    line-height: 1.2;
+    white-space: normal !important;
+  }
+  .table-responsive th,
+  .overflow-x-auto > table th {
+    font-size: 0.625rem !important;
+    padding-top: 0.35rem !important;
+    padding-bottom: 0.35rem !important;
+  }
+  .table-responsive > table,
+  .overflow-x-auto > table {
+    min-width: 0 !important;
+  }
+}
+
 .table {
   @apply w-full border-collapse;
 }
