@@ -848,12 +848,13 @@ const categorias = Array.from(
                     ) : (
                       <div className="table-responsive">
                         <table className="table">
-                          <thead>
+<thead>
                             <tr>
                               <th className="text-center w-16">Pos.</th>
-                              <th className="text-center w-16">Dorsal</th>
-                              <th>Jinete</th>
-                              <th>Caballo</th>
+                              <th className="hidden sm:table-cell text-center w-16">Dorsal</th>
+                              <th className="hidden sm:table-cell">Jinete</th>
+                              <th className="hidden sm:table-cell">Caballo</th>
+                              <th className="sm:hidden">Binomio</th>
                               {letrasJueces.map((l) => (
                                 <th key={l} className="text-center w-20">
                                   {l}
@@ -877,12 +878,23 @@ const categorias = Array.from(
                               return (
                                 <Fragment key={c.participacion_id}>
                                   <tr className={colorPuesto(c.posicion)}>
-                                    <td className="text-center font-bold">
+<td className="text-center font-bold">
                                       {medallaEmoji(c.posicion)} {c.posicion}º
+                                      <span className="sm:hidden text-[0.65rem] font-normal text-gray-500">
+                                        {' '}· {c.dorsal}
+                                      </span>
                                     </td>
-                                    <td className="text-center font-bold">{c.dorsal}</td>
-                                    <td>{c.jinete}</td>
-                                    <td>{c.caballo}</td>
+                                    <td className="hidden sm:table-cell text-center font-bold">
+                                      {c.dorsal}
+                                    </td>
+                                    <td className="hidden sm:table-cell">{c.jinete}</td>
+                                    <td className="hidden sm:table-cell">{c.caballo}</td>
+                                    <td className="sm:hidden">
+                                      <span className="block">{c.jinete}</span>
+                                      <span className="block text-xs font-normal text-gray-500">
+                                        {c.caballo}
+                                      </span>
+                                    </td>
 
                                     {letrasJueces.map((l) => (
                                       <td key={l} className="text-center text-sm">
