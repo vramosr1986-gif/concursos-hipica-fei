@@ -66,15 +66,15 @@ export default function AsistenteBubble() {
   return (
     <div className="fixed bottom-4 right-4 z-[60] flex flex-col items-end gap-3 sm:bottom-6 sm:right-6">
       {abierto && (
-        <div className="pointer-events-auto flex w-[min(92vw,22rem)] flex-col overflow-hidden rounded-2xl border border-[#dcd4c4] bg-white shadow-2xl">
+        <div className="pointer-events-auto flex w-[min(96vw,30rem)] flex-col overflow-hidden rounded-2xl border border-[#dcd4c4] bg-white shadow-2xl">
           <div className="flex items-center justify-between gap-3 bg-[#173b2f] px-4 py-3 text-white">
             <div className="flex items-center gap-2.5">
-              <span className="flex size-9 items-center justify-center rounded-full bg-[#b88746] text-white">
+              <span className="flex size-10 items-center justify-center rounded-full bg-[#b88746] text-white">
                 <Bot className="size-5" aria-hidden="true" />
               </span>
               <div>
-                <p className="text-sm font-bold leading-tight">Asistente FEI</p>
-                <p className="text-[0.65rem] leading-tight text-white/70">
+                <p className="text-base font-bold leading-tight">Asistente FEI</p>
+                <p className="text-xs leading-tight text-white/70">
                   Solo la web y doma clasica
                 </p>
               </div>
@@ -90,7 +90,7 @@ export default function AsistenteBubble() {
 
           <div
             ref={panelRef}
-            className="flex max-h-[55vh] min-h-40 flex-col gap-3 overflow-y-auto bg-[#f7f5f0] px-3 py-3"
+            className="flex max-h-[72vh] min-h-40 flex-col gap-3 overflow-y-auto bg-[#f7f5f0] px-4 py-4"
           >
             {error && (
               <p className="rounded-lg bg-red-50 px-3 py-2 text-xs text-red-700">{error}</p>
@@ -101,12 +101,12 @@ export default function AsistenteBubble() {
                 className={`flex gap-2 ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}
               >
                 {m.role === 'assistant' && (
-                  <span className="mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-full bg-[#e4dfd4] text-[#173b2f]">
-                    <Bot className="size-3.5" aria-hidden="true" />
+                  <span className="mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-full bg-[#e4dfd4] text-[#173b2f]">
+                    <Bot className="size-4" aria-hidden="true" />
                   </span>
                 )}
                 <p
-                  className={`max-w-[80%] whitespace-pre-wrap px-3 py-2 text-[0.8rem] leading-5 ${
+                  className={`max-w-[80%] whitespace-pre-wrap px-3 py-2 text-sm leading-6 ${
                     m.role === 'user'
                       ? 'rounded-2xl rounded-br-sm bg-[#173b2f] text-white'
                       : 'rounded-2xl rounded-bl-sm border border-[#e4dfd4] bg-white text-[#3c3c3c]'
@@ -115,8 +115,8 @@ export default function AsistenteBubble() {
                   {m.content}
                 </p>
                 {m.role === 'user' && (
-                  <span className="mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-full bg-[#b88746] text-white">
-                    <User className="size-3.5" aria-hidden="true" />
+                  <span className="mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-full bg-[#b88746] text-white">
+                    <User className="size-4" aria-hidden="true" />
                   </span>
                 )}
               </div>
@@ -140,7 +140,7 @@ export default function AsistenteBubble() {
                     key={s}
                     onClick={() => enviar(s)}
                     disabled={cargando}
-                    className="rounded-full border border-[#dcd4c4] bg-[#f7f5f0] px-2.5 py-1 text-[0.7rem] text-[#173b2f] transition hover:border-[#b88746] hover:text-[#b88746]"
+                    className="rounded-full border border-[#dcd4c4] bg-[#f7f5f0] px-3 py-1.5 text-xs text-[#173b2f] transition hover:border-[#b88746] hover:text-[#b88746]"
                   >
                     {s}
                   </button>
@@ -159,13 +159,13 @@ export default function AsistenteBubble() {
                 onChange={(e) => setTexto(e.target.value)}
                 placeholder="Pregunta sobre la web o doma FEI..."
                 aria-label="Pregunta al asistente"
-                className="min-w-0 flex-1 rounded-xl border border-[#dcd4c4] bg-[#f7f5f0] px-3 py-2 text-sm outline-none transition focus:border-[#b88746] focus:bg-white"
+                className="min-w-0 flex-1 rounded-xl border border-[#dcd4c4] bg-[#f7f5f0] px-3 py-2.5 text-sm outline-none transition focus:border-[#b88746] focus:bg-white"
               />
               <button
                 type="submit"
                 disabled={cargando || !texto.trim()}
                 aria-label="Enviar pregunta"
-                className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-[#173b2f] text-white transition hover:bg-[#0f2a21] disabled:cursor-not-allowed disabled:opacity-40"
+                className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-[#173b2f] text-white transition hover:bg-[#0f2a21] disabled:cursor-not-allowed disabled:opacity-40"
               >
                 <Send className="size-4" aria-hidden="true" />
               </button>
@@ -177,12 +177,12 @@ export default function AsistenteBubble() {
       <button
         onClick={() => setAbierto((v) => !v)}
         aria-label={abierto ? 'Cerrar asistente' : 'Abrir asistente'}
-        className="pointer-events-auto flex size-12 items-center justify-center rounded-full bg-[#173b2f] text-white shadow-lg ring-2 ring-[#e8c98d]/60 transition hover:scale-105 hover:bg-[#0f2a21]"
+        className="pointer-events-auto flex size-14 items-center justify-center rounded-full bg-[#173b2f] text-white shadow-lg ring-2 ring-[#e8c98d]/60 transition hover:scale-105 hover:bg-[#0f2a21]"
       >
         {abierto ? (
-          <X className="size-5" aria-hidden="true" />
+          <X className="size-6" aria-hidden="true" />
         ) : (
-          <Sparkles className="size-5" aria-hidden="true" />
+          <Sparkles className="size-6" aria-hidden="true" />
         )}
       </button>
     </div>
