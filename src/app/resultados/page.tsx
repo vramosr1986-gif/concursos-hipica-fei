@@ -170,83 +170,130 @@ try {
           return;
         }
 
+        const pruebaIds = pruebas.map((p: any) => p.id);
+
+        // 2. Cargar jueces de todas las pruebas (1 query) + perfiles (1 query)
+        const { data: pruebaJueces } = await supabase
+          .from('prueba_jueces')
+          .select('id, letra, juez_id, prueba_id')
+          .in('prueba_id', pruebaIds)
+          .order('letra');
+
+        const juezIds = Array.from(
+          new Set((pruebaJueces || []).map((pj: any) => pj.juez_id).filter(Boolean))
+        );
+        let perfilesMap: Record<string, string> = {};
+        if (juezIds.length > 0) {
+          const { data: perfiles } = await supabase
+            .from('profiles')
+            .select('id, nombre, email')
+            .in('id', juezIds);
+
+          (perfiles || []).forEach((p: any) => {
+            perfilesMap[p.id] = p.nombre || p.email || 'Sin nombre';
+          });
+        }
+
+        // 3. Cargar participaciones de todas las pruebas (1 query)
+        const { data: participaciones } = await supabase
+          .from('participaciones')
+          .select(`
+            id,
+            prueba_id,
+            orden_salida,
+            equipo:equipo_id(nombre),
+            inscripcion:inscripcion_id(
+              dorsal,
+              binomio:binomio_id(nombre_jinete, nombre_caballo)
+            )
+          `)
+          .in('prueba_id', pruebaIds);
+
+        const participacionIds = (participaciones || []).map((p: any) => p.id);
+        const pruebaDeParte: Record<string, string> = {};
+        (participaciones || []).forEach((p: any) => {
+          pruebaDeParte[p.id] = p.prueba_id;
+        });
+
+        // 4. Cargar puntuaciones de todas las participaciones (1 query)
+        let puntuacionesRows: any[] = [];
+        if (participacionIds.length > 0) {
+          const { data: puntuaciones } = await supabase
+            .from('puntuaciones')
+            .select(`
+              nota,
+              participacion_id,
+              ejercicio_reprise_id,
+              prueba_juez:prueba_juez_id(id, letra),
+              ejercicio_reprise:ejercicio_reprise_id(coeficiente)
+            `)
+            .in('participacion_id', participacionIds);
+          puntuacionesRows = (puntuaciones || []) as any[];
+        }
+
+        // 5. Cargar metadatos de todos los ejercicios (1 query)
+        const ejercicioIds = Array.from(
+          new Set(puntuacionesRows.map((p) => (p as any).ejercicio_reprise_id).filter(Boolean))
+        );
+        const ejerciciosMetaMap: Record<string, any> = {};
+        if (ejercicioIds.length > 0) {
+          const { data: ejerciciosData } = await supabase
+            .from('ejercicios_reprise')
+            .select('id, numero_orden, letra, descripcion, coeficiente')
+            .in('id', ejercicioIds);
+          (ejerciciosData || []).forEach((e: any) => {
+            ejerciciosMetaMap[e.id] = e;
+          });
+        }
+
+        // 6. Cargar clasificacion de equipos solo para pruebas por equipos (1 query)
+        const equiposPruebaIds = pruebas
+          .filter((p: any) => p.tipo_prueba?.codigo === 'EQU')
+          .map((p: any) => p.id);
+        const equiposData = [] as any[];
+        if (equiposPruebaIds.length > 0) {
+          const { data } = await supabase
+            .from('v_clasificacion_equipos')
+            .select('*')
+            .in('prueba_id', equiposPruebaIds);
+          (data || []).forEach((e: any) => equiposData.push(e));
+        }
+
+        // Agrupar por prueba
+        const partesPorPrueba: Record<string, any[]> = {};
+        const puntosPorPrueba: Record<string, any[]> = {};
+        (participaciones || []).forEach((part: any) => {
+          (partesPorPrueba[part.prueba_id] ||= []).push(part);
+        });
+        puntuacionesRows.forEach((p) => {
+          const pruebaId = pruebaDeParte[p.participacion_id];
+          if (pruebaId) (puntosPorPrueba[pruebaId] ||= []).push(p);
+        });
+
         const resultados: PruebaConResultados[] = [];
 
-        for (const prueba of pruebas) {
-          // 2. Cargar jueces de la prueba (2 queries: prueba_jueces + profiles)
-          const { data: pruebaJueces } = await supabase
-            .from('prueba_jueces')
-            .select('id, letra, juez_id')
-            .eq('prueba_id', prueba.id)
-            .order('letra');
-
-          const juezIds = (pruebaJueces || []).map((pj: any) => pj.juez_id).filter(Boolean);
-          let perfilesMap: Record<string, string> = {};
-          if (juezIds.length > 0) {
-            const { data: perfiles } = await supabase
-              .from('profiles')
-              .select('id, nombre, email')
-              .in('id', juezIds);
-
-            (perfiles || []).forEach((p: any) => {
-              perfilesMap[p.id] = p.nombre || p.email || 'Sin nombre';
-            });
+        for (const prueba of pruebas as any[]) {
+          // Jueces de esta prueba
+          const juecesDePrueba = (pruebaJueces || []).filter(
+            (pj: any) => pj.prueba_id === prueba.id
+          );
+          const notasPorJuez: Record<string, number> = {};
+          for (const p of puntosPorPrueba[prueba.id] || []) {
+            const pjId = p.prueba_juez?.id;
+            if (pjId) notasPorJuez[pjId] = (notasPorJuez[pjId] || 0) + 1;
           }
+          const jueces: ResumenJuez[] = juecesDePrueba.map((pj: any) => ({
+            letra: pj.letra,
+            nombre: perfilesMap[pj.juez_id] || 'Sin nombre',
+            numPuntuaciones: notasPorJuez[pj.id] || 0,
+          }));
 
-          const { data: parts } = await supabase
-            .from('participaciones')
-            .select('id')
-            .eq('prueba_id', prueba.id);
-          const participacionIds = (parts || []).map((p: any) => p.id);
-
-          const jueces: ResumenJuez[] = [];
-          for (const pj of pruebaJueces || []) {
-            let numPuntuaciones = 0;
-            if (participacionIds.length > 0) {
-              const { count } = await supabase
-                .from('puntuaciones')
-                .select('id', { count: 'exact', head: true })
-                .eq('prueba_juez_id', pj.id)
-                .in('participacion_id', participacionIds);
-
-              numPuntuaciones = count || 0;
-            }
-
-            jueces.push({
-              letra: (pj as any).letra,
-              nombre: perfilesMap[(pj as any).juez_id] || 'Sin nombre',
-              numPuntuaciones,
-            });
-          }
-
-          // 3. Cargar participaciones
-          const { data: participaciones } = await supabase
-            .from('participaciones')
-            .select(`
-              id,
-              orden_salida,
-              equipo:equipo_id(nombre),
-              inscripcion:inscripcion_id(
-                dorsal,
-                binomio:binomio_id(nombre_jinete, nombre_caballo)
-              )
-            `)
-            .eq('prueba_id', prueba.id)
-            .order('orden_salida', { ascending: true });
-
-          // 4. Cargar clasificaciones
+          // Clasificaciones de esta prueba
           const clasificaciones: Clasificacion[] = [];
-
-          for (const part of participaciones || []) {
-            const { data: puntuaciones } = await supabase
-              .from('puntuaciones')
-              .select(`
-                nota,
-                ejercicio_reprise_id,
-                prueba_juez:prueba_juez_id(id, letra),
-                ejercicio_reprise:ejercicio_reprise_id(coeficiente)
-              `)
-              .eq('participacion_id', part.id);
+          for (const part of partesPorPrueba[prueba.id] || []) {
+            const puntuaciones = puntosPorPrueba[prueba.id].filter(
+              (p) => p.participacion_id === part.id
+            );
 
             if (!puntuaciones || puntuaciones.length === 0) continue;
 
@@ -285,33 +332,17 @@ try {
               if (!ejId) continue;
               const letra = p.prueba_juez?.letra || '?';
               if (!ejerciciosPorId[ejId]) {
+                const meta = ejerciciosMetaMap[ejId];
                 ejerciciosPorId[ejId] = {
                   id: ejId,
-                  numero_orden: 0,
-                  letra: null,
-                  descripcion: '',
-                  coeficiente: p.ejercicio_reprise?.coeficiente || 1,
+                  numero_orden: meta?.numero_orden || 0,
+                  letra: meta?.letra || null,
+                  descripcion: meta?.descripcion || '',
+                  coeficiente: meta?.coeficiente || p.ejercicio_reprise?.coeficiente || 1,
                   notas: {},
                 };
               }
               ejerciciosPorId[ejId].notas[letra] = p.nota;
-            }
-
-            // Traer metadatos de los ejercicios
-            const ejercicioIds = Object.keys(ejerciciosPorId);
-            if (ejercicioIds.length > 0) {
-              const { data: ejerciciosData } = await supabase
-                .from('ejercicios_reprise')
-                .select('id, numero_orden, letra, descripcion, coeficiente')
-                .in('id', ejercicioIds);
-              (ejerciciosData || []).forEach((e: any) => {
-                if (ejerciciosPorId[e.id]) {
-                  ejerciciosPorId[e.id].numero_orden = e.numero_orden;
-                  ejerciciosPorId[e.id].letra = e.letra;
-                  ejerciciosPorId[e.id].descripcion = e.descripcion;
-                  ejerciciosPorId[e.id].coeficiente = e.coeficiente;
-                }
-              });
             }
 
             const ejercicios = Object.values(ejerciciosPorId).sort(
@@ -341,20 +372,17 @@ try {
             if (original) original.posicion = i + 1;
           });
 
-// 5. Cargar equipos (solo si la prueba es por equipos)
+          // 5. Clasificacion de equipos (solo si la prueba es por equipos)
           const esEquipos = (prueba as any).tipo_prueba?.codigo === 'EQU';
           let equipos: EquipoClasificado[] = [];
 
           if (esEquipos) {
-            const { data: equiposData } = await supabase
-              .from('v_clasificacion_equipos')
-              .select('*')
-              .eq('prueba_id', prueba.id)
-              .order('posicion_equipo', { ascending: true })
-              .order('posicion_miembro', { ascending: true });
+            const equiposDePrueba = (equiposData as any[])
+              .filter((e) => e.prueba_id === prueba.id)
+              .sort((a, b) => a.posicion_equipo - b.posicion_equipo || a.posicion_miembro - b.posicion_miembro);
 
             const equiposPorId: Record<string, EquipoClasificado> = {};
-            (equiposData || []).forEach((e: any) => {
+            equiposDePrueba.forEach((e: any) => {
               if (!equiposPorId[e.equipo_id]) {
                 equiposPorId[e.equipo_id] = {
                   equipo_id: e.equipo_id,
