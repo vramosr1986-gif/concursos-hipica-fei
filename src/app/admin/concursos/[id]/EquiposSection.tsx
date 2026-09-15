@@ -279,7 +279,7 @@ export function EquiposSection({ concursoId }: Props) {
         <div className="mb-6 p-4 border border-primary rounded bg-blue-50">
           <h3 className="font-bold mb-3">Nuevo Equipo</h3>
           <form onSubmit={handleCrearEquipo} className="space-y-3">
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label className="block text-xs font-bold mb-1">Nombre *</label>
                 <input
@@ -366,35 +366,37 @@ export function EquiposSection({ concursoId }: Props) {
               </div>
 
               {miembrosPorEquipo[eq.id]?.length > 0 ? (
-                <table className="table text-sm">
-                  <thead>
-                    <tr>
-                      <th className="text-center w-16">Dorsal</th>
-                      <th>Jinete</th>
-                      <th>Caballo</th>
-                      <th>Categoria</th>
-                      <th></th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {miembrosPorEquipo[eq.id].map((m) => (
-                      <tr key={m.id}>
-                        <td className="text-center font-bold">{m.dorsal}</td>
-                        <td>{m.jinete}</td>
-                        <td>{m.caballo}</td>
-                        <td className="text-sm text-gray-600">{m.categoria || '-'}</td>
-                        <td className="text-right">
-                          <button
-                            onClick={() => quitarMiembro(m.id)}
-                            className="text-danger text-sm hover:underline"
-                          >
-                            Quitar
-                          </button>
-                        </td>
+                <div className="table-responsive">
+                  <table className="table text-sm">
+                    <thead>
+                      <tr>
+                        <th className="text-center w-16">Dorsal</th>
+                        <th>Jinete</th>
+                        <th>Caballo</th>
+                        <th>Categoria</th>
+                        <th></th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
+                    </thead>
+                    <tbody>
+                      {miembrosPorEquipo[eq.id].map((m) => (
+                        <tr key={m.id}>
+                          <td className="text-center font-bold">{m.dorsal}</td>
+                          <td>{m.jinete}</td>
+                          <td>{m.caballo}</td>
+                          <td className="text-sm text-gray-600">{m.categoria || '-'}</td>
+                          <td className="text-right">
+                            <button
+                              onClick={() => quitarMiembro(m.id)}
+                              className="text-danger text-sm hover:underline"
+                            >
+                              Quitar
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               ) : (
                 <p className="text-sm text-gray-500">Sin miembros todavia.</p>
               )}

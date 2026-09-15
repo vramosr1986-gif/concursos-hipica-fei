@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { Medal, Trophy } from 'lucide-react';
+import { BarChart3, Medal, Trophy } from 'lucide-react';
 import Link from 'next/link';
 import { Navbar } from '@/components/Navbar';
 import './globals.css';
@@ -32,6 +32,9 @@ export default function RootLayout({
             <nav className="flex flex-wrap items-center gap-4 text-xs font-semibold text-white/55">
               <Link href="/resultados" className="inline-flex items-center gap-1.5 transition hover:text-[#e8c98d]">
                 <Trophy className="size-3.5" aria-hidden="true" /> Resultados
+              </Link>
+              <Link href="/estadisticas" className="inline-flex items-center gap-1.5 transition hover:text-[#e8c98d]">
+                <BarChart3 className="size-3.5" aria-hidden="true" /> Estadisticas
               </Link>
               <Link href="/login" className="transition hover:text-[#e8c98d]">Acceso</Link>
               <Link href="/ayuda" className="inline-flex items-center gap-1.5 transition hover:text-[#e8c98d]">

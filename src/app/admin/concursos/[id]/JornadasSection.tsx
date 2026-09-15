@@ -184,7 +184,7 @@ export function JornadasSection({ concursoId, fechaInicio, fechaFin }: Props) {
         <div className="mb-6 p-4 border border-primary rounded bg-blue-50">
           <h3 className="font-bold mb-3">Nueva Jornada</h3>
           <form onSubmit={handleAddJornada} className="space-y-3">
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label className="block text-xs font-bold mb-1">Fecha *</label>
                 <input
@@ -218,7 +218,7 @@ export function JornadasSection({ concursoId, fechaInicio, fechaFin }: Props) {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label className="block text-xs font-bold mb-1">
                   Hora Inicio *

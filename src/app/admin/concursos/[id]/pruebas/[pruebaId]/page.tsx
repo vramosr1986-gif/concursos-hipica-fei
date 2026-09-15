@@ -555,33 +555,35 @@ const esPruebaEquipos = prueba?.tipo_prueba_codigo === 'EQU';
         {jueces.length === 0 ? (
           <p className="text-gray-600">No hay jueces asignados todavia</p>
         ) : (
-          <table className="table">
-            <thead>
-              <tr>
-                <th>Letra</th>
-                <th>Nombre</th>
-                <th>Email</th>
-                <th></th>
-              </tr>
-            </thead>
-            <tbody>
-              {jueces.map((j) => (
-                <tr key={j.id}>
-                  <td className="font-bold text-lg">{j.letra}</td>
-                  <td>{j.nombre}</td>
-                  <td className="text-sm text-gray-600">{j.email}</td>
-                  <td>
-                    <button
-                      onClick={() => handleDeleteJuez(j.id)}
-                      className="text-danger text-sm hover:underline"
-                    >
-                      Eliminar
-                    </button>
-                  </td>
+          <div className="table-responsive">
+            <table className="table">
+              <thead>
+                <tr>
+                  <th>Letra</th>
+                  <th>Nombre</th>
+                  <th>Email</th>
+                  <th></th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {jueces.map((j) => (
+                  <tr key={j.id}>
+                    <td className="font-bold text-lg">{j.letra}</td>
+                    <td>{j.nombre}</td>
+                    <td className="text-sm text-gray-600">{j.email}</td>
+                    <td>
+                      <button
+                        onClick={() => handleDeleteJuez(j.id)}
+                        className="text-danger text-sm hover:underline"
+                      >
+                        Eliminar
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
       </div>
 
@@ -684,8 +686,9 @@ const esPruebaEquipos = prueba?.tipo_prueba_codigo === 'EQU';
         {binomios.length === 0 ? (
           <p className="text-gray-600">No hay binomios participantes todavia</p>
         ) : (
-          <table className="table">
-<thead>
+          <div className="table-responsive">
+            <table className="table">
+              <thead>
                 <tr>
                   <th>Orden</th>
                   <th>Dorsal</th>
@@ -703,28 +706,29 @@ const esPruebaEquipos = prueba?.tipo_prueba_codigo === 'EQU';
                     <td>{b.jinete}</td>
                     <td>{b.caballo}</td>
                     {esPruebaEquipos && (
+                      <td>
+                        {b.equipo_nombre ? (
+                          <span className="px-2 py-1 rounded text-xs bg-teal-100 text-teal-800 font-medium">
+                            {b.equipo_nombre}
+                          </span>
+                        ) : (
+                          <span className="text-gray-400 text-xs">-</span>
+                        )}
+                      </td>
+                    )}
                     <td>
-                      {b.equipo_nombre ? (
-                        <span className="px-2 py-1 rounded text-xs bg-teal-100 text-teal-800 font-medium">
-                          {b.equipo_nombre}
-                        </span>
-                      ) : (
-                        <span className="text-gray-400 text-xs">-</span>
-                      )}
+                      <button
+                        onClick={() => handleDeleteBinomio(b.id)}
+                        className="text-danger text-sm hover:underline"
+                      >
+                        Eliminar
+                      </button>
                     </td>
-                  )}
-                  <td>
-                    <button
-                      onClick={() => handleDeleteBinomio(b.id)}
-                      className="text-danger text-sm hover:underline"
-                    >
-                      Eliminar
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
       </div>
     </div>

@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
-import { Trophy, Gavel, Settings, ArrowRight } from 'lucide-react';
+import { Trophy, Gavel, Settings, ArrowRight, BarChart3 } from 'lucide-react';
 import { Concurso } from '@/types';
 import { concursoService } from '@/lib/services';
 import { ConcursoCard } from '@/components/ConcursoCard';
@@ -32,6 +32,14 @@ const panels = [
     href: '/admin/concursos',
     action: 'Gestionar concursos',
     Icon: Settings,
+  },
+  {
+    mark: '04',
+    title: 'Estadísticas',
+    description: 'Medias por juez, movimientos más exigentes y curiosidades de la temporada.',
+    href: '/estadisticas',
+    action: 'Ver estadísticas',
+    Icon: BarChart3,
   },
 ];
 
@@ -71,6 +79,9 @@ export default function Home() {
               <Link href="/resultados" className="btn btn-secondary">
                 <Trophy className="mr-2 size-4" aria-hidden="true" />
                 Consultar resultados
+              </Link>
+              <Link href="/estadisticas" className="btn border border-white/30 text-white hover:border-[#e8c98d] hover:bg-white/10">
+                Estadisticas y curiosidades
               </Link>
               <Link href="/login" className="btn border border-white/30 text-white hover:border-[#e8c98d] hover:bg-white/10">
                 Acceso profesional
@@ -132,7 +143,7 @@ export default function Home() {
         {loading ? (
           <div className="card py-12 text-center text-sm text-[#607168]">Cargando concursos…</div>
         ) : concursos.length > 0 ? (
-          <div className="grid gap-5 md:grid-cols-3">
+<div className="grid gap-5 md:grid-cols-2 lg:grid-cols-4">
             {concursos.map((concurso) => (
               <ConcursoCard key={concurso.id} concurso={concurso} />
             ))}

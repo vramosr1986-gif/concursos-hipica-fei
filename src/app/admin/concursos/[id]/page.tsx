@@ -375,7 +375,7 @@ export default function EditarConcursoPage() {
               required
             />
           </div>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block font-bold mb-2">Fecha Inicio</label>
               <input
@@ -519,7 +519,7 @@ export default function EditarConcursoPage() {
             </div>
           )}
 
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
             <input
               type="number"
               placeholder="N (dorsal)"

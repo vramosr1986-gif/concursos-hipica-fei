@@ -50,7 +50,7 @@ type Prueba = {
   num_participantes?: number;
 };
 
-type Reprise = { id: string; codigo: string; nombre: string };
+type Reprise = { id: string; codigo: string; nombre: string; tipo?: string | null };
 type Jornada = { id: string; fecha: string; numero: number; pista: string | null };
 type Nivel = { id: string; codigo: string; nombre: string; orden: number; color: string | null };
 type CategoriaEdad = { id: string; codigo: string; nombre: string; orden: number | null };
@@ -106,6 +106,18 @@ export function PruebasSection({ concursoId }: Props) {
   const tiposCompatibles = compat
     ? tipos.filter((t) => compat.tipos.includes(t.codigo))
     : tipos;
+
+  const esRepriseEquipos = (repriseId: string): boolean => {
+    const reprise = reprises.find((r) => r.id === repriseId);
+    if (!reprise) return false;
+    const tipo = (reprise.tipo || '').toLowerCase();
+    const codigo = (reprise.codigo || '').toUpperCase();
+    return tipo === 'equipos' || codigo.includes('EQU');
+  };
+
+  const repriseSeleccionadaEsEquipos = nuevaPrueba.reprise_id
+    ? esRepriseEquipos(nuevaPrueba.reprise_id)
+    : false;
 
   const cargarPruebas = async () => {
     setLoading(true);
@@ -176,7 +188,7 @@ export function PruebasSection({ concursoId }: Props) {
     }
     const { data, error: dbError } = await supabase
       .from('niveles_reprises')
-      .select('reprise_id, reprise:reprise_id(id, codigo, nombre)')
+      .select('reprise_id, reprise:reprise_id(id, codigo, nombre, tipo)')
       .eq('nivel_id', nivelId);
 
     if (dbError) {
@@ -186,7 +198,7 @@ export function PruebasSection({ concursoId }: Props) {
     }
 
     const formateadas: Reprise[] = (data || [])
-      .map((r: any) => ({ id: r.reprise.id, codigo: r.reprise.codigo, nombre: r.reprise.nombre }))
+      .map((r: any) => ({ id: r.reprise.id, codigo: r.reprise.codigo, nombre: r.reprise.nombre, tipo: r.reprise.tipo }))
       .sort((a, b) => a.nombre.localeCompare(b.nombre));
 
     setReprises(formateadas);
@@ -232,6 +244,11 @@ export function PruebasSection({ concursoId }: Props) {
         setError(`El tipo "${tipoObj.nombre}" no es compatible con el nivel "${nivelObj.nombre}"`);
         return;
       }
+    }
+
+    if (tipoObj?.codigo === 'EQU' && nuevaPrueba.reprise_id && !esRepriseEquipos(nuevaPrueba.reprise_id)) {
+      setError('La prueba es individual: la reprise seleccionada no es por equipos.');
+      return;
     }
 
     setGuardando(true);
@@ -320,7 +337,7 @@ export function PruebasSection({ concursoId }: Props) {
         <div className="mb-6 p-4 border border-primary rounded bg-blue-50">
           <h3 className="font-bold mb-3">Nueva Prueba</h3>
           <form onSubmit={handleAddPrueba} className="space-y-3">
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label className="block text-xs font-bold mb-1">Nombre *</label>
                 <input
@@ -350,7 +367,7 @@ export function PruebasSection({ concursoId }: Props) {
               </div>
             </div>
 
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div>
                 <label className="block text-xs font-bold mb-1">Nivel *</label>
                 <select
@@ -415,17 +432,22 @@ export function PruebasSection({ concursoId }: Props) {
                   value={nuevaPrueba.tipo_prueba_id}
                   onChange={(e) => setNuevaPrueba({ ...nuevaPrueba, tipo_prueba_id: e.target.value })}
                   className="input w-full"
-                  disabled={!nuevaPrueba.nivel_id}
+                  disabled={!nuevaPrueba.nivel_id || repriseSeleccionadaEsEquipos}
                 >
                   <option value="">
-                    {nuevaPrueba.nivel_id ? '-- Elegir tipo --' : '-- Elige un nivel primero --'}
+                    {repriseSeleccionadaEsEquipos
+                      ? 'Equipos (auto por reprise)'
+                      : nuevaPrueba.nivel_id ? '-- Elegir tipo --' : '-- Elige un nivel primero --'}
                   </option>
-                  {tiposCompatibles.map((t) => (
+                  {!repriseSeleccionadaEsEquipos && tiposCompatibles.map((t) => (
                     <option key={t.id} value={t.id}>
                       {t.nombre} (coef {t.coeficiente})
                     </option>
                   ))}
                 </select>
+                {repriseSeleccionadaEsEquipos && (
+                  <p className="text-xs text-teal-700 mt-1">Por equipos: tipo fijado automáticamente.</p>
+                )}
               </div>
             </div>
 
@@ -435,7 +457,20 @@ export function PruebasSection({ concursoId }: Props) {
               </label>
               <select
                 value={nuevaPrueba.reprise_id}
-                onChange={(e) => setNuevaPrueba({ ...nuevaPrueba, reprise_id: e.target.value })}
+                onChange={(e) => {
+                  const repId = e.target.value;
+                  setNuevaPrueba((prev) => {
+                    if (repId && esRepriseEquipos(repId)) {
+                      const tipoEqu = tipos.find((t) => t.codigo === 'EQU');
+                      return {
+                        ...prev,
+                        reprise_id: repId,
+                        tipo_prueba_id: tipoEqu ? tipoEqu.id : prev.tipo_prueba_id,
+                      };
+                    }
+                    return { ...prev, reprise_id: repId };
+                  });
+                }}
                 className="input w-full"
                 disabled={!nuevaPrueba.nivel_id}
               >
@@ -444,12 +479,17 @@ export function PruebasSection({ concursoId }: Props) {
                   <option key={r.id} value={r.id}>{r.nombre} ({r.codigo})</option>
                 ))}
               </select>
+              {repriseSeleccionadaEsEquipos && (
+                <p className="text-xs text-teal-700 mt-1 font-semibold">
+                  Reprise por equipos: la prueba se marcará como Equipos.
+                </p>
+              )}
               {nuevaPrueba.nivel_id && reprises.length === 0 && (
                 <p className="text-xs text-orange-600 mt-1">No hay reprises para este nivel.</p>
               )}
             </div>
 
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div>
                 <label className="block text-xs font-bold mb-1">Hora Inicio *</label>
                 <input

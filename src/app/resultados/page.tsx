@@ -67,7 +67,9 @@ type EquipoClasificado = {
 type PruebaConResultados = {
   prueba_id: string;
   prueba_nombre: string;
+  concurso_nombre: string | null;
   categoria: string | null;
+  nivel_codigo: string | null;
   reprise_nombre: string | null;
   fecha: string;
   hora_inicio: string;
@@ -83,12 +85,18 @@ type PruebaConResultados = {
 
 function ResultadosContent() {
   const [concursos, setConcursos] = useState<Concurso[]>([]);
-  const [concursoSeleccionado, setConcursoSeleccionado] = useState<string>('');
+  const [concursoSeleccionado, setConcursoSeleccionado] = useState<string>('todos');
   const [pruebasConResultados, setPruebasConResultados] = useState<PruebaConResultados[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingDatos, setLoadingDatos] = useState(false);
   const [error, setError] = useState('');
-const [filtroCategoria, setFiltroCategoria] = useState<string>('');
+  const [filtroCategoria, setFiltroCategoria] = useState<string>('');
+  const [filtroTipo, setFiltroTipo] = useState<'todas' | 'individuales' | 'equipos'>('todas');
+  const [filtroEstado, setFiltroEstado] = useState<'todos' | 'en_curso' | 'finalizada' | 'programada'>('todos');
+  const [filtroNivel, setFiltroNivel] = useState<string>('');
+  const [filtroFecha, setFiltroFecha] = useState<string>('');
+  const [filtroResultados, setFiltroResultados] = useState<'todas' | 'con' | 'sin'>('todas');
+  const [busqueda, setBusqueda] = useState('');
   const [ordenacion, setOrdenacion] = useState<'media' | 'dorsal' | 'jinete'>('media');
   const [expandidos, setExpandidos] = useState<string[]>([]);
 
@@ -103,9 +111,6 @@ const [filtroCategoria, setFiltroCategoria] = useState<string>('');
         setError(dbError.message);
       } else {
         setConcursos(data || []);
-        if (data && data.length > 0) {
-          setConcursoSeleccionado(data[0].id);
-        }
       }
       setLoading(false);
     };
@@ -143,12 +148,17 @@ const [filtroCategoria, setFiltroCategoria] = useState<string>('');
       setLoadingDatos(true);
       setError('');
 
-      try {
-        // 1. Cargar pruebas
-const { data: pruebas, error: pruebasErr } = await supabase
+try {
+        // 1. Cargar pruebas de todos los concursos o de uno solo
+        let query = supabase
           .from('pruebas')
-          .select('id, nombre, categoria, fecha, hora_inicio, reprise_id, tipo_prueba:tipo_prueba_id(codigo), reprise:reprise_id(nombre)')
-          .eq('concurso_id', concursoSeleccionado)
+          .select('id, nombre, categoria, fecha, hora_inicio, reprise_id, tipo_prueba:tipo_prueba_id(codigo), reprise:reprise_id(nombre), concurso:concurso_id(nombre), nivel:nivel_id(codigo)');
+
+        if (concursoSeleccionado !== 'todos') {
+          query = query.eq('concurso_id', concursoSeleccionado);
+        }
+
+        const { data: pruebas, error: pruebasErr } = await query
           .order('fecha', { ascending: true })
           .order('orden', { ascending: true });
 
@@ -371,7 +381,9 @@ const { data: pruebas, error: pruebasErr } = await supabase
           resultados.push({
             prueba_id: prueba.id,
             prueba_nombre: prueba.nombre,
+            concurso_nombre: (prueba as any).concurso?.nombre || null,
             categoria: prueba.categoria,
+            nivel_codigo: (prueba as any).nivel?.codigo || null,
             reprise_nombre: (prueba as any).reprise?.nombre || null,
             fecha: prueba.fecha,
             hora_inicio: prueba.hora_inicio,
@@ -423,13 +435,40 @@ const { data: pruebas, error: pruebasErr } = await supabase
     return copia;
   };
 
-  const categorias = Array.from(
+const categorias = Array.from(
     new Set(pruebasConResultados.map((p) => p.categoria).filter(Boolean))
   ) as string[];
 
-  const pruebasFiltradas = filtroCategoria
-    ? pruebasConResultados.filter((p) => p.categoria === filtroCategoria)
-    : pruebasConResultados;
+  const niveles = Array.from(
+    new Set(pruebasConResultados.map((p) => p.nivel_codigo).filter(Boolean))
+  ) as string[];
+
+  const textoBusqueda = busqueda.trim().toLowerCase();
+
+  const pruebasFiltradas = pruebasConResultados.filter((p) => {
+    if (filtroCategoria && p.categoria !== filtroCategoria) return false;
+    if (filtroTipo === 'individuales' && p.es_equipos) return false;
+    if (filtroTipo === 'equipos' && !p.es_equipos) return false;
+    if (filtroEstado !== 'todos' && estadoTemporal(p.fecha, p.hora_inicio) !== filtroEstado) return false;
+    if (filtroNivel && p.nivel_codigo !== filtroNivel) return false;
+    if (filtroFecha && p.fecha !== filtroFecha) return false;
+    if (filtroResultados === 'con' && p.clasificaciones.length === 0 && p.equipos.length === 0) return false;
+    if (filtroResultados === 'sin' && (p.clasificaciones.length > 0 || p.equipos.length > 0)) return false;
+    if (textoBusqueda) {
+      const coincide =
+        p.prueba_nombre.toLowerCase().includes(textoBusqueda) ||
+        (p.reprise_nombre || '').toLowerCase().includes(textoBusqueda) ||
+        (p.concurso_nombre || '').toLowerCase().includes(textoBusqueda) ||
+        p.clasificaciones.some(
+          (c) =>
+            c.jinete.toLowerCase().includes(textoBusqueda) ||
+            c.caballo.toLowerCase().includes(textoBusqueda) ||
+            (c.equipo_nombre || '').toLowerCase().includes(textoBusqueda)
+        );
+      if (!coincide) return false;
+    }
+    return true;
+  });
 
   const colorPuesto = (pos: number) => {
     if (pos === 1) return 'bg-yellow-50 border-l-4 border-yellow-400';
@@ -479,9 +518,42 @@ const { data: pruebas, error: pruebasErr } = await supabase
         </div>
       )}
 
-      {/* FILTROS */}
+{/* FILTROS */}
       <div className="card p-6 mb-6">
-        <div className="grid md:grid-cols-3 gap-4">
+        <div className="mb-4 flex flex-col sm:flex-row sm:items-center gap-3">
+          <div className="flex-1">
+            <label className="block text-sm font-bold mb-2">Buscar:</label>
+            <input
+              type="search"
+              value={busqueda}
+              onChange={(e) => setBusqueda(e.target.value)}
+              placeholder="Prueba, concurso, reprise, jinete, caballo o equipo..."
+              className="input w-full"
+            />
+          </div>
+          <div className="flex items-end gap-2">
+            <span className="text-sm text-gray-600 whitespace-nowrap pb-2">
+              {pruebasFiltradas.length} de {pruebasConResultados.length} pruebas
+            </span>
+            <button
+              onClick={() => {
+                setConcursoSeleccionado('todos');
+                setFiltroCategoria('');
+                setFiltroTipo('todas');
+                setFiltroEstado('todos');
+                setFiltroNivel('');
+                setFiltroFecha('');
+                setFiltroResultados('todas');
+                setBusqueda('');
+              }}
+              className="btn btn-outline text-sm whitespace-nowrap"
+            >
+              Limpiar filtros
+            </button>
+          </div>
+        </div>
+
+        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
           <div>
             <label className="block text-sm font-bold mb-2">Concurso:</label>
             <select
@@ -489,12 +561,40 @@ const { data: pruebas, error: pruebasErr } = await supabase
               onChange={(e) => setConcursoSeleccionado(e.target.value)}
               className="input w-full"
             >
+              <option value="todos">Todos los concursos</option>
               {concursos.length === 0 && <option value="">No hay concursos</option>}
               {concursos.map((c) => (
                 <option key={c.id} value={c.id}>
                   {c.nombre} {c.ubicacion ? '- ' + c.ubicacion : ''}
                 </option>
               ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-bold mb-2">Estado:</label>
+            <select
+              value={filtroEstado}
+              onChange={(e) => setFiltroEstado(e.target.value as any)}
+              className="input w-full"
+            >
+              <option value="todos">Todos</option>
+              <option value="en_curso">En directo</option>
+              <option value="finalizada">Acabadas</option>
+              <option value="programada">Por empezar</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-bold mb-2">Tipo de prueba:</label>
+            <select
+              value={filtroTipo}
+              onChange={(e) => setFiltroTipo(e.target.value as any)}
+              className="input w-full"
+            >
+              <option value="todas">Todas</option>
+              <option value="individuales">Individuales</option>
+              <option value="equipos">Por equipos</option>
             </select>
           </div>
 
@@ -509,6 +609,43 @@ const { data: pruebas, error: pruebasErr } = await supabase
               {categorias.map((c) => (
                 <option key={c} value={c}>{c}</option>
               ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-bold mb-2">Nivel:</label>
+            <select
+              value={filtroNivel}
+              onChange={(e) => setFiltroNivel(e.target.value)}
+              className="input w-full"
+            >
+              <option value="">Todos</option>
+              {niveles.map((n) => (
+                <option key={n} value={n}>{n}</option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-bold mb-2">Fecha:</label>
+            <input
+              type="date"
+              value={filtroFecha}
+              onChange={(e) => setFiltroFecha(e.target.value)}
+              className="input w-full"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-bold mb-2">Resultados:</label>
+            <select
+              value={filtroResultados}
+              onChange={(e) => setFiltroResultados(e.target.value as any)}
+              className="input w-full"
+            >
+              <option value="todas">Todas</option>
+              <option value="con">Con resultados</option>
+              <option value="sin">Sin resultados</option>
             </select>
           </div>
 
@@ -546,8 +683,13 @@ const { data: pruebas, error: pruebasErr } = await supabase
                 <div className="p-4 bg-[#112d24] text-white">
                   <div className="flex items-start justify-between gap-4">
                     <div>
-                      <div className="flex items-center gap-3 mb-1">
+<div className="flex items-center gap-3 mb-1">
                         <h2 className="text-xl font-bold">{prueba.prueba_nombre}</h2>
+                        {concursoSeleccionado === 'todos' && prueba.concurso_nombre && (
+                          <span className="px-2 py-0.5 rounded-full bg-amber-400 text-amber-950 text-xs font-bold">
+                            {prueba.concurso_nombre}
+                          </span>
+                        )}
                         {(() => {
                           const estado = estadoTemporal(prueba.fecha, prueba.hora_inicio);
                           if (estado === 'en_curso') {
@@ -591,7 +733,7 @@ const { data: pruebas, error: pruebasErr } = await supabase
                 </div>
 
                 {/* RESUMEN DE JUECES */}
-                {prueba.jueces.length > 0 && (
+{prueba.jueces.length > 0 && (
                   <div className="p-4 bg-gray-50 border-b">
                     <p className="text-xs font-bold text-gray-600 uppercase mb-2">
                       Jueces de esta prueba
@@ -600,21 +742,10 @@ const { data: pruebas, error: pruebasErr } = await supabase
                       {prueba.jueces.map((j) => (
                         <div
                           key={j.letra}
-                          className={`px-3 py-2 rounded border ${
-                            j.numPuntuaciones > 0
-                              ? 'bg-green-50 border-green-300'
-                              : 'bg-gray-100 border-gray-300'
-                          }`}
+                          className="px-3 py-2 rounded border border-gray-200 bg-white"
                         >
                           <span className="font-bold text-lg mr-2">{j.letra}</span>
                           <span className="text-sm">{j.nombre}</span>
-                          <span
-                            className={`ml-2 text-xs ${
-                              j.numPuntuaciones > 0 ? 'text-green-700' : 'text-gray-500'
-                            }`}
-                          >
-                            {j.numPuntuaciones > 0 ? `✓ ${j.numPuntuaciones} notas` : 'Sin puntuar'}
-                          </span>
                         </div>
                       ))}
                     </div>

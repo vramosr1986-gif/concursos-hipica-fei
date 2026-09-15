@@ -74,6 +74,19 @@ h1, h2, h3, h4 {
 
 .table-responsive {
   @apply overflow-x-auto rounded-2xl border border-[#e4dfd4] bg-[#fffdfa] shadow-card;
+  -webkit-overflow-scrolling: touch;
+}
+
+.table-responsive > table {
+  min-width: 100%;
+}
+
+/* En pantallas pequeñas las tablas se deslizan en horizontal en vez de cortarse */
+.table-responsive th,
+.table-responsive td,
+.overflow-x-auto > table th,
+.overflow-x-auto > table td {
+  white-space: nowrap;
 }
 
 .table {
