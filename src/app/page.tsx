@@ -61,27 +61,30 @@ export default function Home() {
 
   return (
     <div className="container">
-      <section className="relative overflow-hidden rounded-[2rem] border border-[#ddd3c0] bg-[#173b2f] px-6 py-14 text-white shadow-soft sm:px-10 sm:py-20 lg:px-16">
+      <section className="relative overflow-hidden rounded-[2rem] border border-[#ddd3c0] bg-[#173b2f] px-6 py-11 text-white shadow-soft sm:px-12 sm:py-16 lg:py-20">
         <div className="absolute -right-24 -top-32 size-80 rounded-full border border-[#e8c98d]/20" />
         <div className="absolute -bottom-40 right-20 size-96 rounded-full bg-[#b88746]/10 blur-3xl" />
-        <div className="relative grid items-center gap-12 lg:grid-cols-[1.05fr_0.95fr]">
-          <div className="max-w-3xl">
-            <p className="mb-5 text-xs font-bold uppercase tracking-[0.28em] text-[#e8c98d]">
-              GESTIÓN COMPLETA DE CONCURSOS DE DOMA
+        <div className="relative flex flex-col gap-10 lg:grid lg:grid-cols-[1.05fr_0.95fr] lg:items-center lg:gap-12">
+          <div className="mx-auto max-w-2xl text-center lg:mx-0 lg:text-left">
+            <p className="mb-4 flex items-center justify-center gap-3 text-xs font-bold uppercase tracking-[0.28em] text-[#e8c98d] lg:justify-start">
+              <span aria-hidden="true">—</span>
+              Concursos FEI de doma
+              <span aria-hidden="true">—</span>
             </p>
-            <h1 className="max-w-2xl text-4xl font-semibold leading-tight sm:text-5xl lg:text-6xl">
-              Paneles diferenciados para organización, jueces y público.
+            <h1 className="text-3xl font-semibold leading-tight sm:text-5xl lg:text-6xl">
+              La doma se vive,
+              <span className="mt-1 block font-serif italic text-[#e8c98d]">
+                se juzga y se comparte.
+              </span>
             </h1>
-            <p className="mt-6 max-w-xl text-base leading-7 text-white/75 sm:text-lg">
-              Resultados en tiempo real y clasificaciones por binomio y por equipo.
+            <p className="mx-auto mt-4 max-w-xl text-sm leading-6 text-white/75 sm:text-lg sm:leading-7 lg:mx-0">
+              Organización, jurado y público en una misma arena digital: resultados en tiempo real
+              para cada prueba.
             </p>
-            <div className="mt-8 flex flex-wrap gap-3">
+            <div className="mt-7 flex flex-wrap justify-center gap-3 lg:justify-start">
               <Link href="/resultados" className="btn btn-secondary">
                 <Trophy className="mr-2 size-4" aria-hidden="true" />
-                Consultar resultados
-              </Link>
-              <Link href="/estadisticas" className="btn border border-white/30 text-white hover:border-[#e8c98d] hover:bg-white/10">
-                Estadisticas y curiosidades
+                Ver resultados
               </Link>
               <Link href="/login" className="btn border border-white/30 text-white hover:border-[#e8c98d] hover:bg-white/10">
                 Acceso profesional
@@ -89,7 +92,7 @@ export default function Home() {
             </div>
           </div>
 
-          <div className="hidden lg:block">
+          <div className="hidden lg:flex lg:items-center lg:justify-center">
             <HeroIllustration />
           </div>
         </div>
