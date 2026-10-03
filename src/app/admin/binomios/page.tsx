@@ -242,7 +242,7 @@ export default function AdminBinomiosPage() {
                       {chipEstadoValidacion(b.estado_validacion)}
                     </td>
                     <td className="p-2">
-                      <div className="flex flex-col gap-1">
+                      <div className="flex flex-col gap-1 items-center">
                         <div className="flex gap-0.5 justify-center flex-wrap">
                           <button
                             onClick={() => changeEstadoValidacion(b.binomio_id, 'valido')}
@@ -265,14 +265,14 @@ export default function AdminBinomiosPage() {
                           >
                             🔄
                           </button>
+                          <button
+                            onClick={() => abrirRfhe()}
+                            className="btn btn-sm btn-outline text-sm px-1.5 py-0.5"
+                            title="Abrir RFHE (LDN y LAC)"
+                          >
+                            🔍
+                          </button>
                         </div>
-                        <button
-                          onClick={() => abrirRfhe()}
-                          className="btn btn-sm btn-outline text-xs px-1.5 py-0.5"
-                          title="Abrir RFHE"
-                        >
-                          🔍
-                        </button>
                       </div>
                     </td>
                   </tr>
