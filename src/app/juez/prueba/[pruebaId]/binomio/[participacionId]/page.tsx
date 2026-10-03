@@ -5,6 +5,7 @@ import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 import { fetchConSesion, pruebaJuezDeLaUrl, resolverPuntuador } from '@/lib/juez-actual';
+import { esPendienteConfirmacion, nombreConMarca } from '@/lib/rfhe-pruebas';
 import FilaEjercicio from './FilaEjercicio';
 
 type Prueba = {
@@ -24,8 +25,7 @@ type Participacion = {
   dorsal: number;
   jinete: string;
   caballo: string;
-  equipo_id: string | null;
-  equipo_nombre: string | null;
+  pendiente: boolean;
 };
 
 type Ejercicio = {
@@ -94,7 +94,7 @@ export default function PuntuarBinomioPage() {
         // 2. Participacion
         const { data: partData, error: partErr } = await supabase
           .from('participaciones')
-          .select('id, orden_salida, equipo_id, equipo:equipo_id(nombre), inscripcion:inscripcion_id(dorsal, binomio:binomio_id(nombre_jinete, nombre_caballo))')
+          .select('id, orden_salida, observaciones, inscripcion:inscripcion_id(dorsal, binomio:binomio_id(nombre_jinete, nombre_caballo))')
           .eq('id', participacionId)
           .single();
 
@@ -106,8 +106,7 @@ export default function PuntuarBinomioPage() {
           dorsal: (partData as any).inscripcion?.dorsal || 0,
           jinete: (partData as any).inscripcion?.binomio?.nombre_jinete || '-',
           caballo: (partData as any).inscripcion?.binomio?.nombre_caballo || '-',
-          equipo_id: (partData as any).equipo_id || null,
-          equipo_nombre: (partData as any).equipo?.nombre || null,
+          pendiente: esPendienteConfirmacion((partData as any).observaciones),
         });
 
         // 3. Ejercicios
@@ -231,14 +230,11 @@ export default function PuntuarBinomioPage() {
         </div>
 
         <div className="mt-4 pt-4 border-t border-white/20">
-          <p className="text-lg font-bold">{participacion.jinete}</p>
+          <p className="text-lg font-bold">{nombreConMarca(participacion.jinete, participacion.pendiente)}</p>
           <p className="text-sm opacity-90">{participacion.caballo}</p>
-        {participacion.equipo_nombre && (
-          <p className="text-sm mt-1 text-teal-200">
-            🏆 Equipo: <strong>{participacion.equipo_nombre}</strong>
-          </p>
-        )}
-          
+          {participacion.pendiente && (
+            <p className="mt-2 text-sm opacity-75">* Pendiente de confirmación en la RFHE.</p>
+          )}
         </div>
       </div>
 

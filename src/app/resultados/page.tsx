@@ -2,6 +2,7 @@
 
 import { useEffect, useState, Suspense, Fragment } from 'react';
 import { supabase } from '@/lib/supabase';
+import { esPendienteConfirmacion, nombreConMarca } from '@/lib/rfhe-pruebas';
 
 // ============================================================
 // TIPOS
@@ -35,7 +36,8 @@ type Clasificacion = {
   dorsal: number;
   jinete: string;
   caballo: string;
-  equipo_nombre: string | null;
+  /** "Pte. Confirmación" en la RFHE: se muestra con * tras el nombre. */
+  pendiente: boolean;
   media: number;
   numJueces: number;
   puntuaciones: PuntuacionJuez[];
@@ -48,35 +50,17 @@ type ResumenJuez = {
   numPuntuaciones: number;
 };
 
-type MiembroEquipo = {
-  posicion_miembro: number;
-  dorsal: number;
-  nombre_jinete: string;
-  nombre_caballo: string;
-  porcentaje: number;
-};
-
-type EquipoClasificado = {
-  equipo_id: string;
-  equipo_nombre: string;
-  puntuacion_equipo: number;
-  posicion_equipo: number;
-  miembros: MiembroEquipo[];
-};
-
 type PruebaConResultados = {
   prueba_id: string;
   prueba_nombre: string;
   concurso_nombre: string | null;
   categoria: string | null;
-  nivel_codigo: string | null;
   reprise_nombre: string | null;
   fecha: string;
   hora_inicio: string;
+  pista: string | null;
   jueces: ResumenJuez[];
   clasificaciones: Clasificacion[];
-  equipos: EquipoClasificado[];
-  es_equipos: boolean;
 };
 
 // ============================================================
@@ -91,9 +75,8 @@ function ResultadosContent() {
   const [loadingDatos, setLoadingDatos] = useState(false);
   const [error, setError] = useState('');
   const [filtroCategoria, setFiltroCategoria] = useState<string>('');
-  const [filtroTipo, setFiltroTipo] = useState<'todas' | 'individuales' | 'equipos'>('todas');
   const [filtroEstado, setFiltroEstado] = useState<'todos' | 'en_curso' | 'finalizada' | 'programada'>('todos');
-  const [filtroNivel, setFiltroNivel] = useState<string>('');
+  const [filtroReprise, setFiltroReprise] = useState<string>('');
   const [filtroFecha, setFiltroFecha] = useState<string>('');
   const [filtroResultados, setFiltroResultados] = useState<'todas' | 'con' | 'sin'>('todas');
   const [busqueda, setBusqueda] = useState('');
@@ -152,7 +135,7 @@ try {
         // 1. Cargar pruebas de todos los concursos o de uno solo
         let query = supabase
           .from('pruebas')
-          .select('id, nombre, categoria, fecha, hora_inicio, reprise_id, tipo_prueba:tipo_prueba_id(codigo), reprise:reprise_id(nombre), concurso:concurso_id(nombre), nivel:nivel_id(codigo)');
+          .select('id, nombre, categoria, fecha, hora_inicio, pista, reprise_id, reprise:reprise_id(nombre), concurso:concurso_id(nombre)');
 
         if (concursoSeleccionado !== 'todos') {
           query = query.eq('concurso_id', concursoSeleccionado);
@@ -201,7 +184,7 @@ try {
             id,
             prueba_id,
             orden_salida,
-            equipo:equipo_id(nombre),
+            observaciones,
             inscripcion:inscripcion_id(
               dorsal,
               binomio:binomio_id(nombre_jinete, nombre_caballo)
@@ -251,19 +234,6 @@ try {
           (ejerciciosData || []).forEach((e: any) => {
             ejerciciosMetaMap[e.id] = e;
           });
-        }
-
-        // 6. Cargar clasificacion de equipos solo para pruebas por equipos (1 query)
-        const equiposPruebaIds = pruebas
-          .filter((p: any) => p.tipo_prueba?.codigo === 'EQU')
-          .map((p: any) => p.id);
-        const equiposData = [] as any[];
-        if (equiposPruebaIds.length > 0) {
-          const { data } = await supabase
-            .from('v_clasificacion_equipos')
-            .select('*')
-            .in('prueba_id', equiposPruebaIds);
-          (data || []).forEach((e: any) => equiposData.push(e));
         }
 
         // Agrupar por prueba
@@ -362,7 +332,7 @@ try {
               dorsal: inscripcion?.dorsal || 0,
               jinete: binomio?.nombre_jinete || '-',
               caballo: binomio?.nombre_caballo || '-',
-              equipo_nombre: (part as any).equipo?.nombre || null,
+              pendiente: esPendienteConfirmacion((part as any).observaciones),
               media: Math.round(media * 100) / 100,
               numJueces: puntuacionesPorJuez.length,
               puntuaciones: puntuacionesPorJuez,
@@ -379,53 +349,17 @@ try {
             if (original) original.posicion = i + 1;
           });
 
-          // 5. Clasificacion de equipos (solo si la prueba es por equipos)
-          const esEquipos = (prueba as any).tipo_prueba?.codigo === 'EQU';
-          let equipos: EquipoClasificado[] = [];
-
-          if (esEquipos) {
-            const equiposDePrueba = (equiposData as any[])
-              .filter((e) => e.prueba_id === prueba.id)
-              .sort((a, b) => a.posicion_equipo - b.posicion_equipo || a.posicion_miembro - b.posicion_miembro);
-
-            const equiposPorId: Record<string, EquipoClasificado> = {};
-            equiposDePrueba.forEach((e: any) => {
-              if (!equiposPorId[e.equipo_id]) {
-                equiposPorId[e.equipo_id] = {
-                  equipo_id: e.equipo_id,
-                  equipo_nombre: e.equipo_nombre,
-                  puntuacion_equipo: e.puntuacion_equipo,
-                  posicion_equipo: e.posicion_equipo,
-                  miembros: [],
-                };
-              }
-              equiposPorId[e.equipo_id].miembros.push({
-                posicion_miembro: e.posicion_miembro,
-                dorsal: e.dorsal,
-                nombre_jinete: e.nombre_jinete,
-                nombre_caballo: e.nombre_caballo,
-                porcentaje: e.porcentaje,
-              });
-            });
-
-            equipos = Object.values(equiposPorId).sort(
-              (a, b) => a.posicion_equipo - b.posicion_equipo
-            );
-          }
-
           resultados.push({
             prueba_id: prueba.id,
             prueba_nombre: prueba.nombre,
             concurso_nombre: (prueba as any).concurso?.nombre || null,
             categoria: prueba.categoria,
-            nivel_codigo: (prueba as any).nivel?.codigo || null,
             reprise_nombre: (prueba as any).reprise?.nombre || null,
             fecha: prueba.fecha,
             hora_inicio: prueba.hora_inicio,
+            pista: (prueba as any).pista || null,
             jueces,
             clasificaciones,
-            equipos,
-            es_equipos: esEquipos,
           });
         }
 
@@ -474,21 +408,19 @@ const categorias = Array.from(
     new Set(pruebasConResultados.map((p) => p.categoria).filter(Boolean))
   ) as string[];
 
-  const niveles = Array.from(
-    new Set(pruebasConResultados.map((p) => p.nivel_codigo).filter(Boolean))
-  ) as string[];
+  const reprises = Array.from(
+    new Set(pruebasConResultados.map((p) => p.reprise_nombre).filter(Boolean))
+  ).sort() as string[];
 
   const textoBusqueda = busqueda.trim().toLowerCase();
 
   const pruebasFiltradas = pruebasConResultados.filter((p) => {
     if (filtroCategoria && p.categoria !== filtroCategoria) return false;
-    if (filtroTipo === 'individuales' && p.es_equipos) return false;
-    if (filtroTipo === 'equipos' && !p.es_equipos) return false;
     if (filtroEstado !== 'todos' && estadoTemporal(p.fecha, p.hora_inicio) !== filtroEstado) return false;
-    if (filtroNivel && p.nivel_codigo !== filtroNivel) return false;
+    if (filtroReprise && p.reprise_nombre !== filtroReprise) return false;
     if (filtroFecha && p.fecha !== filtroFecha) return false;
-    if (filtroResultados === 'con' && p.clasificaciones.length === 0 && p.equipos.length === 0) return false;
-    if (filtroResultados === 'sin' && (p.clasificaciones.length > 0 || p.equipos.length > 0)) return false;
+    if (filtroResultados === 'con' && p.clasificaciones.length === 0) return false;
+    if (filtroResultados === 'sin' && p.clasificaciones.length > 0) return false;
     if (textoBusqueda) {
       const coincide =
         p.prueba_nombre.toLowerCase().includes(textoBusqueda) ||
@@ -497,8 +429,7 @@ const categorias = Array.from(
         p.clasificaciones.some(
           (c) =>
             c.jinete.toLowerCase().includes(textoBusqueda) ||
-            c.caballo.toLowerCase().includes(textoBusqueda) ||
-            (c.equipo_nombre || '').toLowerCase().includes(textoBusqueda)
+            c.caballo.toLowerCase().includes(textoBusqueda)
         );
       if (!coincide) return false;
     }
@@ -562,7 +493,7 @@ const categorias = Array.from(
               type="search"
               value={busqueda}
               onChange={(e) => setBusqueda(e.target.value)}
-              placeholder="Prueba, concurso, reprise, jinete, caballo o equipo..."
+              placeholder="Prueba, concurso, reprise, jinete o caballo..."
               className="input w-full"
             />
           </div>
@@ -574,9 +505,8 @@ const categorias = Array.from(
               onClick={() => {
                 setConcursoSeleccionado('todos');
                 setFiltroCategoria('');
-                setFiltroTipo('todas');
                 setFiltroEstado('todos');
-                setFiltroNivel('');
+                setFiltroReprise('');
                 setFiltroFecha('');
                 setFiltroResultados('todas');
                 setBusqueda('');
@@ -621,19 +551,6 @@ const categorias = Array.from(
           </div>
 
           <div>
-            <label className="block text-sm font-bold mb-2">Tipo de prueba:</label>
-            <select
-              value={filtroTipo}
-              onChange={(e) => setFiltroTipo(e.target.value as any)}
-              className="input w-full"
-            >
-              <option value="todas">Todas</option>
-              <option value="individuales">Individuales</option>
-              <option value="equipos">Por equipos</option>
-            </select>
-          </div>
-
-          <div>
             <label className="block text-sm font-bold mb-2">Categoria:</label>
             <select
               value={filtroCategoria}
@@ -648,15 +565,15 @@ const categorias = Array.from(
           </div>
 
           <div>
-            <label className="block text-sm font-bold mb-2">Nivel:</label>
+            <label className="block text-sm font-bold mb-2">Reprise:</label>
             <select
-              value={filtroNivel}
-              onChange={(e) => setFiltroNivel(e.target.value)}
+              value={filtroReprise}
+              onChange={(e) => setFiltroReprise(e.target.value)}
               className="input w-full"
             >
-              <option value="">Todos</option>
-              {niveles.map((n) => (
-                <option key={n} value={n}>{n}</option>
+              <option value="">Todas</option>
+              {reprises.map((r) => (
+                <option key={r} value={r}>{r}</option>
               ))}
             </select>
           </div>
@@ -707,10 +624,8 @@ const categorias = Array.from(
       ) : (
         <div className="space-y-8">
 {pruebasFiltradas.map((prueba) => {
-            const esEquipos = prueba.es_equipos;
             const conPuntuacion = prueba.clasificaciones.filter((c) => c.numJueces > 0);
             const top3Individual = [...conPuntuacion].sort((a, b) => b.media - a.media).slice(0, 3);
-            const top3Equipos = prueba.equipos.slice(0, 3);
 
             return (
               <div key={prueba.prueba_id} className="card overflow-hidden">
@@ -754,15 +669,14 @@ const categorias = Array.from(
                       </div>
                       <p className="text-sm opacity-75">
                         {formatearFecha(prueba.fecha)} | {prueba.hora_inicio.substring(0, 5)}
+                        {prueba.pista && ' | ' + prueba.pista}
                         {prueba.categoria && ' | ' + prueba.categoria}
                         {prueba.reprise_nombre && ' | ' + prueba.reprise_nombre}
                       </p>
                     </div>
 <div className="text-right">
-                      <p className="text-xs opacity-75">{esEquipos ? 'Equipos' : 'Binomios'}</p>
-                      <p className="text-2xl font-bold">
-                        {esEquipos ? prueba.equipos.length : prueba.clasificaciones.length}
-                      </p>
+                      <p className="text-xs opacity-75">Binomios puntuados</p>
+                      <p className="text-2xl font-bold">{prueba.clasificaciones.length}</p>
                     </div>
                   </div>
                 </div>
@@ -788,19 +702,18 @@ const categorias = Array.from(
                 )}
 
 {/* PESTANA INDIVIDUAL */}
-                {!esEquipos && (
-                  <>
+                <>
                     {top3Individual.length > 0 && (
                       <div className="p-6 bg-gradient-to-b from-gray-50 to-white border-b">
                         <p className="text-center text-sm text-gray-600 mb-4 font-semibold uppercase tracking-wide">
-                          Podio Individual
+                          Podio
                         </p>
                         <div className="flex items-end justify-center gap-4">
                           {top3Individual[1] && (
                             <div className="text-center flex-1 max-w-xs">
                               <div className="text-4xl mb-2">🥈</div>
                               <div className="bg-gray-200 rounded-t-lg p-4 pt-8 pb-4">
-                                <p className="font-bold truncate">{top3Individual[1].jinete}</p>
+                                <p className="font-bold truncate">{nombreConMarca(top3Individual[1].jinete, top3Individual[1].pendiente)}</p>
                                 <p className="text-xs text-gray-600 truncate">{top3Individual[1].caballo}</p>
 
                                 <p className="text-xl font-bold mt-2">
@@ -816,7 +729,7 @@ const categorias = Array.from(
                             <div className="text-center flex-1 max-w-xs">
                               <div className="text-5xl mb-2">🥇</div>
                               <div className="bg-yellow-200 rounded-t-lg p-4 pt-8 pb-4">
-                                <p className="font-bold truncate">{top3Individual[0].jinete}</p>
+                                <p className="font-bold truncate">{nombreConMarca(top3Individual[0].jinete, top3Individual[0].pendiente)}</p>
                                 <p className="text-xs text-gray-700 truncate">{top3Individual[0].caballo}</p>
 
                                 <p className="text-2xl font-bold mt-2">
@@ -832,7 +745,7 @@ const categorias = Array.from(
                             <div className="text-center flex-1 max-w-xs">
                               <div className="text-4xl mb-2">🥉</div>
                               <div className="bg-orange-200 rounded-t-lg p-4 pt-8 pb-4">
-                                <p className="font-bold text-sm truncate">{top3Individual[2].jinete}</p>
+                                <p className="font-bold text-sm truncate">{nombreConMarca(top3Individual[2].jinete, top3Individual[2].pendiente)}</p>
                                 <p className="text-xs text-gray-700 truncate">{top3Individual[2].caballo}</p>
 
                                 <p className="text-lg font-bold mt-2">
@@ -894,10 +807,10 @@ const categorias = Array.from(
                                     <td className="hidden sm:table-cell text-center font-bold">
                                       {c.dorsal}
                                     </td>
-                                    <td className="hidden sm:table-cell">{c.jinete}</td>
+                                    <td className="hidden sm:table-cell">{nombreConMarca(c.jinete, c.pendiente)}</td>
                                     <td className="hidden sm:table-cell">{c.caballo}</td>
                                     <td className="sm:hidden">
-                                      <span className="block">{c.jinete}</span>
+                                      <span className="block">{nombreConMarca(c.jinete, c.pendiente)}</span>
                                       <span className="block text-xs font-normal text-gray-500">
                                         {c.caballo}
                                       </span>
@@ -1017,175 +930,10 @@ const categorias = Array.from(
                         </table>
                       </div>
                     )}
-                  </>
-                )}
-
-{/* PESTANA EQUIPOS */}
-                {esEquipos && (
-                  <>
-                    {top3Equipos.length > 0 && (
-                      <div className="p-6 bg-gradient-to-b from-teal-50 to-white border-b">
-                        <p className="text-center text-sm text-gray-600 mb-4 font-semibold uppercase tracking-wide">
-                          Podio por Equipos
-                        </p>
-                        <div className="flex items-end justify-center gap-4">
-                          {top3Equipos[1] && (
-                            <div className="text-center flex-1 max-w-xs">
-                              <div className="text-4xl mb-2">🥈</div>
-                              <div className="bg-gray-200 rounded-t-lg p-4 pt-8 pb-4">
-                                <p className="font-bold truncate">{top3Equipos[1].equipo_nombre}</p>
-                                <p className="text-xl font-bold mt-2">
-                                  {top3Equipos[1].puntuacion_equipo.toFixed(2)}%
-                                </p>
-                              </div>
-                              <div className="bg-gray-300 h-12 flex items-center justify-center font-bold text-2xl text-gray-700">
-                                2
-                              </div>
-                            </div>
-                          )}
-                          {top3Equipos[0] && (
-                            <div className="text-center flex-1 max-w-xs">
-                              <div className="text-5xl mb-2">🥇</div>
-                              <div className="bg-yellow-200 rounded-t-lg p-4 pt-8 pb-4">
-                                <p className="font-bold truncate">{top3Equipos[0].equipo_nombre}</p>
-                                <p className="text-2xl font-bold mt-2">
-                                  {top3Equipos[0].puntuacion_equipo.toFixed(2)}%
-                                </p>
-                              </div>
-                              <div className="bg-yellow-400 h-16 flex items-center justify-center font-bold text-3xl text-yellow-900">
-                                1
-                              </div>
-                            </div>
-                          )}
-                          {top3Equipos[2] && (
-                            <div className="text-center flex-1 max-w-xs">
-                              <div className="text-4xl mb-2">🥉</div>
-                              <div className="bg-orange-200 rounded-t-lg p-4 pt-8 pb-4">
-                                <p className="font-bold text-sm truncate">{top3Equipos[2].equipo_nombre}</p>
-                                <p className="text-lg font-bold mt-2">
-                                  {top3Equipos[2].puntuacion_equipo.toFixed(2)}%
-                                </p>
-                              </div>
-                              <div className="bg-orange-400 h-8 flex items-center justify-center font-bold text-2xl text-orange-900">
-                                3
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                      </div>
+                    {prueba.clasificaciones.some((c) => c.pendiente) && (
+                      <p className="border-t px-4 py-2 text-xs text-gray-600">* Pendiente de confirmación en la RFHE.</p>
                     )}
-
-                    <div className="table-responsive">
-                      <table className="table">
-                        <thead>
-                          <tr>
-                            <th className="text-center w-16">Pos.</th>
-                            <th>Equipo</th>
-                            <th className="text-center w-20">#</th>
-                            <th>Jinete</th>
-                            <th>Caballo</th>
-                            <th className="text-right w-28">%</th>
-                            <th className="text-center w-28"></th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {prueba.equipos.map((eq) => (
-                            <Fragment key={eq.equipo_id}>
-                              {eq.miembros.map((m, idx) => {
-                                const participacionDetalle = prueba.clasificaciones.find(
-                                  (c) => c.dorsal === m.dorsal && c.jinete === m.nombre_jinete
-                                );
-                                const keyDetalle = eq.equipo_id + '-det-' + m.dorsal;
-                                const abiertoEq = expandidos.includes(keyDetalle);
-                                return (
-                                  <Fragment key={eq.equipo_id + '-' + m.posicion_miembro}>
-                                    <tr className={idx === 0 ? colorPuesto(eq.posicion_equipo) : ''}>
-                                      {idx === 0 && (
-                                        <td className="text-center font-bold align-top" rowSpan={eq.miembros.length}>
-                                          {medallaEmoji(eq.posicion_equipo)} {eq.posicion_equipo}º
-                                        </td>
-                                      )}
-                                      {idx === 0 && (
-                                        <td className="font-bold align-top" rowSpan={eq.miembros.length}>
-                                          {eq.equipo_nombre}
-                                          <div className="text-lg font-bold text-teal-700 mt-1">
-                                            {eq.puntuacion_equipo.toFixed(2)}%
-                                          </div>
-                                        </td>
-                                      )}
-                                      <td className="text-center text-gray-500">{m.posicion_miembro}</td>
-                                      <td>{m.nombre_jinete}</td>
-                                      <td>{m.nombre_caballo}</td>
-                                      <td className="text-right font-bold">{m.porcentaje.toFixed(2)}%</td>
-                                      <td className="text-center">
-                                        {participacionDetalle && participacionDetalle.ejercicios.length > 0 ? (
-                                          <button
-                                            onClick={() => setExpandidos((prev) => abiertoEq ? prev.filter((x) => x !== keyDetalle) : [...prev, keyDetalle])}
-                                            className="text-primary hover:underline text-sm font-medium"
-                                          >
-                                            {abiertoEq ? 'Ocultar' : 'Ver detalle'}
-                                          </button>
-                                        ) : (
-                                          <span className="text-xs text-gray-400">-</span>
-                                        )}
-                                      </td>
-                                    </tr>
-                                    {abiertoEq && participacionDetalle && (
-                                      <tr>
-                                        <td colSpan={7} className="bg-blue-50 p-4">
-                                          <h4 className="font-bold mb-2">Detalle por ejercicio · {m.nombre_jinete} / {m.nombre_caballo}</h4>
-                                          <div className="table-responsive">
-                                            <table className="table text-sm">
-                                              <thead>
-                                                <tr>
-                                                  <th className="text-center w-14">N</th>
-                                                  <th className="w-16">Letra</th>
-                                                  <th>Movimiento</th>
-                                                  <th className="text-center w-16">Coef</th>
-                                                  {letrasJueces.map((l) => (<th key={l} className="text-center w-20">{l}</th>))}
-                                                  <th className="text-center w-24">Media</th>
-                                                </tr>
-                                              </thead>
-                                              <tbody>
-                                                {participacionDetalle.ejercicios.map((ej) => {
-                                                  const notas = letrasJueces.map((l) => ej.notas[l]).filter((n) => n !== undefined) as number[];
-                                                  const mediaEj = notas.length > 0 ? notas.reduce((a, b) => a + b, 0) / notas.length : 0;
-                                                  return (
-                                                    <tr key={ej.id}>
-                                                      <td className="text-center font-bold">{ej.numero_orden}</td>
-                                                      <td className="font-mono text-xs">{ej.letra || '-'}</td>
-                                                      <td className="text-xs">{ej.descripcion}</td>
-                                                      <td className="text-center">{ej.coeficiente > 1 ? 'x' + ej.coeficiente : '1'}</td>
-                                                      {letrasJueces.map((l) => (<td key={l} className="text-center">{ej.notas[l] !== undefined ? ej.notas[l].toFixed(1) : '-'}</td>))}
-                                                      <td className="text-center font-bold">{mediaEj.toFixed(2)}</td>
-                                                    </tr>
-                                                  );
-                                                })}
-                                              </tbody>
-                                              <tfoot>
-                                                <tr className="bg-gray-100 border-t-2 font-bold">
-                                                  <td colSpan={4} className="text-right pr-2">SUMA:</td>
-                                                  {letrasJueces.map((l) => {
-                                                    const punt = participacionDetalle.puntuaciones.find((p) => p.letra === l);
-                                                    return (<td key={l} className="text-center">{punt ? punt.puntuacion.toFixed(2) + '%' : '-'}</td>);
-                                                  })}
-                                                  <td className="text-center text-blue-700">{participacionDetalle.media.toFixed(2)}%</td>
-                                                </tr>
-                                              </tfoot>
-                                            </table>
-                                          </div>
-                                        </td>
-                                      </tr>
-                                    )}
-                                  </Fragment>
-                                );
-                              })}
-                            </Fragment>
-                          ))}</tbody>
-                      </table>
-                    </div>
                   </>
-                )}
               </div>
             );
           })}

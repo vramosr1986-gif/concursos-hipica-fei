@@ -336,7 +336,6 @@ function EstadisticasContent() {
   const [loading, setLoading] = useState(true);
   const [cargando, setCargando] = useState(false);
   const [error, setError] = useState('');
-  const [filtroTipo, setFiltroTipo] = useState<'todas' | 'individuales' | 'equipos'>('todas');
   const [filtroCategoria, setFiltroCategoria] = useState('');
   const [filtroNivel, setFiltroNivel] = useState('');
   const [refreshKey, setRefreshKey] = useState(0);
@@ -490,14 +489,12 @@ function EstadisticasContent() {
 
   const stats = useMemo(() => {
     const filtradas = datos.pruebas.filter((p) => {
-      if (filtroTipo === 'individuales' && p.tipo_codigo === 'EQU') return false;
-      if (filtroTipo === 'equipos' && p.tipo_codigo !== 'EQU') return false;
       if (filtroCategoria && p.categoria !== filtroCategoria) return false;
       if (filtroNivel && p.nivel_codigo !== filtroNivel) return false;
       return true;
     });
     return calcularStats(filtradas, datos.partes, datos.puntos);
-  }, [datos, filtroTipo, filtroCategoria, filtroNivel]);
+  }, [datos, filtroCategoria, filtroNivel]);
 
   const fmt = (n: number) => (Number.isFinite(n) ? n.toFixed(2) + '%' : '-');
   const notafmt = (n: number) => (Number.isFinite(n) ? n.toFixed(2) : '-');
@@ -532,14 +529,6 @@ function EstadisticasContent() {
               {concursos.map((c) => (
                 <option key={c.id} value={c.id}>{c.nombre}{c.ubicacion ? ' - ' + c.ubicacion : ''}</option>
               ))}
-            </select>
-          </div>
-          <div>
-            <label className="block text-sm font-bold mb-2">Tipo de prueba:</label>
-            <select value={filtroTipo} onChange={(e) => setFiltroTipo(e.target.value as any)} className="input w-full">
-              <option value="todas">Todas</option>
-              <option value="individuales">Individuales</option>
-              <option value="equipos">Por equipos</option>
             </select>
           </div>
           <div>
