@@ -93,7 +93,7 @@ export function Navbar() {
         { href: '/admin/concursos', label: 'Concursos', Icon: CalendarDays },
         { href: '/admin/pruebas', label: 'Pruebas', Icon: ClipboardList },
         { href: '/admin/jueces', label: 'Jueces', Icon: Gavel },
-        { href: '/admin/binomios', label: 'Binomios', Icon: HorseIcon },
+        { href: '/admin/binomios', label: 'Jinetes y caballos', Icon: HorseIcon },
         { href: '/admin/reprises', label: 'Reprises', Icon: ListChecks },
         { href: '/admin/usuarios', label: 'Usuarios', Icon: Users },
       ]

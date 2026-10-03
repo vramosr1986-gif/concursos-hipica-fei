@@ -28,8 +28,8 @@ const modulos = [
   },
   {
     href: '/admin/binomios',
-    titulo: 'Binomios',
-    descripcion: 'Catálogo de jinetes y caballos con su licencia.',
+    titulo: 'Jinetes y caballos',
+    descripcion: 'Binomios de los concursos: los de la RFHE llegan solos; aquí se añaden los manuales y se corrigen datos.',
     Icon: HorseIcon,
     color: 'bg-[#b88746]/15 text-[#b88746] group-hover:bg-[#b88746] group-hover:text-white',
   },
