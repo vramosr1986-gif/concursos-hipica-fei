@@ -41,7 +41,6 @@ export default function NuevoConcursoPage() {
   const [juecesError, setJuecesError] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const [rfheUrl, setRfheUrl] = useState('');
   const [traerDeRfhe, setTraerDeRfhe] = useState(true);
   const [importacion, setImportacion] = useState<ResultadoImportacion | null>(null);
   const [creado, setCreado] = useState<{ id: string; avisos: string[] } | null>(null);
@@ -52,11 +51,12 @@ export default function NuevoConcursoPage() {
     const precarga = Object.fromEntries(
       CAMPOS_CONCURSO.filter((c) => params.get(c)).map((c) => [c, params.get(c) as string])
     );
+    // El calendario RFHE pasa el enlace como ?rfhe=...
+    if (params.get('rfhe')) precarga.rfhe_url = params.get('rfhe') as string;
     if (Object.keys(precarga).length > 0) {
       setFormData((actual) => ({ ...actual, ...precarga }));
       setDesdeRfhe(true);
     }
-    setRfheUrl(params.get('rfhe') || '');
   }, []);
 
   useEffect(() => {
@@ -167,15 +167,15 @@ export default function NuevoConcursoPage() {
       }
 
       // 3. Si viene de la RFHE, traer inscritos y pruebas
-      if (rfheUrl && traerDeRfhe) {
+      if (formData.rfhe_url && traerDeRfhe) {
         try {
-          setImportacion(await importarDesdeRfhe(concurso.id, rfheUrl));
+          setImportacion(await importarDesdeRfhe(concurso.id, formData.rfhe_url));
         } catch (err) {
           avisos.push(`No se pudieron traer los inscritos y pruebas de la RFHE: ${err instanceof Error ? err.message : 'error desconocido'}. Puedes repetirlo desde la ficha del concurso.`);
         }
       }
 
-      if (avisos.length > 0 || (rfheUrl && traerDeRfhe)) {
+      if (avisos.length > 0 || (formData.rfhe_url && traerDeRfhe)) {
         // Se queda en esta pantalla para enseñar el resumen antes de ir al concurso.
         setCreado({ id: concurso.id, avisos });
         return;
@@ -233,7 +233,7 @@ export default function NuevoConcursoPage() {
         <form onSubmit={handleSubmit} className="card p-6 space-y-8">
           <ConcursoCampos datos={formData} onChange={setFormData} />
 
-          {rfheUrl && (
+          {formData.rfhe_url && (
             <label className="flex items-start gap-3 rounded border border-[#173b2f]/20 bg-[#173b2f]/5 p-4">
               <input
                 type="checkbox"

@@ -10,16 +10,18 @@ export type DatosConcurso = {
   ubicacion: string;
   organizador: string;
   federacion: string;
+  /** Enlace del concurso en la web de la RFHE (vacío = concurso manual). */
+  rfhe_url: string;
 };
 
 export const CAMPOS_CONCURSO = [
-  'nombre', 'tipo', 'fecha_inicio', 'fecha_fin', 'provincia', 'ubicacion', 'organizador', 'federacion',
+  'nombre', 'tipo', 'fecha_inicio', 'fecha_fin', 'provincia', 'ubicacion', 'organizador', 'federacion', 'rfhe_url',
 ] as const;
 
 export function concursoVacio(): DatosConcurso {
   return {
     nombre: '', tipo: '', fecha_inicio: '', fecha_fin: '',
-    provincia: '', ubicacion: '', organizador: '', federacion: '',
+    provincia: '', ubicacion: '', organizador: '', federacion: '', rfhe_url: '',
   };
 }
 
@@ -35,6 +37,7 @@ export function datosParaGuardar(datos: DatosConcurso) {
     ubicacion: limpio(datos.ubicacion),
     organizador: limpio(datos.organizador),
     federacion: limpio(datos.federacion),
+    rfhe_url: limpio(datos.rfhe_url),
   };
 }
 
@@ -42,6 +45,9 @@ export function validarConcurso(datos: DatosConcurso): string | null {
   if (!datos.nombre.trim()) return 'El nombre es obligatorio';
   if (!datos.fecha_inicio || !datos.fecha_fin) return 'Las fechas de inicio y fin son obligatorias';
   if (datos.fecha_fin < datos.fecha_inicio) return 'La fecha de fin no puede ser anterior a la de inicio';
+  if (datos.rfhe_url.trim() && !/^https:\/\/(www\.|gestion\.)?cbservicios\.net\//i.test(datos.rfhe_url.trim())) {
+    return 'El enlace de la RFHE debe ser una dirección de la web de la Federación (cbservicios.net)';
+  }
   return null;
 }
 
@@ -93,6 +99,13 @@ export function ConcursoCampos({ datos, onChange }: {
       <div>
         {etiqueta('federacion', 'Federación')}
         <input type="text" placeholder="Ej. Federación Hípica de Madrid" {...campo('federacion')} />
+      </div>
+      <div className="md:col-span-2">
+        {etiqueta('rfhe_url', 'Enlace del concurso en la web de la RFHE')}
+        <input type="url" placeholder="Solo si es un concurso de la Federación: https://www.cbservicios.net/..." {...campo('rfhe_url')} />
+        <p className="mt-1 text-xs text-gray-500">
+          Queda guardado para traer o actualizar los inscritos y las pruebas sin tener que buscarlo otra vez. Déjalo vacío si el concurso es manual.
+        </p>
       </div>
     </div>
   );

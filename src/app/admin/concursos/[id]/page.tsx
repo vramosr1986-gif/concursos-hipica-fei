@@ -120,6 +120,7 @@ export default function EditarConcursoPage() {
           ubicacion: data.ubicacion || '',
           organizador: data.organizador || '',
           federacion: data.federacion || '',
+          rfhe_url: data.rfhe_url || '',
         });
       }
       await cargarJuecesResumen();
@@ -175,6 +176,8 @@ export default function EditarConcursoPage() {
       {/* PARTICIPANTES DE LA RFHE (actualizar o importar por primera vez) */}
       <ImportarRfhe
         concursoId={concursoId}
+        nombre={concurso.nombre}
+        fechaInicio={concurso.fecha_inicio}
         urlGuardada={concurso.rfhe_url}
         onImportado={() => {
           concursoService.getById(concursoId).then(({ data }) => data && setConcurso(data));
