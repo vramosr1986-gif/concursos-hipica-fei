@@ -268,7 +268,7 @@ function decodificarHtml(bytes: Buffer, contentType: string): string {
 }
 
 async function extraerPdf(url: string, bytes: Buffer) {
-  const pdf = await getDocument({ data: new Uint8Array(bytes), disableWorker: true }).promise;
+  const pdf = await getDocument({ data: new Uint8Array(bytes) }).promise;
   const paginas: { numero: number; texto: string }[] = [];
 
   for (let numero = 1; numero <= pdf.numPages; numero += 1) {
