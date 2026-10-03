@@ -13,6 +13,8 @@ type Binomio = {
   anio_nacimiento_caballo: number | null;
   fecha_nacimiento_jinete: string | null;
   licencia_federativa: string | null;
+  ldn_jinete: string | null;
+  lac_caballo: string | null;
 };
 
 export default function EditarBinomioPage() {
@@ -27,6 +29,8 @@ export default function EditarBinomioPage() {
     anio_nacimiento_caballo: '',
     fecha_nacimiento_jinete: '',
     licencia_federativa: '',
+    ldn_jinete: '',
+    lac_caballo: '',
   });
   const [loading, setLoading] = useState(true);
   const [guardando, setGuardando] = useState(false);
@@ -37,7 +41,7 @@ export default function EditarBinomioPage() {
       try {
         const { data, error: dbErr } = await supabase
           .from('binomios')
-          .select('id, nombre_jinete, nombre_caballo, anio_nacimiento_caballo, fecha_nacimiento_jinete, licencia_federativa')
+          .select('id, nombre_jinete, nombre_caballo, anio_nacimiento_caballo, fecha_nacimiento_jinete, licencia_federativa, ldn_jinete, lac_caballo')
           .eq('id', binomioId)
           .single();
 
@@ -50,6 +54,8 @@ export default function EditarBinomioPage() {
           anio_nacimiento_caballo: data.anio_nacimiento_caballo ? String(data.anio_nacimiento_caballo) : '',
           fecha_nacimiento_jinete: data.fecha_nacimiento_jinete || '',
           licencia_federativa: data.licencia_federativa || '',
+          ldn_jinete: data.ldn_jinete || '',
+          lac_caballo: data.lac_caballo || '',
         });
       } catch (err: any) {
         setError(err.message || 'Error al cargar el binomio');
@@ -85,6 +91,8 @@ export default function EditarBinomioPage() {
             : null,
           fecha_nacimiento_jinete: formData.fecha_nacimiento_jinete || null,
           licencia_federativa: formData.licencia_federativa.trim() || null,
+          ldn_jinete: formData.ldn_jinete.trim() || null,
+          lac_caballo: formData.lac_caballo.trim() || null,
         }),
       });
 
@@ -203,6 +211,67 @@ export default function EditarBinomioPage() {
               }
               className="input w-full"
             />
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-bold mb-2">
+                LDN del jinete
+              </label>
+              <input
+                type="text"
+                placeholder="Ej. 12345678"
+                value={formData.ldn_jinete}
+                onChange={(e) =>
+                  setFormData({ ...formData, ldn_jinete: e.target.value })
+                }
+                className="input w-full"
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                Número de licencia de RFHE
+              </p>
+            </div>
+
+            <div>
+              <label className="block text-sm font-bold mb-2">
+                LAC del caballo
+              </label>
+              <input
+                type="text"
+                placeholder="Ej. 87654321"
+                value={formData.lac_caballo}
+                onChange={(e) =>
+                  setFormData({ ...formData, lac_caballo: e.target.value })
+                }
+                className="input w-full"
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                Número de registro de RFHE
+              </p>
+            </div>
+          </div>
+
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <label className="text-sm font-bold">RFHE</label>
+              <button
+                type="button"
+                onClick={() => window.open('https://www.cbservicios.net/Magic94Scripts/Mgrqispi94.dll?APPNAME=CBRFHE&PRGNAME=RFHEBUSJIN', '_blank')}
+                className="btn btn-sm btn-outline text-xs"
+              >
+                🔍 Buscar LDN
+              </button>
+            </div>
+            <div className="flex items-center justify-between">
+              <div></div>
+              <button
+                type="button"
+                onClick={() => window.open('https://www.cbservicios.net/Magic94Scripts/Mgrqispi94.dll?APPNAME=CBRFHE&PRGNAME=RFHEBUSCAB', '_blank')}
+                className="btn btn-sm btn-outline text-xs"
+              >
+                🔍 Buscar LAC
+              </button>
+            </div>
             <ConsultaRfhe />
           </div>
 

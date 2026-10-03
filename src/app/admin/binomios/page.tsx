@@ -3,7 +3,6 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
-import ModalBuscarRfhe from '@/components/ModalBuscarRfhe';
 
 type BinomioConCategoria = {
   binomio_id: string;
@@ -54,8 +53,6 @@ export default function AdminBinomiosPage() {
   const [binomios, setBinomios] = useState<BinomioConCategoria[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [modalAbierto, setModalAbierto] = useState(false);
-  const [tipoModal, setTipoModal] = useState<'jinete' | 'caballo'>('jinete');
 
   const cargarBinomios = async () => {
     setLoading(true);
@@ -148,9 +145,11 @@ export default function AdminBinomiosPage() {
     }
   };
 
-  const abrirBuscadorRfhe = (tipo: 'jinete' | 'caballo') => {
-    setTipoModal(tipo);
-    setModalAbierto(true);
+  const abrirRfhe = (tipo: 'jinete' | 'caballo') => {
+    const baseUrl = 'https://www.cbservicios.net/Magic94Scripts/Mgrqispi94.dll?APPNAME=CBRFHE&PRGNAME=';
+    const prgname = tipo === 'jinete' ? 'RFHEBUSJIN' : 'RFHEBUSCAB';
+    // Abre RFHE directamente (es público, no se necesita validación)
+    window.open(baseUrl + prgname, '_blank');
   };
 
   const chipCategoria = (cat: string | null) => {
@@ -293,19 +292,19 @@ export default function AdminBinomiosPage() {
                           <div className="dropdown dropdown-end">
                             <button
                               className="btn btn-sm btn-outline text-sm px-1.5 py-0.5"
-                              title="Buscar en RFHE"
+                              title="Abrir RFHE en ventana nueva"
                             >
                               🔍
                             </button>
                             <ul className="dropdown-content menu bg-base-100 rounded-box z-[1] w-52 p-2 shadow">
                               <li>
-                                <a onClick={() => abrirBuscadorRfhe('jinete')}>
-                                  LDN - Buscar Jinete
+                                <a onClick={() => abrirRfhe('jinete')}>
+                                  LDN - Abrir búsqueda Jinete
                                 </a>
                               </li>
                               <li>
-                                <a onClick={() => abrirBuscadorRfhe('caballo')}>
-                                  LAC - Buscar Caballo
+                                <a onClick={() => abrirRfhe('caballo')}>
+                                  LAC - Abrir búsqueda Caballo
                                 </a>
                               </li>
                             </ul>
@@ -327,12 +326,6 @@ export default function AdminBinomiosPage() {
           </div>
         </div>
       )}
-
-      <ModalBuscarRfhe
-        isOpen={modalAbierto}
-        onClose={() => setModalAbierto(false)}
-        tipo={tipoModal}
-      />
     </div>
   );
 }
