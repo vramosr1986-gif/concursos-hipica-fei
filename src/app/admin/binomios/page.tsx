@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
+import { BanderaFH } from '@/components/BanderaFH';
 
 type EstadoValidacion = 'pendiente' | 'valido' | 'no_valido';
 
@@ -12,6 +13,8 @@ type Binomio = {
   nombre_caballo: string;
   ldn_jinete: string | null;
   lac_caballo: string | null;
+  fh_jinete: string | null;
+  fh_caballo: string | null;
   fecha_nacimiento_jinete: string | null;
   anio_nacimiento_caballo: number | null;
   estado_validacion: EstadoValidacion;
@@ -85,7 +88,7 @@ export default function JinetesYCaballosPage() {
       const [binomiosRes, categoriasRes, inscripcionesRes, concursosRes] = await Promise.all([
         supabase
           .from('binomios')
-          .select('id, nombre_jinete, nombre_caballo, ldn_jinete, lac_caballo, fecha_nacimiento_jinete, anio_nacimiento_caballo, estado_validacion')
+          .select('id, nombre_jinete, nombre_caballo, ldn_jinete, lac_caballo, fh_jinete, fh_caballo, fecha_nacimiento_jinete, anio_nacimiento_caballo, estado_validacion')
           .order('nombre_jinete'),
         supabase.from('v_binomios_categorias').select('binomio_id, categoria_principal'),
         supabase.from('inscripciones').select('binomio_id, concurso_id'),
@@ -223,8 +226,8 @@ export default function JinetesYCaballosPage() {
                     <th className="px-3 py-2">Jinete</th>
                     <th className="px-3 py-2">Caballo</th>
                     <th className="px-3 py-2">Categoría</th>
-                    <th className="px-3 py-2">Origen y concursos</th>
-                    <th className="px-3 py-2">Comprobado en la RFHE</th>
+                    <th className="whitespace-nowrap px-3 py-2">Origen y concursos</th>
+                    <th className="whitespace-nowrap px-3 py-2">Comprobado</th>
                     <th className="px-3 py-2" />
                   </tr>
                 </thead>
@@ -233,21 +236,21 @@ export default function JinetesYCaballosPage() {
                     const pendientes = faltan(b);
                     return (
                       <tr key={b.id} className="border-t border-[#eee9df] align-top even:bg-[#fffdfa]">
-                        <td className="min-w-44 px-3 py-2">
-                          <span className="font-medium">{b.nombre_jinete}</span>
+                        <td className="px-3 py-2">
+                          <span className="inline-flex items-center gap-1.5 font-medium"><BanderaFH codigo={b.fh_jinete} />{b.nombre_jinete}</span>
                           <span className="block text-xs text-gray-500">LDN {b.ldn_jinete || '—'}</span>
                         </td>
-                        <td className="min-w-40 px-3 py-2">
-                          {b.nombre_caballo}
+                        <td className="px-3 py-2">
+                          <span className="inline-flex items-center gap-1.5"><BanderaFH codigo={b.fh_caballo} />{b.nombre_caballo}</span>
                           <span className="block text-xs text-gray-500">LAC {b.lac_caballo || '—'}</span>
                         </td>
-                        <td className="min-w-36 px-3 py-2">
+                        <td className="px-3 py-2">
                           {b.categoria_principal ? NOMBRE_CATEGORIA[b.categoria_principal] || b.categoria_principal : <span className="text-gray-400">—</span>}
                           {pendientes.length > 0 && (
                             <span className="mt-1 block text-xs text-amber-700">Falta: {pendientes.join(' y ')}</span>
                           )}
                         </td>
-                        <td className="min-w-48 px-3 py-2">
+                        <td className="px-3 py-2">
                           <span className={`inline-block rounded px-2 py-0.5 text-xs font-medium ${vieneDeRfhe(b) ? 'bg-[#173b2f]/10 text-[#173b2f]' : 'bg-gray-100 text-gray-700'}`}>
                             {vieneDeRfhe(b) ? 'RFHE' : 'Añadido a mano'}
                           </span>
@@ -264,24 +267,31 @@ export default function JinetesYCaballosPage() {
                           )}
                         </td>
                         <td className="px-3 py-2">
+                          {vieneDeRfhe(b) ? (
+                            <span className="whitespace-nowrap text-sm text-[#173b2f]">Viene de la RFHE</span>
+                          ) : (
                           <select
                             aria-label={`Comprobado en la RFHE: ${b.nombre_jinete} / ${b.nombre_caballo}`}
                             value={b.estado_validacion}
                             onChange={(e) => cambiarValidacion(b, e.target.value as EstadoValidacion)}
-                            className="input text-sm"
+                            className="input w-40 text-sm"
                           >
                             <option value="pendiente">Sin comprobar</option>
                             <option value="valido">Sí, es correcto</option>
                             <option value="no_valido">No, hay un error</option>
                           </select>
+                          )}
                         </td>
                         <td className="whitespace-nowrap px-3 py-2 text-right">
                           <div className="flex flex-col items-end gap-1">
-                            <Link href={`/admin/binomios/${b.id}`} className="btn btn-outline btn-sm">Editar datos</Link>
-                            <button type="button" onClick={() => buscarJineteEnRfhe(b.nombre_jinete)} className="text-xs text-primary hover:underline" title="Abre la búsqueda de jinetes de la RFHE en otra pestaña">
+                            <Link href={`/admin/binomios/${b.id}`} className="btn btn-outline btn-sm whitespace-nowrap">Editar datos</Link>
+                            <button type="button" onClick={() => buscarJineteEnRfhe(b.nombre_jinete)} className="whitespace-nowrap text-xs text-primary hover:underline" title="Abre la búsqueda de jinetes de la RFHE en otra pestaña">
                               Buscar jinete en la RFHE
                             </button>
-                            <button type="button" onClick={() => borrar(b)} className="text-xs text-danger hover:underline">Borrar</button>
+                            <button type="button" onClick={() => window.open('https://www.cbservicios.net/Magic94Scripts/mgrqispi94.dll?APPNAME=CBRFHE&PRGNAME=RFHEBUSCAB', '_blank', 'noopener')} className="whitespace-nowrap text-xs text-primary hover:underline" title="Abre la búsqueda de caballos de la RFHE en otra pestaña (busca por una palabra del nombre)">
+                              Buscar caballo en la RFHE
+                            </button>
+                            <button type="button" onClick={() => borrar(b)} className="whitespace-nowrap text-xs text-danger hover:underline">Borrar</button>
                           </div>
                         </td>
                       </tr>
