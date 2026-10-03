@@ -17,6 +17,7 @@ type BinomioConCategoria = {
   categoria_caballo: string | null;
   categoria_principal: string | null;
   licencia_federativa: string | null;
+  estado_validacion: 'pendiente' | 'valido' | 'no_valido';
 };
 
 const COLOR_CATEGORIA: Record<string, string> = {
@@ -66,24 +67,28 @@ export default function AdminBinomiosPage() {
 
       if (dbError) throw dbError;
 
-      // Enriquecer con licencia_federativa desde la tabla original
+      // Enriquecer con licencia_federativa y estado_validacion desde la tabla original
       const ids = (data || []).map((b: any) => b.binomio_id);
-      let licencias: Record<string, string | null> = {};
+      let enriquecimiento: Record<string, any> = {};
 
       if (ids.length > 0) {
         const { data: binomiosData } = await supabase
           .from('binomios')
-          .select('id, licencia_federativa')
+          .select('id, licencia_federativa, estado_validacion')
           .in('id', ids);
 
         (binomiosData || []).forEach((b: any) => {
-          licencias[b.id] = b.licencia_federativa;
+          enriquecimiento[b.id] = {
+            licencia_federativa: b.licencia_federativa,
+            estado_validacion: b.estado_validacion || 'pendiente',
+          };
         });
       }
 
       const enriquecidos: BinomioConCategoria[] = (data || []).map((b: any) => ({
         ...b,
-        licencia_federativa: licencias[b.binomio_id] || null,
+        licencia_federativa: enriquecimiento[b.binomio_id]?.licencia_federativa || null,
+        estado_validacion: enriquecimiento[b.binomio_id]?.estado_validacion || 'pendiente',
       }));
 
       setBinomios(enriquecidos);
@@ -118,6 +123,32 @@ export default function AdminBinomiosPage() {
     }
   };
 
+  const changeEstadoValidacion = async (id: string, nuevoEstado: 'pendiente' | 'valido' | 'no_valido') => {
+    try {
+      const { error: dbError } = await supabase
+        .from('binomios')
+        .update({ estado_validacion: nuevoEstado })
+        .eq('id', id);
+
+      if (dbError) throw dbError;
+
+      // Actualizar en el estado local
+      setBinomios((actuales) =>
+        actuales.map((b) =>
+          b.binomio_id === id ? { ...b, estado_validacion: nuevoEstado } : b
+        )
+      );
+    } catch (err: any) {
+      alert(err.message || 'Error al cambiar el estado de validación');
+    }
+  };
+
+  const abrirRfhe = () => {
+    const baseUrl = 'https://www.cbservicios.net/Magic94Scripts/Mgrqispi94.dll?APPNAME=CBRFHE&PRGNAME=';
+    window.open(baseUrl + 'RFHEBUSJIN', '_blank');
+    window.open(baseUrl + 'RFHEBUSCAB', '_blank');
+  };
+
   const chipCategoria = (cat: string | null) => {
     if (!cat) return <span className="text-gray-400 text-xs">-</span>;
     const color = COLOR_CATEGORIA[cat] || 'bg-gray-100 text-gray-800';
@@ -125,6 +156,29 @@ export default function AdminBinomiosPage() {
     return (
       <span className={'px-2 py-0.5 rounded text-xs font-medium ' + color}>
         {nombre}
+      </span>
+    );
+  };
+
+  const chipEstadoValidacion = (estado: 'pendiente' | 'valido' | 'no_valido') => {
+    const estilos = {
+      pendiente: 'bg-yellow-100 text-yellow-800',
+      valido: 'bg-green-100 text-green-800',
+      no_valido: 'bg-red-100 text-red-800',
+    };
+    const iconos = {
+      pendiente: '🔄',
+      valido: '✓',
+      no_valido: '✗',
+    };
+    const textos = {
+      pendiente: 'Pendiente',
+      valido: 'Válido',
+      no_valido: 'No válido',
+    };
+    return (
+      <span className={'px-2 py-0.5 rounded text-xs font-medium ' + estilos[estado]}>
+        {iconos[estado]} {textos[estado]}
       </span>
     );
   };
@@ -185,6 +239,7 @@ export default function AdminBinomiosPage() {
                   <th className="text-center p-3">Cat. caballo</th>
                   <th className="text-center p-3">Categoria principal</th>
                   <th className="text-left p-3">Licencia</th>
+                  <th className="text-center p-3">Estado RFHE</th>
                   <th className="text-right p-3">Acciones</th>
                 </tr>
               </thead>
@@ -208,22 +263,57 @@ export default function AdminBinomiosPage() {
                     <td className="p-3 text-sm text-gray-600">
                       {b.licencia_federativa || '-'}
                     </td>
+                    <td className="p-3 text-center">
+                      {chipEstadoValidacion(b.estado_validacion)}
+                    </td>
                     <td className="p-3 text-right">
-                      <div className="flex gap-2 justify-end">
-                        <Link
-                          href={'/admin/binomios/' + b.binomio_id}
-                          className="btn btn-outline text-sm"
-                        >
-                          Editar
-                        </Link>
-                        <button
-                          onClick={() =>
-                            eliminarBinomio(b.binomio_id, b.nombre_jinete, b.nombre_caballo)
-                          }
-                          className="btn btn-outline text-danger text-sm"
-                        >
-                          Eliminar
-                        </button>
+                      <div className="flex flex-col gap-2">
+                        <div className="flex gap-1 justify-end flex-wrap">
+                          <button
+                            onClick={() => changeEstadoValidacion(b.binomio_id, 'valido')}
+                            className={`btn text-xs px-2 py-1 ${b.estado_validacion === 'valido' ? 'btn-success' : 'btn-outline'}`}
+                            title="Marcar como válido"
+                          >
+                            ✓
+                          </button>
+                          <button
+                            onClick={() => changeEstadoValidacion(b.binomio_id, 'no_valido')}
+                            className={`btn text-xs px-2 py-1 ${b.estado_validacion === 'no_valido' ? 'btn-danger' : 'btn-outline'}`}
+                            title="Marcar como no válido"
+                          >
+                            ✗
+                          </button>
+                          <button
+                            onClick={() => changeEstadoValidacion(b.binomio_id, 'pendiente')}
+                            className={`btn text-xs px-2 py-1 ${b.estado_validacion === 'pendiente' ? 'btn-warning' : 'btn-outline'}`}
+                            title="Marcar como pendiente"
+                          >
+                            🔄
+                          </button>
+                        </div>
+                        <div className="flex gap-1 justify-end">
+                          <button
+                            onClick={() => abrirRfhe()}
+                            className="btn btn-outline text-xs px-2 py-1"
+                            title="Abrir búsqueda RFHE"
+                          >
+                            🔍 RFHE
+                          </button>
+                          <Link
+                            href={'/admin/binomios/' + b.binomio_id}
+                            className="btn btn-outline text-xs px-2 py-1"
+                          >
+                            Editar
+                          </Link>
+                          <button
+                            onClick={() =>
+                              eliminarBinomio(b.binomio_id, b.nombre_jinete, b.nombre_caballo)
+                            }
+                            className="btn btn-outline text-danger text-xs px-2 py-1"
+                          >
+                            Eliminar
+                          </button>
+                        </div>
                       </div>
                     </td>
                   </tr>
