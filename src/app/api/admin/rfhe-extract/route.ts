@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { load } from 'cheerio';
 import { verificarAdmin } from '@/lib/api-guard';
+import { request as httpsRequest } from 'node:https';
+import { rootCertificates } from 'node:tls';
+import { RAPIDSSL_INTERMEDIATE_PEM } from '@/lib/rfhe-ca';
 
 export const runtime = 'nodejs';
 
@@ -81,62 +84,58 @@ function validarUrl(valor: unknown, campo: string): URL {
   return url;
 }
 
-async function leerRespuestaLimitada(response: Response): Promise<Buffer> {
-  const contentLength = Number(response.headers.get('content-length') || 0);
-  if (contentLength > MAX_BYTES) {
-    throw new Error('El archivo supera el límite de 8 MB');
-  }
+const CA_RFHE = [...rootCertificates, RAPIDSSL_INTERMEDIATE_PEM];
 
-  if (!response.body) return Buffer.alloc(0);
+function descargar(url: URL): Promise<{ bytes: Buffer; contentType: string }> {
+  return new Promise((resolve, reject) => {
+    const req = httpsRequest(
+      url,
+      {
+        ca: CA_RFHE,
+        timeout: TIMEOUT_MS,
+        headers: { 'User-Agent': 'ConcursosHipica/1.0 (RFHE import preview)' },
+      },
+      (res) => {
+        const status = res.statusCode || 0;
+        if (status >= 300 && status < 400) {
+          res.resume();
+          reject(new Error('RFHE respondió con una redirección; abre el enlace final y vuelve a intentarlo'));
+          return;
+        }
+        if (status < 200 || status >= 300) {
+          res.resume();
+          reject(new Error(`RFHE respondió con el estado ${status}`));
+          return;
+        }
+        if (Number(res.headers['content-length'] || 0) > MAX_BYTES) {
+          res.destroy();
+          reject(new Error('El archivo supera el límite de 8 MB'));
+          return;
+        }
 
-  const reader = response.body.getReader();
-  const chunks: Uint8Array[] = [];
-  let total = 0;
-
-  while (true) {
-    const { done, value } = await reader.read();
-    if (done) break;
-    total += value.byteLength;
-    if (total > MAX_BYTES) {
-      await reader.cancel();
-      throw new Error('El archivo supera el límite de 8 MB');
-    }
-    chunks.push(value);
-  }
-
-  return Buffer.concat(chunks.map((chunk) => Buffer.from(chunk)));
-}
-
-async function descargar(url: URL): Promise<{ bytes: Buffer; contentType: string }> {
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), TIMEOUT_MS);
-
-  try {
-    const response = await fetch(url, {
-      signal: controller.signal,
-      redirect: 'manual',
-      headers: { 'User-Agent': 'ConcursosHipica/1.0 (RFHE import preview)' },
+        const chunks: Buffer[] = [];
+        let total = 0;
+        res.on('data', (chunk: Buffer) => {
+          total += chunk.length;
+          if (total > MAX_BYTES) {
+            res.destroy();
+            reject(new Error('El archivo supera el límite de 8 MB'));
+            return;
+          }
+          chunks.push(chunk);
+        });
+        res.on('end', () =>
+          resolve({ bytes: Buffer.concat(chunks), contentType: String(res.headers['content-type'] || '') })
+        );
+        res.on('error', reject);
+      }
+    );
+    req.on('timeout', () => {
+      req.destroy(new Error('La consulta a RFHE agotó el tiempo de espera'));
     });
-
-    if (response.status >= 300 && response.status < 400) {
-      throw new Error('RFHE respondió con una redirección; abre el enlace final y vuelve a intentarlo');
-    }
-    if (!response.ok) {
-      throw new Error(`RFHE respondió con el estado ${response.status}`);
-    }
-
-    return {
-      bytes: await leerRespuestaLimitada(response),
-      contentType: response.headers.get('content-type') || '',
-    };
-  } catch (error) {
-    if (controller.signal.aborted) {
-      throw new Error('La consulta a RFHE agotó el tiempo de espera');
-    }
-    throw error;
-  } finally {
-    clearTimeout(timeout);
-  }
+    req.on('error', reject);
+    req.end();
+  });
 }
 
 function normalizarEncabezado(valor: string): string {
