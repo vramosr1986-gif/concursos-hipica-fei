@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { FileSearch } from 'lucide-react';
+import { ResultadoImportacion, ResumenImportacion, importarDesdeRfhe } from '@/components/ImportarRfhe';
 import { concursoService } from '@/lib/services';
 import { supabase } from '@/lib/supabase';
 import {
@@ -40,8 +41,12 @@ export default function NuevoConcursoPage() {
   const [juecesError, setJuecesError] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [rfheUrl, setRfheUrl] = useState('');
+  const [traerDeRfhe, setTraerDeRfhe] = useState(true);
+  const [importacion, setImportacion] = useState<ResultadoImportacion | null>(null);
+  const [creado, setCreado] = useState<{ id: string; avisos: string[] } | null>(null);
 
-  // Precarga desde "Crear concurso" del calendario RFHE (?nombre=...&fecha_inicio=...).
+  // Precarga desde "Crear concurso" del calendario RFHE (?nombre=...&fecha_inicio=...&rfhe=enlace).
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const precarga = Object.fromEntries(
@@ -51,6 +56,7 @@ export default function NuevoConcursoPage() {
       setFormData((actual) => ({ ...actual, ...precarga }));
       setDesdeRfhe(true);
     }
+    setRfheUrl(params.get('rfhe') || '');
   }, []);
 
   useEffect(() => {
@@ -143,11 +149,13 @@ export default function NuevoConcursoPage() {
       }
 
       // 2. Crear los jueces
+      const { data: { session } } = await supabase.auth.getSession();
+      const avisos: string[] = [];
       const juecesValidos = jueces.filter((j) => j.user_id && j.letra.trim());
       for (const j of juecesValidos) {
-        await fetch('/api/jueces', {
+        const res = await fetch('/api/jueces', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session?.access_token || ''}` },
           body: JSON.stringify({
             concurso_id: concurso.id,
             user_id: j.user_id,
@@ -155,8 +163,23 @@ export default function NuevoConcursoPage() {
             letra_oficial: j.letra.trim().toUpperCase(),
           }),
         });
+        if (!res.ok) avisos.push(`No se pudo guardar el juez ${j.nombre || ''}.`);
       }
 
+      // 3. Si viene de la RFHE, traer inscritos y pruebas
+      if (rfheUrl && traerDeRfhe) {
+        try {
+          setImportacion(await importarDesdeRfhe(concurso.id, rfheUrl));
+        } catch (err) {
+          avisos.push(`No se pudieron traer los inscritos y pruebas de la RFHE: ${err instanceof Error ? err.message : 'error desconocido'}. Puedes repetirlo desde la ficha del concurso.`);
+        }
+      }
+
+      if (avisos.length > 0 || (rfheUrl && traerDeRfhe)) {
+        // Se queda en esta pantalla para enseñar el resumen antes de ir al concurso.
+        setCreado({ id: concurso.id, avisos });
+        return;
+      }
       router.push(`/admin/concursos/${concurso.id}`);
     } catch (err: any) {
       setError(err.message || 'Error inesperado al guardar');
@@ -164,6 +187,21 @@ export default function NuevoConcursoPage() {
       setLoading(false);
     }
   };
+
+  if (creado) {
+    return (
+      <div className="container">
+        <div className="max-w-4xl mx-auto space-y-4">
+          <h1 className="text-3xl font-bold">Concurso creado</h1>
+          {importacion && <ResumenImportacion resultado={importacion} />}
+          {creado.avisos.map((aviso) => (
+            <p key={aviso} role="alert" className="rounded border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">{aviso}</p>
+          ))}
+          <Link href={`/admin/concursos/${creado.id}`} className="btn btn-primary">Ir al concurso</Link>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="container">
@@ -194,6 +232,23 @@ export default function NuevoConcursoPage() {
 
         <form onSubmit={handleSubmit} className="card p-6 space-y-8">
           <ConcursoCampos datos={formData} onChange={setFormData} />
+
+          {rfheUrl && (
+            <label className="flex items-start gap-3 rounded border border-[#173b2f]/20 bg-[#173b2f]/5 p-4">
+              <input
+                type="checkbox"
+                checked={traerDeRfhe}
+                onChange={(e) => setTraerDeRfhe(e.target.checked)}
+                className="mt-1"
+              />
+              <span>
+                <span className="block font-semibold">Traer también las pruebas y los binomios inscritos desde la RFHE</span>
+                <span className="block text-sm text-gray-600">
+                  Al guardar se crean solas las pruebas (una por reprise, en sábado o domingo) y se inscriben los jinetes y caballos de la lista de la Federación.
+                </span>
+              </span>
+            </label>
+          )}
 
           <hr />
 

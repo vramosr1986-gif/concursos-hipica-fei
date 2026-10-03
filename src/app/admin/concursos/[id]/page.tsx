@@ -7,7 +7,7 @@ import { Concurso } from '@/types';
 import { concursoService } from '@/lib/services';
 import { supabase } from '@/lib/supabase';
 import { PruebasSection } from './PruebasSection';
-import { EquiposSection } from './EquiposSection';
+import { ImportarRfhe } from '@/components/ImportarRfhe';
 import {
   ConcursoCampos, DatosConcurso, concursoVacio, datosParaGuardar, validarConcurso,
 } from '@/components/ConcursoCampos';
@@ -84,6 +84,7 @@ export default function EditarConcursoPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState('');
+  const [recargaPruebas, setRecargaPruebas] = useState(0);
 
   const [inscripciones, setInscripciones] = useState<Inscripcion[]>([]);
   const [nuevaInscripcion, setNuevaInscripcion] = useState<NuevaInscripcionForm>(inscripcionVacia());
@@ -382,6 +383,16 @@ export default function EditarConcursoPage() {
         </form>
       </div>
 
+      {/* IMPORTAR DESDE RFHE */}
+      <ImportarRfhe
+        concursoId={concursoId}
+        onImportado={() => {
+          cargarInscripciones();
+          cargarJuecesResumen();
+          setRecargaPruebas((n) => n + 1);
+        }}
+      />
+
       {/* INSCRIPCIONES */}
       <div className="card p-6 max-w-4xl mb-8">
         <div className="flex items-center justify-between mb-4">
@@ -516,8 +527,6 @@ export default function EditarConcursoPage() {
         </form>
       </div>
 
-      {/* EQUIPOS */}
-      <EquiposSection concursoId={concursoId} />
 
       {/* RESUMEN DE JUECES */}
       <div className="card p-6 max-w-4xl mb-8">
@@ -574,7 +583,7 @@ export default function EditarConcursoPage() {
       </div>
 
       {/* PRUEBAS */}
-      <PruebasSection concursoId={concursoId} fechaInicio={concurso.fecha_inicio} fechaFin={concurso.fecha_fin} />
+      <PruebasSection key={recargaPruebas} concursoId={concursoId} fechaInicio={concurso.fecha_inicio} fechaFin={concurso.fecha_fin} />
 
       {/* MODAL DE COHERENCIA */}
       {modalCoherencia.abierto && (

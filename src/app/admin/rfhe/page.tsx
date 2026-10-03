@@ -4,6 +4,7 @@ import { FormEvent, useState } from 'react';
 import Link from 'next/link';
 import { ArrowDown, ArrowDownUp, ArrowUp, CalendarPlus, ExternalLink, FileSearch, LoaderCircle, Users } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
+import { crearUrlInscritos, sugerirJornada } from '@/lib/rfhe-pruebas';
 import { compararPorInicio, formatearFecha } from '@/lib/fechas';
 
 type RepriseInscrito = {
@@ -49,19 +50,6 @@ type InscritoSortKey = 'numero' | 'jinete' | 'ldn' | 'federacionJinete' | 'cabal
 
 type FilaInscrito = InscritoRfhe & RepriseInscrito & { filaId: string };
 
-function sugerirJornada(reprise: string): string {
-  const nombre = reprise.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
-  const domingo = /\b(final(?:es)?|individual(?:es)?|kur|san\s*jorge|intermedia|gran\s*premio|grand\s*prix|sj|int[\s._-]*(?:i{1,2}|[12])|gp)\b/;
-  const sabado = /\b(preliminar(?:es)?|equipos|promocion|infantil(?:es)?|alevin(?:es)?|benjamin(?:es)?|n[0-4]|rider\s*[1-3]|ponis?\s*[abc])\b/;
-
-  // Clásica 1 se monta el sábado y Clásica 2 el domingo.
-  if (/\bclasica\s*1\b/.test(nombre)) return 'Sábado · jornada 1';
-  if (/\bclasica\s*2\b/.test(nombre)) return 'Domingo · jornada 2';
-  if (domingo.test(nombre)) return 'Domingo · jornada 2';
-  if (sabado.test(nombre)) return 'Sábado · jornada 1';
-  return 'Asignación manual';
-}
-
 type CalendarContest = {
   fecha_inicio: string;
   fecha_fin: string;
@@ -98,18 +86,6 @@ async function leerJsonApi<T>(response: Response): Promise<T> {
   } catch {
     const resumen = body.replace(/\s+/g, ' ').slice(0, 180);
     throw new Error(`La API respondió HTTP ${response.status} sin JSON: ${resumen || response.statusText}`);
-  }
-}
-
-function crearUrlInscritos(concursoUrl: string): string | null {
-  try {
-    const url = new URL(concursoUrl);
-    const programa = url.searchParams.get('PRGNAME');
-    if (!programa || !['RFHECALCON', 'RFHECONADM', 'RFHECONLISINS'].includes(programa)) return null;
-    url.searchParams.set('PRGNAME', 'RFHECONLISINS');
-    return url.toString();
-  } catch {
-    return null;
   }
 }
 
@@ -599,6 +575,7 @@ export default function RfheExtractionPage() {
                               fecha_fin: contest.fecha_fin,
                               provincia: contest.provincia,
                               ubicacion: contest.sede,
+                              rfhe: contest.urlDetalle,
                             })}`}
                             className="btn btn-sm btn-outline"
                             title="Abre el formulario de nuevo concurso con estos datos ya rellenos"
