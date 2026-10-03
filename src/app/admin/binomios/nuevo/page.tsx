@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { SelectorFederacion } from '@/components/BanderaFH';
 import { fetchConSesion } from '@/lib/juez-actual';
+import { buscarCaballoEnRfhe } from '@/lib/rfhe-busqueda';
 
 export default function NuevoBinomioPage() {
   const router = useRouter();
@@ -64,11 +65,13 @@ export default function NuevoBinomioPage() {
   };
 
   const abrirBusquedaCaballoRfhe = () => {
-    window.open(
-      'https://www.cbservicios.net/Magic94Scripts/Mgrqispi94.dll?APPNAME=CBRFHE&PRGNAME=RFHEBUSCAB',
-      '_blank',
-      'noopener,noreferrer'
-    );
+    const nombre = formData.nombre_caballo.trim();
+    if (!nombre) {
+      setError('Escribe el nombre del caballo antes de buscarlo en RFHE');
+      return;
+    }
+    setError('');
+    buscarCaballoEnRfhe(nombre);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -231,7 +234,7 @@ export default function NuevoBinomioPage() {
               <input id="lac_caballo" type="text" placeholder="Ej. 080640" value={formData.lac_caballo}
                 onChange={(e) => setFormData({ ...formData, lac_caballo: e.target.value })}
                 className="input w-full" />
-              <p className="mt-1 text-xs text-gray-500">En RFHE busca por una palabra del nombre y copia el LAC.</p>
+              <p className="mt-1 text-xs text-gray-500">Abre la búsqueda con el nombre del caballo ya puesto; copia el LAC del resultado correcto.</p>
             </div>
           </div>
 

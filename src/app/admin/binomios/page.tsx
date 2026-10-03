@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 import { BanderaFH } from '@/components/BanderaFH';
+import { buscarCaballoEnRfhe, buscarJineteEnRfhe } from '@/lib/rfhe-busqueda';
 
 type EstadoValidacion = 'pendiente' | 'valido' | 'no_valido';
 
@@ -51,27 +52,6 @@ function faltan(b: Binomio): string[] {
   if (!b.fecha_nacimiento_jinete) lista.push('Sin fecha del jinete');
   if (!b.anio_nacimiento_caballo) lista.push('Sin año del caballo');
   return lista;
-}
-
-/** Abre en otra pestaña la búsqueda de jinetes de la RFHE por apellidos. */
-function buscarJineteEnRfhe(nombre: string) {
-  const ventana = `rfhe-${Date.now()}`;
-  window.open('', ventana);
-  const form = document.createElement('form');
-  form.method = 'POST';
-  form.action = 'https://www.cbservicios.net/Magic94Scripts/mgrqispi94.dll?';
-  form.target = ventana;
-  const campos = { APPNAME: 'CBRFHE', PRGNAME: 'RFHEBUSJIN02', ARGUMENTS: 'APE,FIN', FIN: 'FIN', APE: nombre.split(',')[0]?.trim() || nombre.trim() };
-  for (const [name, value] of Object.entries(campos)) {
-    const input = document.createElement('input');
-    input.type = 'hidden';
-    input.name = name;
-    input.value = value;
-    form.appendChild(input);
-  }
-  document.body.appendChild(form);
-  form.submit();
-  form.remove();
 }
 
 export default function JinetesYCaballosPage() {
@@ -286,10 +266,10 @@ export default function JinetesYCaballosPage() {
                         <td className="whitespace-nowrap px-2 py-2 text-right">
                           <div className="flex flex-col items-end gap-1">
                             <Link href={`/admin/binomios/${b.id}`} className="btn btn-outline btn-sm whitespace-nowrap">Editar datos</Link>
-                            <button type="button" onClick={() => buscarJineteEnRfhe(b.nombre_jinete)} className="whitespace-nowrap text-xs text-primary hover:underline" title="Abre la búsqueda de jinetes de la RFHE en otra pestaña">
+                            <button type="button" onClick={() => buscarJineteEnRfhe(b.nombre_jinete)} className="whitespace-nowrap text-xs text-primary hover:underline" title="Abre en otra pestaña la búsqueda de este jinete en la RFHE">
                               Buscar jinete en la RFHE
                             </button>
-                            <button type="button" onClick={() => window.open('https://www.cbservicios.net/Magic94Scripts/mgrqispi94.dll?APPNAME=CBRFHE&PRGNAME=RFHEBUSCAB', '_blank', 'noopener')} className="whitespace-nowrap text-xs text-primary hover:underline" title="Abre la búsqueda de caballos de la RFHE en otra pestaña (busca por una palabra del nombre)">
+                            <button type="button" onClick={() => buscarCaballoEnRfhe(b.nombre_caballo)} className="whitespace-nowrap text-xs text-primary hover:underline" title="Abre en otra pestaña la búsqueda de este caballo en la RFHE">
                               Buscar caballo en la RFHE
                             </button>
                             <button type="button" onClick={() => borrar(b)} className="whitespace-nowrap text-xs text-danger hover:underline">Borrar</button>
