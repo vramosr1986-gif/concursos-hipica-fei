@@ -10,7 +10,10 @@ export const runtime = 'nodejs';
 
 type Reprise = { id: string; nombre: string; categoria: string | null };
 type CategoriaEdad = { id: string; codigo: string; nombre: string };
-type Binomio = { id: string; nombre_jinete: string; nombre_caballo: string; ldn_jinete: string | null; lac_caballo: string | null };
+type Binomio = {
+  id: string; nombre_jinete: string; nombre_caballo: string; ldn_jinete: string | null; lac_caballo: string | null;
+  fh_jinete: string | null; fh_caballo: string | null;
+};
 
 const clave = (texto: string | null | undefined) =>
   (texto || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/\s+/g, ' ').trim();
@@ -60,10 +63,13 @@ export async function POST(request: NextRequest) {
     const categorias = (catRes.data || []) as CategoriaEdad[];
 
     // ---- 1. Binomios (jinete + caballo), en el orden de la lista RFHE ----
-    type Fila = { jinete: string; ldn: string; caballo: string; lac: string; reprise: string; observaciones: string };
+    type Fila = { jinete: string; ldn: string; fhJinete: string; caballo: string; lac: string; fhCaballo: string; reprise: string; observaciones: string };
     const filas: Fila[] = inscritos.flatMap((i) => i.reprises
       .filter((r) => r.caballo && r.reprise)
-      .map((r) => ({ jinete: i.jinete, ldn: i.ldn, caballo: r.caballo, lac: r.lac, reprise: r.reprise, observaciones: r.observaciones })));
+      .map((r) => ({
+        jinete: i.jinete, ldn: i.ldn, fhJinete: i.federacionJinete, caballo: r.caballo, lac: r.lac,
+        fhCaballo: r.federacionCaballo, reprise: r.reprise, observaciones: r.observaciones,
+      })));
     const claveBinomio = (f: { ldn: string; lac: string; jinete: string; caballo: string }) =>
       f.ldn && f.lac ? `${f.ldn}|${f.lac}` : `${clave(f.jinete)}|${clave(f.caballo)}`;
 
@@ -74,7 +80,7 @@ export async function POST(request: NextRequest) {
     const existentes: Binomio[] = [];
     for (let i = 0; i < lacs.length; i += 200) {
       const { data, error } = await supabaseAdmin
-        .from('binomios').select('id, nombre_jinete, nombre_caballo, ldn_jinete, lac_caballo')
+        .from('binomios').select('id, nombre_jinete, nombre_caballo, ldn_jinete, lac_caballo, fh_jinete, fh_caballo')
         .in('lac_caballo', lacs.slice(i, i + 200));
       lanzar(error, 'No se pudieron leer los binomios');
       existentes.push(...((data || []) as Binomio[]));
@@ -84,6 +90,17 @@ export async function POST(request: NextRequest) {
       binomioPorClave.set(claveBinomio({ ldn: b.ldn_jinete || '', lac: b.lac_caballo || '', jinete: b.nombre_jinete, caballo: b.nombre_caballo }), b.id);
     }
 
+    for (const b of existentes) {
+      const fila = unicos.get(claveBinomio({ ldn: b.ldn_jinete || '', lac: b.lac_caballo || '', jinete: b.nombre_jinete, caballo: b.nombre_caballo }));
+      if (!fila) continue;
+      const cambios: Record<string, string> = {};
+      if (!b.fh_jinete && fila.fhJinete) cambios.fh_jinete = fila.fhJinete;
+      if (!b.fh_caballo && fila.fhCaballo) cambios.fh_caballo = fila.fhCaballo;
+      if (Object.keys(cambios).length === 0) continue;
+      const { error } = await supabaseAdmin.from('binomios').update(cambios).eq('id', b.id);
+      lanzar(error, 'No se pudo guardar la federación del binomio (¿falta ejecutar la migración 048?)');
+    }
+
     const nuevosBinomios = Array.from(unicos.entries()).filter(([k]) => !binomioPorClave.has(k));
     if (nuevosBinomios.length > 0) {
       const { data, error } = await supabaseAdmin.from('binomios').insert(nuevosBinomios.map(([, f]) => ({
@@ -91,7 +108,9 @@ export async function POST(request: NextRequest) {
         nombre_caballo: f.caballo,
         ldn_jinete: f.ldn || null,
         lac_caballo: f.lac || null,
-      }))).select('id, nombre_jinete, nombre_caballo, ldn_jinete, lac_caballo');
+        fh_jinete: f.fhJinete || null,
+        fh_caballo: f.fhCaballo || null,
+      }))).select('id, nombre_jinete, nombre_caballo, ldn_jinete, lac_caballo, fh_jinete, fh_caballo');
       lanzar(error, 'No se pudieron crear los binomios');
       for (const b of (data || []) as Binomio[]) {
         binomioPorClave.set(claveBinomio({ ldn: b.ldn_jinete || '', lac: b.lac_caballo || '', jinete: b.nombre_jinete, caballo: b.nombre_caballo }), b.id);

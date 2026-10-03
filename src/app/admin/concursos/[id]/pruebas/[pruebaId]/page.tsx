@@ -5,6 +5,7 @@ import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 import { esPendienteConfirmacion, nombreConMarca } from '@/lib/rfhe-pruebas';
+import { CaballoConBandera } from '@/components/BanderaFH';
 
 const LETRAS = ['A', 'B', 'C', 'D', 'E'];
 
@@ -41,6 +42,7 @@ type BinomioParticipante = {
   dorsal: number;
   jinete: string;
   caballo: string;
+  fh_caballo: string | null;
   pendiente: boolean;
 };
 
@@ -126,7 +128,7 @@ export default function DetallePruebaPage() {
   const cargarBinomios = async () => {
     const { data, error: dbError } = await supabase
       .from('participaciones')
-      .select('id, inscripcion_id, orden_salida, observaciones, inscripcion:inscripcion_id(dorsal, binomio:binomio_id(nombre_jinete, nombre_caballo))')
+      .select('id, inscripcion_id, orden_salida, observaciones, inscripcion:inscripcion_id(dorsal, binomio:binomio_id(nombre_jinete, nombre_caballo, fh_caballo))')
       .eq('prueba_id', pruebaId)
       .order('orden_salida', { ascending: true });
 
@@ -139,6 +141,7 @@ export default function DetallePruebaPage() {
       dorsal: b.inscripcion?.dorsal || 0,
       jinete: b.inscripcion?.binomio?.nombre_jinete || '-',
       caballo: b.inscripcion?.binomio?.nombre_caballo || '-',
+      fh_caballo: b.inscripcion?.binomio?.fh_caballo || null,
       pendiente: esPendienteConfirmacion(b.observaciones),
     }));
 
@@ -632,7 +635,7 @@ export default function DetallePruebaPage() {
                     <td className="font-bold">{b.orden_salida}</td>
                     <td>{b.dorsal}</td>
                     <td>{nombreConMarca(b.jinete, b.pendiente)}</td>
-                    <td>{b.caballo}</td>
+                    <td><CaballoConBandera nombre={b.caballo} fh={b.fh_caballo} /></td>
                     <td>
                       <button
                         onClick={() => handleDeleteBinomio(b.id)}

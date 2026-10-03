@@ -80,6 +80,7 @@ export async function GET(request: NextRequest) {
           id,
           nombre_jinete,
           nombre_caballo,
+          fh_caballo,
           anio,
           licencia_federativa
         )

@@ -19,6 +19,8 @@ export async function POST(request: NextRequest) {
       licencia_federativa,
       ldn_jinete,
       lac_caballo,
+      fh_jinete,
+      fh_caballo,
     } = body;
 
     if (!nombre_jinete || !nombre_caballo) {
@@ -39,6 +41,8 @@ export async function POST(request: NextRequest) {
           licencia_federativa: licencia_federativa || null,
           ldn_jinete: ldn_jinete || null,
           lac_caballo: lac_caballo || null,
+          fh_jinete: fh_jinete || null,
+          fh_caballo: fh_caballo || null,
         },
       ])
       .select()

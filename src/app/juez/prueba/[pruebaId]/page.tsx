@@ -5,6 +5,7 @@ import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 import { JuezDeLaPrueba, pruebaJuezDeLaUrl, resolverPuntuador } from '@/lib/juez-actual';
+import { CaballoConBandera } from '@/components/BanderaFH';
 import { esPendienteConfirmacion, nombreConMarca } from '@/lib/rfhe-pruebas';
 
 type Concurso = {
@@ -45,6 +46,7 @@ type Participacion = {
   dorsal: number;
   jinete: string;
   caballo: string;
+  fh_caballo: string | null;
   puntuada: boolean;
   pendiente: boolean;
 };
@@ -135,7 +137,7 @@ export default function PuntuarPruebaPage() {
             observaciones,
             inscripcion:inscripcion_id(
               dorsal,
-              binomio:binomio_id(nombre_jinete, nombre_caballo)
+              binomio:binomio_id(nombre_jinete, nombre_caballo, fh_caballo)
             )
           `)
           .eq('prueba_id', pruebaId)
@@ -157,6 +159,7 @@ export default function PuntuarPruebaPage() {
             dorsal: (p as any).inscripcion?.dorsal || 0,
             jinete: (p as any).inscripcion?.binomio?.nombre_jinete || '-',
             caballo: (p as any).inscripcion?.binomio?.nombre_caballo || '-',
+            fh_caballo: (p as any).inscripcion?.binomio?.fh_caballo || null,
             puntuada: puntuadas.has(p.id),
             pendiente: esPendienteConfirmacion((p as any).observaciones),
           });
@@ -270,7 +273,7 @@ export default function PuntuarPruebaPage() {
                       <td className="text-center font-bold text-lg">{p.orden_salida}</td>
                       <td className="text-center font-bold">{p.dorsal}</td>
                       <td className="font-medium">{nombreConMarca(p.jinete, p.pendiente)}</td>
-                      <td>{p.caballo}</td>
+                      <td><CaballoConBandera nombre={p.caballo} fh={p.fh_caballo} /></td>
                       <td className="text-sm text-gray-600">
                         {prueba.concurso?.nombre || '-'}
                       </td>

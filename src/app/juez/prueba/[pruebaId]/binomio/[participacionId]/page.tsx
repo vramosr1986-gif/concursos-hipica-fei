@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 import { fetchConSesion, pruebaJuezDeLaUrl, resolverPuntuador } from '@/lib/juez-actual';
 import { esPendienteConfirmacion, nombreConMarca } from '@/lib/rfhe-pruebas';
+import { CaballoConBandera } from '@/components/BanderaFH';
 import FilaEjercicio from './FilaEjercicio';
 
 type Prueba = {
@@ -25,6 +26,7 @@ type Participacion = {
   dorsal: number;
   jinete: string;
   caballo: string;
+  fh_caballo: string | null;
   pendiente: boolean;
 };
 
@@ -94,7 +96,7 @@ export default function PuntuarBinomioPage() {
         // 2. Participacion
         const { data: partData, error: partErr } = await supabase
           .from('participaciones')
-          .select('id, orden_salida, observaciones, inscripcion:inscripcion_id(dorsal, binomio:binomio_id(nombre_jinete, nombre_caballo))')
+          .select('id, orden_salida, observaciones, inscripcion:inscripcion_id(dorsal, binomio:binomio_id(nombre_jinete, nombre_caballo, fh_caballo))')
           .eq('id', participacionId)
           .single();
 
@@ -106,6 +108,7 @@ export default function PuntuarBinomioPage() {
           dorsal: (partData as any).inscripcion?.dorsal || 0,
           jinete: (partData as any).inscripcion?.binomio?.nombre_jinete || '-',
           caballo: (partData as any).inscripcion?.binomio?.nombre_caballo || '-',
+          fh_caballo: (partData as any).inscripcion?.binomio?.fh_caballo || null,
           pendiente: esPendienteConfirmacion((partData as any).observaciones),
         });
 
@@ -231,7 +234,7 @@ export default function PuntuarBinomioPage() {
 
         <div className="mt-4 pt-4 border-t border-white/20">
           <p className="text-lg font-bold">{nombreConMarca(participacion.jinete, participacion.pendiente)}</p>
-          <p className="text-sm opacity-90">{participacion.caballo}</p>
+          <p className="text-sm opacity-90"><CaballoConBandera nombre={participacion.caballo} fh={participacion.fh_caballo} /></p>
           {participacion.pendiente && (
             <p className="mt-2 text-sm opacity-75">* Pendiente de confirmación en la RFHE.</p>
           )}

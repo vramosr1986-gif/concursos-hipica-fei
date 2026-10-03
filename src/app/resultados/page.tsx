@@ -3,6 +3,7 @@
 import { useEffect, useState, Suspense, Fragment } from 'react';
 import { supabase } from '@/lib/supabase';
 import { esPendienteConfirmacion, nombreConMarca } from '@/lib/rfhe-pruebas';
+import { CaballoConBandera } from '@/components/BanderaFH';
 
 // ============================================================
 // TIPOS
@@ -36,6 +37,7 @@ type Clasificacion = {
   dorsal: number;
   jinete: string;
   caballo: string;
+  fh_caballo: string | null;
   /** "Pte. Confirmación" en la RFHE: se muestra con * tras el nombre. */
   pendiente: boolean;
   media: number;
@@ -187,7 +189,7 @@ try {
             observaciones,
             inscripcion:inscripcion_id(
               dorsal,
-              binomio:binomio_id(nombre_jinete, nombre_caballo)
+              binomio:binomio_id(nombre_jinete, nombre_caballo, fh_caballo)
             )
           `)
           .in('prueba_id', pruebaIds);
@@ -332,6 +334,7 @@ try {
               dorsal: inscripcion?.dorsal || 0,
               jinete: binomio?.nombre_jinete || '-',
               caballo: binomio?.nombre_caballo || '-',
+              fh_caballo: binomio?.fh_caballo || null,
               pendiente: esPendienteConfirmacion((part as any).observaciones),
               media: Math.round(media * 100) / 100,
               numJueces: puntuacionesPorJuez.length,
@@ -714,7 +717,7 @@ const categorias = Array.from(
                               <div className="text-4xl mb-2">🥈</div>
                               <div className="bg-gray-200 rounded-t-lg p-4 pt-8 pb-4">
                                 <p className="font-bold truncate">{nombreConMarca(top3Individual[1].jinete, top3Individual[1].pendiente)}</p>
-                                <p className="text-xs text-gray-600 truncate">{top3Individual[1].caballo}</p>
+                                <p className="text-xs text-gray-600 truncate"><CaballoConBandera nombre={top3Individual[1].caballo} fh={top3Individual[1].fh_caballo} /></p>
 
                                 <p className="text-xl font-bold mt-2">
                                   {top3Individual[1].media.toFixed(2)}%
@@ -730,7 +733,7 @@ const categorias = Array.from(
                               <div className="text-5xl mb-2">🥇</div>
                               <div className="bg-yellow-200 rounded-t-lg p-4 pt-8 pb-4">
                                 <p className="font-bold truncate">{nombreConMarca(top3Individual[0].jinete, top3Individual[0].pendiente)}</p>
-                                <p className="text-xs text-gray-700 truncate">{top3Individual[0].caballo}</p>
+                                <p className="text-xs text-gray-700 truncate"><CaballoConBandera nombre={top3Individual[0].caballo} fh={top3Individual[0].fh_caballo} /></p>
 
                                 <p className="text-2xl font-bold mt-2">
                                   {top3Individual[0].media.toFixed(2)}%
@@ -746,7 +749,7 @@ const categorias = Array.from(
                               <div className="text-4xl mb-2">🥉</div>
                               <div className="bg-orange-200 rounded-t-lg p-4 pt-8 pb-4">
                                 <p className="font-bold text-sm truncate">{nombreConMarca(top3Individual[2].jinete, top3Individual[2].pendiente)}</p>
-                                <p className="text-xs text-gray-700 truncate">{top3Individual[2].caballo}</p>
+                                <p className="text-xs text-gray-700 truncate"><CaballoConBandera nombre={top3Individual[2].caballo} fh={top3Individual[2].fh_caballo} /></p>
 
                                 <p className="text-lg font-bold mt-2">
                                   {top3Individual[2].media.toFixed(2)}%
@@ -808,11 +811,11 @@ const categorias = Array.from(
                                       {c.dorsal}
                                     </td>
                                     <td className="hidden sm:table-cell">{nombreConMarca(c.jinete, c.pendiente)}</td>
-                                    <td className="hidden sm:table-cell">{c.caballo}</td>
+                                    <td className="hidden sm:table-cell"><CaballoConBandera nombre={c.caballo} fh={c.fh_caballo} /></td>
                                     <td className="sm:hidden">
                                       <span className="block">{nombreConMarca(c.jinete, c.pendiente)}</span>
                                       <span className="block text-xs font-normal text-gray-500">
-                                        {c.caballo}
+                                        <CaballoConBandera nombre={c.caballo} fh={c.fh_caballo} />
                                       </span>
                                     </td>
 

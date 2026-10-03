@@ -3,6 +3,8 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { SelectorFederacion } from '@/components/BanderaFH';
+import { fetchConSesion } from '@/lib/juez-actual';
 
 export default function NuevoBinomioPage() {
   const router = useRouter();
@@ -15,6 +17,8 @@ export default function NuevoBinomioPage() {
     licencia_federativa: '',
     ldn_jinete: '',
     lac_caballo: '',
+    fh_jinete: '',
+    fh_caballo: '',
   });
 
   const [error, setError] = useState('');
@@ -78,9 +82,8 @@ export default function NuevoBinomioPage() {
 
     setGuardando(true);
     try {
-      const res = await fetch('/api/binomios', {
+      const res = await fetchConSesion('/api/binomios', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           nombre_jinete: formData.nombre_jinete.trim(),
           nombre_caballo: formData.nombre_caballo.trim(),
@@ -91,6 +94,8 @@ export default function NuevoBinomioPage() {
           licencia_federativa: formData.licencia_federativa.trim() || null,
           ldn_jinete: formData.ldn_jinete.trim() || null,
           lac_caballo: formData.lac_caballo.trim() || null,
+          fh_jinete: formData.fh_jinete || null,
+          fh_caballo: formData.fh_caballo || null,
         }),
       });
 
@@ -228,6 +233,13 @@ export default function NuevoBinomioPage() {
                 className="input w-full" />
               <p className="mt-1 text-xs text-gray-500">En RFHE busca por una palabra del nombre y copia el LAC.</p>
             </div>
+          </div>
+
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <SelectorFederacion id="fh_jinete" etiqueta="Federación (comunidad) del jinete" valor={formData.fh_jinete}
+              onChange={(fh_jinete) => setFormData({ ...formData, fh_jinete })} />
+            <SelectorFederacion id="fh_caballo" etiqueta="Federación (comunidad) del caballo" valor={formData.fh_caballo}
+              onChange={(fh_caballo) => setFormData({ ...formData, fh_caballo })} />
           </div>
 
           <div>

@@ -3,13 +3,14 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { esPendienteConfirmacion, nombreConMarca } from '@/lib/rfhe-pruebas';
+import { CaballoConBandera } from '@/components/BanderaFH';
 
 type Inscripcion = {
   id: string;
   binomio_id: string;
   dorsal: number;
   categoria: string | null;
-  binomio: { nombre_jinete: string; nombre_caballo: string } | null;
+  binomio: { nombre_jinete: string; nombre_caballo: string; fh_caballo?: string | null } | null;
 };
 
 type BinomioRegistrado = {
@@ -336,7 +337,7 @@ export function InscripcionesSection({ concursoId, esRfhe }: { concursoId: strin
                     />
                   </td>
                   <td>{nombreConMarca(i.binomio?.nombre_jinete || '-', pendientes.has(i.id))}</td>
-                  <td>{i.binomio?.nombre_caballo || '-'}</td>
+                  <td><CaballoConBandera nombre={i.binomio?.nombre_caballo || '-'} fh={i.binomio?.fh_caballo} /></td>
                   <td className="text-sm">
                     {(pruebasPorInscripcion.get(i.id) || []).length === 0
                       ? <span className="text-amber-700">En ninguna prueba</span>

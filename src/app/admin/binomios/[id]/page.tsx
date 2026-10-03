@@ -3,6 +3,8 @@
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { SelectorFederacion } from '@/components/BanderaFH';
+import { fetchConSesion } from '@/lib/juez-actual';
 import { supabase } from '@/lib/supabase';
 import { ConsultaRfhe } from '@/components/ConsultaRfhe';
 
@@ -31,6 +33,8 @@ export default function EditarBinomioPage() {
     licencia_federativa: '',
     ldn_jinete: '',
     lac_caballo: '',
+    fh_jinete: '',
+    fh_caballo: '',
   });
   const [loading, setLoading] = useState(true);
   const [guardando, setGuardando] = useState(false);
@@ -41,7 +45,7 @@ export default function EditarBinomioPage() {
       try {
         const { data, error: dbErr } = await supabase
           .from('binomios')
-          .select('id, nombre_jinete, nombre_caballo, anio_nacimiento_caballo, fecha_nacimiento_jinete, licencia_federativa, ldn_jinete, lac_caballo')
+          .select('id, nombre_jinete, nombre_caballo, anio_nacimiento_caballo, fecha_nacimiento_jinete, licencia_federativa, ldn_jinete, lac_caballo, fh_jinete, fh_caballo')
           .eq('id', binomioId)
           .single();
 
@@ -56,6 +60,8 @@ export default function EditarBinomioPage() {
           licencia_federativa: data.licencia_federativa || '',
           ldn_jinete: data.ldn_jinete || '',
           lac_caballo: data.lac_caballo || '',
+          fh_jinete: data.fh_jinete || '',
+          fh_caballo: data.fh_caballo || '',
         });
       } catch (err: any) {
         setError(err.message || 'Error al cargar el binomio');
@@ -79,9 +85,8 @@ export default function EditarBinomioPage() {
 
     setGuardando(true);
     try {
-      const res = await fetch('/api/binomios', {
+      const res = await fetchConSesion('/api/binomios', {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           id: binomioId,
           nombre_jinete: formData.nombre_jinete.trim(),
@@ -93,6 +98,8 @@ export default function EditarBinomioPage() {
           licencia_federativa: formData.licencia_federativa.trim() || null,
           ldn_jinete: formData.ldn_jinete.trim() || null,
           lac_caballo: formData.lac_caballo.trim() || null,
+          fh_jinete: formData.fh_jinete || null,
+          fh_caballo: formData.fh_caballo || null,
         }),
       });
 
@@ -249,6 +256,13 @@ export default function EditarBinomioPage() {
                 Número de registro de RFHE
               </p>
             </div>
+          </div>
+
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <SelectorFederacion id="fh_jinete" etiqueta="Federación (comunidad) del jinete" valor={formData.fh_jinete}
+              onChange={(fh_jinete) => setFormData({ ...formData, fh_jinete })} />
+            <SelectorFederacion id="fh_caballo" etiqueta="Federación (comunidad) del caballo" valor={formData.fh_caballo}
+              onChange={(fh_caballo) => setFormData({ ...formData, fh_caballo })} />
           </div>
 
           <div>
