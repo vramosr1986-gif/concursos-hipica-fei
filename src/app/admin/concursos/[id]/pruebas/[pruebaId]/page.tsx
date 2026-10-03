@@ -40,8 +40,6 @@ type BinomioParticipante = {
   dorsal: number;
   jinete: string;
   caballo: string;
-  equipo_id: string | null;
-  equipo_nombre: string | null;
 };
 
 type UserJuezOption = {
@@ -61,8 +59,6 @@ type InscripcionOption = {
   edad_caballo: number | null;
   nombre_jinete: string;
   nombre_caballo: string;
-  equipo_id: string | null;
-  equipo_nombre: string | null;
 };
 
 export default function DetallePruebaPage() {
@@ -128,7 +124,7 @@ export default function DetallePruebaPage() {
   const cargarBinomios = async () => {
     const { data, error: dbError } = await supabase
       .from('participaciones')
-      .select('id, inscripcion_id, orden_salida, equipo_id, inscripcion:inscripcion_id(dorsal, binomio:binomio_id(nombre_jinete, nombre_caballo)), equipo:equipo_id(nombre)')
+      .select('id, inscripcion_id, orden_salida, inscripcion:inscripcion_id(dorsal, binomio:binomio_id(nombre_jinete, nombre_caballo))')
       .eq('prueba_id', pruebaId)
       .order('orden_salida', { ascending: true });
 
@@ -141,8 +137,6 @@ export default function DetallePruebaPage() {
       dorsal: b.inscripcion?.dorsal || 0,
       jinete: b.inscripcion?.binomio?.nombre_jinete || '-',
       caballo: b.inscripcion?.binomio?.nombre_caballo || '-',
-      equipo_id: b.equipo_id || null,
-      equipo_nombre: b.equipo?.nombre || null,
     }));
 
     setBinomios(formateados);
@@ -160,8 +154,7 @@ export default function DetallePruebaPage() {
 
   const cargarInscripcionesDisponibles = async (
     esCaballosJovenes: boolean,
-    categoriaEdadId: string | null,
-    esEquipos: boolean
+    categoriaEdadId: string | null
   ) => {
     const { data: inscripciones } = await supabase
       .from('inscripciones')
@@ -188,39 +181,16 @@ export default function DetallePruebaPage() {
       });
     }
 
-    // Cargar los equipos de las inscripciones
-    const inscripcionIds = inscripciones.map((i: any) => i.id);
-    const equiposPorInscripcion: Record<string, { id: string; nombre: string }> = {};
-
-    if (inscripcionIds.length > 0) {
-      const { data: miembros } = await supabase
-        .from('equipo_miembros')
-        .select('inscripcion_id, equipo:equipo_id(id, nombre)')
-        .in('inscripcion_id', inscripcionIds);
-
-      (miembros || []).forEach((m: any) => {
-        if (m.equipo) {
-          equiposPorInscripcion[m.inscripcion_id] = {
-            id: m.equipo.id,
-            nombre: m.equipo.nombre,
-          };
-        }
-      });
-    }
-
     const filtradas: InscripcionOption[] = [];
 
     for (const i of inscripciones as any[]) {
       const cat = categoriasPorBinomio[i.binomio_id] || {};
-      const equipo = equiposPorInscripcion[i.id] || null;
 
       if (esCaballosJovenes) {
         if (!cat.categoria_caballo) continue;
       } else {
         if (categoriaEdadId && i.categoria_edad_id !== categoriaEdadId) continue;
       }
-
-      if (esEquipos && !equipo) continue;
 
       filtradas.push({
         id: i.id,
@@ -233,8 +203,6 @@ export default function DetallePruebaPage() {
         edad_caballo: cat.edad_caballo ?? null,
         nombre_jinete: i.binomio?.nombre_jinete || '-',
         nombre_caballo: i.binomio?.nombre_caballo || '-',
-        equipo_id: equipo?.id || null,
-        equipo_nombre: equipo?.nombre || null,
       });
     }
 
@@ -265,12 +233,11 @@ export default function DetallePruebaPage() {
     if (prueba) {
       cargarInscripcionesDisponibles(
         !!prueba.es_caballos_jovenes,
-        prueba.categoria_edad_id,
-        prueba.tipo_prueba_codigo === 'EQU'
+        prueba.categoria_edad_id
       );
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [prueba?.id, prueba?.es_caballos_jovenes, prueba?.categoria_edad_id, prueba?.tipo_prueba_codigo]);
+  }, [prueba?.id, prueba?.es_caballos_jovenes, prueba?.categoria_edad_id]);
 
   const handleAddJuez = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -340,24 +307,6 @@ export default function DetallePruebaPage() {
         ? parseInt(nuevoBinomio.orden_salida, 10)
         : binomios.length + 1;
 
-const esPruebaEquipos = prueba?.tipo_prueba_codigo === 'EQU';
-
-      // Buscar si la inscripcion pertenece a algun equipo
-      const { data: equipoMiembro } = await supabase
-        .from('equipo_miembros')
-        .select('equipo_id')
-        .eq('inscripcion_id', nuevoBinomio.inscripcion_id)
-        .maybeSingle();
-
-      // En pruebas por equipos el binomio debe pertenecer a un equipo;
-      // en pruebas individuales nunca se asigna equipo.
-      const equipoId = esPruebaEquipos ? (equipoMiembro?.equipo_id || null) : null;
-
-      if (esPruebaEquipos && !equipoId) {
-        setError('El binomio debe pertenecer a un equipo para participar en una prueba por equipos.');
-        return;
-      }
-
       const { error: dbError } = await supabase
         .from('participaciones')
         .insert({
@@ -365,7 +314,6 @@ const esPruebaEquipos = prueba?.tipo_prueba_codigo === 'EQU';
           inscripcion_id: nuevoBinomio.inscripcion_id,
           orden_salida: nuevoOrden,
           estado: 'pendiente',
-          equipo_id: equipoId,
         });
 
       if (dbError) {
@@ -416,9 +364,6 @@ const esPruebaEquipos = prueba?.tipo_prueba_codigo === 'EQU';
   if (loading) return <div className="container py-8">Cargando...</div>;
   if (!prueba) return <div className="container py-8">Prueba no encontrada</div>;
 
-  // Tipo de prueba: por equipos (EQU) o individual (resto)
-  const esPruebaEquipos = prueba.tipo_prueba_codigo === 'EQU';
-
   return (
     <div className="container max-w-5xl py-8">
       <Link
@@ -431,15 +376,6 @@ const esPruebaEquipos = prueba?.tipo_prueba_codigo === 'EQU';
       <div className="card p-6 mb-6">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <h1 className="text-2xl font-bold mb-2">{prueba.nombre}</h1>
-          {esPruebaEquipos ? (
-            <span className="px-3 py-1 rounded-full text-xs font-bold bg-teal-100 text-teal-800">
-              Prueba por Equipos
-            </span>
-          ) : (
-            <span className="px-3 py-1 rounded-full text-xs font-bold bg-blue-100 text-blue-800">
-              Prueba Individual
-            </span>
-          )}
         </div>
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm mt-4">
@@ -591,16 +527,6 @@ const esPruebaEquipos = prueba?.tipo_prueba_codigo === 'EQU';
         <div className="flex items-center justify-between mb-4">
           <div>
             <h2 className="text-xl font-bold">Binomios participantes ({binomios.length})</h2>
-            {esPruebaEquipos && (
-              <p className="text-sm text-teal-700 mt-1">
-                Solo pueden inscribirse binomios que pertenezcan a un equipo.
-              </p>
-            )}
-            {!esPruebaEquipos && (
-              <p className="text-sm text-blue-700 mt-1">
-                Los participantes se inscriben individualmente (sin equipos).
-              </p>
-            )}
           </div>
           <button
             onClick={() => setModalBinomioAbierto(!modalBinomioAbierto)}
@@ -645,7 +571,7 @@ const esPruebaEquipos = prueba?.tipo_prueba_codigo === 'EQU';
                     <option value="">-- Elegir binomio --</option>
                     {inscripcionesDisponibles.map((i) => (
                       <option key={i.id} value={i.id}>
-                        #{i.dorsal} · {i.nombre_jinete} / {i.nombre_caballo} · Jinete: {formatearEdad(i.edad_jinete)} ({i.categoria_jinete || '-'}) · Caballo: {formatearEdad(i.edad_caballo)} ({i.categoria_caballo || 'adulto'}){i.equipo_nombre ? ' · Equipo: ' + i.equipo_nombre : ''}
+                        #{i.dorsal} · {i.nombre_jinete} / {i.nombre_caballo} · Jinete: {formatearEdad(i.edad_jinete)} ({i.categoria_jinete || '-'}) · Caballo: {formatearEdad(i.edad_caballo)} ({i.categoria_caballo || 'adulto'})
                       </option>
                     ))}
                   </select>
@@ -694,7 +620,6 @@ const esPruebaEquipos = prueba?.tipo_prueba_codigo === 'EQU';
                   <th>Dorsal</th>
                   <th>Jinete</th>
                   <th>Caballo</th>
-                  {esPruebaEquipos && <th>Equipo</th>}
                   <th></th>
                 </tr>
               </thead>
@@ -705,17 +630,6 @@ const esPruebaEquipos = prueba?.tipo_prueba_codigo === 'EQU';
                     <td>{b.dorsal}</td>
                     <td>{b.jinete}</td>
                     <td>{b.caballo}</td>
-                    {esPruebaEquipos && (
-                      <td>
-                        {b.equipo_nombre ? (
-                          <span className="px-2 py-1 rounded text-xs bg-teal-100 text-teal-800 font-medium">
-                            {b.equipo_nombre}
-                          </span>
-                        ) : (
-                          <span className="text-gray-400 text-xs">-</span>
-                        )}
-                      </td>
-                    )}
                     <td>
                       <button
                         onClick={() => handleDeleteBinomio(b.id)}

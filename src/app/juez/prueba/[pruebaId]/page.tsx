@@ -43,15 +43,7 @@ type Participacion = {
   dorsal: number;
   jinete: string;
   caballo: string;
-  equipo_id: string | null;
-  equipo_nombre: string | null;
   puntuada: boolean;
-};
-
-type GrupoEquipo = {
-  equipo_id: string | null;
-  equipo_nombre: string | null;
-  participaciones: Participacion[];
 };
 
 export default function PuntuarPruebaPage() {
@@ -119,8 +111,6 @@ export default function PuntuarPruebaPage() {
           .select(`
             id,
             orden_salida,
-            equipo_id,
-            equipo:equipo_id(nombre),
             inscripcion:inscripcion_id(
               dorsal,
               binomio:binomio_id(nombre_jinete, nombre_caballo)
@@ -146,8 +136,6 @@ export default function PuntuarPruebaPage() {
             dorsal: (p as any).inscripcion?.dorsal || 0,
             jinete: (p as any).inscripcion?.binomio?.nombre_jinete || '-',
             caballo: (p as any).inscripcion?.binomio?.nombre_caballo || '-',
-            equipo_id: (p as any).equipo_id || null,
-            equipo_nombre: (p as any).equipo?.nombre || null,
             puntuada: (count || 0) > 0,
           });
         }
@@ -170,35 +158,10 @@ export default function PuntuarPruebaPage() {
     return d + '/' + m + '/' + y;
   };
 
-  const agruparPorEquipo = (): GrupoEquipo[] => {
-    const grupos: Record<string, GrupoEquipo> = {};
-
-    for (const p of participaciones) {
-      const key = p.equipo_id || 'sin-equipo';
-      if (!grupos[key]) {
-        grupos[key] = {
-          equipo_id: p.equipo_id,
-          equipo_nombre: p.equipo_nombre,
-          participaciones: [],
-        };
-      }
-      grupos[key].participaciones.push(p);
-    }
-
-    const ordenados = Object.values(grupos).sort((a, b) => {
-      if (a.equipo_id === null && b.equipo_id !== null) return 1;
-      if (a.equipo_id !== null && b.equipo_id === null) return -1;
-      return (a.equipo_nombre || '').localeCompare(b.equipo_nombre || '');
-    });
-
-    return ordenados;
-  };
-
   if (loading) return <div className="container py-8 text-center">Cargando...</div>;
   if (error) return <div className="container py-8 text-center text-red-600">{error}</div>;
   if (!prueba) return <div className="container py-8 text-center">Prueba no encontrada</div>;
 
-  const grupos = agruparPorEquipo();
   const totalPuntuadas = participaciones.filter((p) => p.puntuada).length;
 
   return (
@@ -244,42 +207,10 @@ export default function PuntuarPruebaPage() {
           </div>
         </div>
       </div>
-<div className="space-y-6">
-        {grupos.map((grupo) => (
-          <div key={grupo.equipo_id || 'sin-equipo'} className="card overflow-hidden">
-            <div className={`p-4 border-b ${grupo.equipo_id ? 'bg-teal-50' : 'bg-gray-50'}`}>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  {grupo.equipo_id ? (
-                    <>
-                      <span className="text-2xl"> </span>
-                      <div>
-                        <p className="text-xs text-teal-700 font-bold uppercase">Equipo</p>
-                        <h2 className="text-xl font-bold text-teal-900">
-                          {grupo.equipo_nombre}
-                        </h2>
-                      </div>
-                    </>
-                  ) : (
-                    <>
-                      <span className="text-2xl"></span>
-                      <div>
-                        <p className="text-xs text-gray-600 font-bold uppercase">Sin equipo</p>
-                        <h2 className="text-xl font-bold text-gray-800">
-                          Binomios individuales
-                        </h2>
-                      </div>
-                    </>
-                  )}
-                </div>
-                <div className="text-right">
-                  <p className="text-xs text-gray-600">Binomios</p>
-                  <p className="text-2xl font-bold">{grupo.participaciones.length}</p>
-                </div>
-              </div>
-            </div>
 
-            <div className="table-responsive">
+      {participaciones.length > 0 && (
+        <div className="card overflow-hidden">
+          <div className="table-responsive">
               <table className="table">
                 <thead>
                   <tr>
@@ -293,7 +224,7 @@ export default function PuntuarPruebaPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {grupo.participaciones.map((p) => (
+                  {participaciones.map((p) => (
                     <tr key={p.id} className="hover:bg-gray-50">
                       <td className="text-center font-bold text-lg">{p.orden_salida}</td>
                       <td className="text-center font-bold">{p.dorsal}</td>
@@ -326,9 +257,8 @@ export default function PuntuarPruebaPage() {
                 </tbody>
               </table>
             </div>
-          </div>
-        ))}
-      </div>
+        </div>
+      )}
 
       {participaciones.length === 0 && (
         <div className="card p-8 text-center text-gray-600">
