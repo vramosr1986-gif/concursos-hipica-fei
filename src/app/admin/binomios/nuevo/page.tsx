@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { ConsultaRfhe } from '@/components/ConsultaRfhe';
 
 export default function NuevoBinomioPage() {
   const router = useRouter();
@@ -158,6 +159,7 @@ export default function NuevoBinomioPage() {
               }
               className="input w-full"
             />
+            <ConsultaRfhe />
           </div>
 
           <div className="flex justify-end gap-3 pt-6">

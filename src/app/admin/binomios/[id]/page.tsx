@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
+import { ConsultaRfhe } from '@/components/ConsultaRfhe';
 
 type Binomio = {
   id: string;
@@ -202,6 +203,7 @@ export default function EditarBinomioPage() {
               }
               className="input w-full"
             />
+            <ConsultaRfhe />
           </div>
 
           <div className="flex justify-end gap-3 pt-6">
