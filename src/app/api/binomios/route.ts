@@ -17,6 +17,8 @@ export async function POST(request: NextRequest) {
       anio_nacimiento_caballo,
       fecha_nacimiento_jinete,
       licencia_federativa,
+      ldn_jinete,
+      lac_caballo,
     } = body;
 
     if (!nombre_jinete || !nombre_caballo) {
@@ -35,6 +37,8 @@ export async function POST(request: NextRequest) {
           anio_nacimiento_caballo: anio_nacimiento_caballo || null,
           fecha_nacimiento_jinete: fecha_nacimiento_jinete || null,
           licencia_federativa: licencia_federativa || null,
+          ldn_jinete: ldn_jinete || null,
+          lac_caballo: lac_caballo || null,
         },
       ])
       .select()

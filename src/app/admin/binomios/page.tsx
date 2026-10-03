@@ -145,11 +145,42 @@ export default function AdminBinomiosPage() {
     }
   };
 
-  const abrirRfhe = (tipo: 'jinete' | 'caballo') => {
-    const baseUrl = 'https://www.cbservicios.net/Magic94Scripts/Mgrqispi94.dll?APPNAME=CBRFHE&PRGNAME=';
-    const prgname = tipo === 'jinete' ? 'RFHEBUSJIN' : 'RFHEBUSCAB';
-    // Abre RFHE directamente (es público, no se necesita validación)
-    window.open(baseUrl + prgname, '_blank');
+  const abrirRfhe = (tipo: 'jinete' | 'caballo', nombre: string) => {
+    const endpoint = 'https://www.cbservicios.net/Magic94Scripts/mgrqispi94.dll?';
+
+    if (tipo === 'jinete') {
+      const apellidos = nombre.split(',')[0]?.trim() || nombre.trim();
+      const ventana = `rfhe-${Date.now()}`;
+      window.open('', ventana);
+
+      const form = document.createElement('form');
+      form.method = 'POST';
+      form.action = endpoint;
+      form.target = ventana;
+
+      const campos = {
+        APPNAME: 'CBRFHE',
+        PRGNAME: 'RFHEBUSJIN02',
+        ARGUMENTS: 'APE,FIN',
+        FIN: 'FIN',
+        APE: apellidos,
+      };
+
+      Object.entries(campos).forEach(([name, value]) => {
+        const input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = name;
+        input.value = value;
+        form.appendChild(input);
+      });
+
+      document.body.appendChild(form);
+      form.submit();
+      form.remove();
+      return;
+    }
+
+    window.open(`${endpoint}APPNAME=CBRFHE&PRGNAME=RFHEBUSCAB`, '_blank');
   };
 
   const chipCategoria = (cat: string | null) => {
@@ -298,12 +329,12 @@ export default function AdminBinomiosPage() {
                             </button>
                             <ul className="dropdown-content menu bg-base-100 rounded-box z-[1] w-52 p-2 shadow">
                               <li>
-                                <a onClick={() => abrirRfhe('jinete')}>
-                                  LDN - Abrir búsqueda Jinete
+                                <a onClick={() => abrirRfhe('jinete', b.nombre_jinete)}>
+                                  LDN - Buscar {b.nombre_jinete}
                                 </a>
                               </li>
                               <li>
-                                <a onClick={() => abrirRfhe('caballo')}>
+                                <a onClick={() => abrirRfhe('caballo', b.nombre_caballo)}>
                                   LAC - Abrir búsqueda Caballo
                                 </a>
                               </li>

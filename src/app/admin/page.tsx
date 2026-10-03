@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { CalendarDays, Gavel, Users, ArrowRight, Plus, ListChecks } from 'lucide-react';
+import { CalendarDays, Gavel, Users, ArrowRight, Plus, ListChecks, FileSearch } from 'lucide-react';
 import { HorseIcon } from '@/components/icons';
 
 const modulos = [
@@ -31,6 +31,13 @@ const modulos = [
     titulo: 'Reprises',
     descripcion: 'Catálogo de reprises FEI y detalle de sus ejercicios.',
     Icon: ListChecks,
+    color: 'bg-[#173b2f]/10 text-[#173b2f] group-hover:bg-[#173b2f] group-hover:text-[#e8c98d]',
+  },
+  {
+    href: '/admin/rfhe',
+    titulo: 'Importar desde RFHE',
+    descripcion: 'Extraer concurso, admitidos y avance para revisar sus datos.',
+    Icon: FileSearch,
     color: 'bg-[#173b2f]/10 text-[#173b2f] group-hover:bg-[#173b2f] group-hover:text-[#e8c98d]',
   },
   {

@@ -11,6 +11,7 @@ const SECCIONES: Record<string, string> = {
   '/admin': 'Resumen',
   '/admin/concursos': 'Gestión de Concursos',
   '/admin/concursos/nuevo': 'Nuevo Concurso',
+  '/admin/rfhe': 'Importar desde RFHE',
   '/admin/jueces': 'Jueces',
   '/admin/jueces/nuevo': 'Nuevo Juez',
   '/admin/binomios': 'Binomios',

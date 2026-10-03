@@ -3,7 +3,6 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { ConsultaRfhe } from '@/components/ConsultaRfhe';
 
 export default function NuevoBinomioPage() {
   const router = useRouter();
@@ -14,10 +13,59 @@ export default function NuevoBinomioPage() {
     anio_nacimiento_caballo: '',
     fecha_nacimiento_jinete: '',
     licencia_federativa: '',
+    ldn_jinete: '',
+    lac_caballo: '',
   });
 
   const [error, setError] = useState('');
   const [guardando, setGuardando] = useState(false);
+
+  const buscarJineteRfhe = () => {
+    const nombre = formData.nombre_jinete.trim();
+    if (!nombre) {
+      setError('Escribe el nombre del jinete antes de buscarlo en RFHE');
+      return;
+    }
+
+    const apellidos = nombre.includes(',')
+      ? nombre.split(',')[0].trim()
+      : nombre.split(/\s+/).slice(-1)[0];
+    const target = `rfhe-jinete-${Date.now()}`;
+    window.open('', target);
+
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = 'https://www.cbservicios.net/Magic94Scripts/mgrqispi94.dll?';
+    form.target = target;
+
+    const campos = {
+      APPNAME: 'CBRFHE',
+      PRGNAME: 'RFHEBUSJIN02',
+      ARGUMENTS: 'APE,FIN',
+      FIN: 'FIN',
+      APE: apellidos,
+    };
+
+    Object.entries(campos).forEach(([key, value]) => {
+      const input = document.createElement('input');
+      input.type = 'hidden';
+      input.name = key;
+      input.value = value;
+      form.appendChild(input);
+    });
+
+    document.body.appendChild(form);
+    form.submit();
+    form.remove();
+  };
+
+  const abrirBusquedaCaballoRfhe = () => {
+    window.open(
+      'https://www.cbservicios.net/Magic94Scripts/Mgrqispi94.dll?APPNAME=CBRFHE&PRGNAME=RFHEBUSCAB',
+      '_blank',
+      'noopener,noreferrer'
+    );
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -41,6 +89,8 @@ export default function NuevoBinomioPage() {
             : null,
           fecha_nacimiento_jinete: formData.fecha_nacimiento_jinete || null,
           licencia_federativa: formData.licencia_federativa.trim() || null,
+          ldn_jinete: formData.ldn_jinete.trim() || null,
+          lac_caballo: formData.lac_caballo.trim() || null,
         }),
       });
 
@@ -52,6 +102,8 @@ export default function NuevoBinomioPage() {
 
       router.push('/admin/binomios');
       router.refresh();
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Error al guardar el binomio');
     } finally {
       setGuardando(false);
     }
@@ -146,20 +198,55 @@ export default function NuevoBinomioPage() {
             </p>
           </div>
 
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div>
+              <div className="mb-2 flex items-center justify-between gap-2">
+                <label className="text-sm font-bold" htmlFor="ldn_jinete">
+                  LDN del jinete
+                </label>
+                <button type="button" onClick={buscarJineteRfhe} className="btn btn-sm btn-outline">
+                  Buscar RFHE
+                </button>
+              </div>
+              <input id="ldn_jinete" type="text" placeholder="Ej. 283953" value={formData.ldn_jinete}
+                onChange={(e) => setFormData({ ...formData, ldn_jinete: e.target.value })}
+                className="input w-full" />
+              <p className="mt-1 text-xs text-gray-500">Busca usando los apellidos y copia la LDN del resultado correcto.</p>
+            </div>
+
+            <div>
+              <div className="mb-2 flex items-center justify-between gap-2">
+                <label className="text-sm font-bold" htmlFor="lac_caballo">
+                  LAC del caballo
+                </label>
+                <button type="button" onClick={abrirBusquedaCaballoRfhe} className="btn btn-sm btn-outline">
+                  Buscar RFHE
+                </button>
+              </div>
+              <input id="lac_caballo" type="text" placeholder="Ej. 080640" value={formData.lac_caballo}
+                onChange={(e) => setFormData({ ...formData, lac_caballo: e.target.value })}
+                className="input w-full" />
+              <p className="mt-1 text-xs text-gray-500">En RFHE busca por una palabra del nombre y copia el LAC.</p>
+            </div>
+          </div>
+
           <div>
-            <label className="block text-sm font-bold mb-2">
+            <label className="block text-sm font-bold mb-2" htmlFor="licencia_federativa">
               Licencia federativa
             </label>
-            <input
-              type="text"
-              placeholder="Ej. 1478"
+            <input id="licencia_federativa" type="text" placeholder="Ej. 1478"
               value={formData.licencia_federativa}
-              onChange={(e) =>
-                setFormData({ ...formData, licencia_federativa: e.target.value })
-              }
-              className="input w-full"
-            />
-            <ConsultaRfhe />
+              onChange={(e) => setFormData({ ...formData, licencia_federativa: e.target.value })}
+              className="input w-full" />
+          </div>
+
+          <div className="rounded border border-gray-200 bg-gray-50 p-3 text-sm text-gray-700">
+            Los datos se utilizarán para gestionar el binomio, sus categorías e inscripciones.
+            Consulta la{' '}
+            <Link href="/privacidad" className="text-primary underline">
+              política de privacidad
+            </Link>
+            .
           </div>
 
           <div className="flex justify-end gap-3 pt-6">

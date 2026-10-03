@@ -55,6 +55,8 @@ export interface Concurso {
   fecha_fin: string;
   ubicacion: string;
   organizador: string;
+  disciplina?: string | null;
+  provincia?: string | null;
   created_at: string;
   created_by: string;
 }
