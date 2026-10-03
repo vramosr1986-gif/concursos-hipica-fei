@@ -4,6 +4,7 @@ import { useEffect, useState, useMemo } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
+import { fetchConSesion, pruebaJuezDeLaUrl, resolverPuntuador } from '@/lib/juez-actual';
 import FilaEjercicio from '../binomio/[participacionId]/FilaEjercicio';
 
 type Prueba = {
@@ -60,6 +61,9 @@ export default function PuntuarPruebaPage() {
   const [letraJuez, setLetraJuez] = useState<string>('');
 
   const [loading, setLoading] = useState(true);
+  // Juez elegido por el admin (?pj=), para volver a la lista con el mismo.
+  const [pjUrl, setPjUrl] = useState<string | null>(null);
+  useEffect(() => setPjUrl(pruebaJuezDeLaUrl()), []);
   const [error, setError] = useState('');
 
   const [tabActiva, setTabActiva] = useState<{ grupo: string; participacion: string }>({
@@ -96,18 +100,13 @@ export default function PuntuarPruebaPage() {
           reprise_nombre: (pruebaData as any).reprise?.nombre || null,
         });
 
-        // 2. Buscar prueba_juez para este juez
-        const { data: pjData, error: pjErr } = await supabase
-          .from('prueba_jueces')
-          .select('id, letra')
-          .eq('prueba_id', pruebaId)
-          .eq('juez_id', user.id)
-          .single();
-
-        if (pjErr || !pjData) {
-          setError('No tienes asignada esta prueba como juez.');
+        // 2. Con qué juez se puntúa (el admin puede elegirlo con ?pj=)
+        const puntuador = await resolverPuntuador(pruebaId, pruebaJuezDeLaUrl());
+        if (!puntuador.ok) {
+          setError(puntuador.error);
           return;
         }
+        const pjData = { id: puntuador.pruebaJuezId, letra: puntuador.letra };
 
         setPruebaJuezId(pjData.id);
         setLetraJuez(pjData.letra);
@@ -211,9 +210,8 @@ export default function PuntuarPruebaPage() {
   const guardarPuntuacion = async (participacionId: string, ejercicioId: string, nota: number, comentario: string) => {
     if (!pruebaJuezId) throw new Error('Sin prueba_juez_id');
 
-    const res = await fetch('/api/puntuaciones', {
+    const res = await fetchConSesion('/api/puntuaciones', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         participacion_id: participacionId,
         prueba_juez_id: pruebaJuezId,
@@ -256,7 +254,7 @@ export default function PuntuarPruebaPage() {
 
   return (
     <div className="container max-w-5xl py-8">
-      <Link href={'/juez/prueba/' + pruebaId} className="text-primary mb-4 inline-block hover:underline">
+      <Link href={'/juez/prueba/' + pruebaId + (pjUrl ? '?pj=' + pjUrl : '')} className="text-primary mb-4 inline-block hover:underline">
         Volver a la prueba
       </Link>
 

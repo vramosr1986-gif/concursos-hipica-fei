@@ -96,7 +96,7 @@ export async function POST(request: NextRequest) {
     // 1. Obtener la letra del juez desde prueba_jueces
     const { data: pruebaJuez, error: pjError } = await supabase
       .from('prueba_jueces')
-      .select('id, letra, juez_id')
+      .select('id, letra, juez_id, prueba_id')
       .eq('id', body.prueba_juez_id)
       .single();
 
@@ -105,6 +105,20 @@ export async function POST(request: NextRequest) {
         { error: 'prueba_juez_id no valido: ' + (pjError?.message || 'no encontrado') },
         { status: 400 }
       );
+    }
+
+    // Un juez solo puntua con su propia letra; el admin puede hacerlo en nombre de cualquiera.
+    if (auth.rol !== 'admin' && pruebaJuez.juez_id !== auth.userId) {
+      return NextResponse.json({ error: 'Solo puedes puntuar con tu propia letra de juez' }, { status: 403 });
+    }
+
+    const { data: participacion } = await supabase
+      .from('participaciones')
+      .select('prueba_id')
+      .eq('id', body.participacion_id)
+      .single();
+    if (!participacion || participacion.prueba_id !== pruebaJuez.prueba_id) {
+      return NextResponse.json({ error: 'El binomio no participa en esta prueba' }, { status: 400 });
     }
 
     // 2. Upsert con letra_juez incluido
@@ -149,6 +163,17 @@ export async function PUT(request: NextRequest) {
 
     if (!id) {
       return NextResponse.json({ error: 'id requerido' }, { status: 400 });
+    }
+
+    if (auth.rol !== 'admin') {
+      const { data: actual } = await supabase
+        .from('puntuaciones')
+        .select('prueba_juez:prueba_juez_id(juez_id)')
+        .eq('id', id)
+        .single();
+      if ((actual as any)?.prueba_juez?.juez_id !== auth.userId) {
+        return NextResponse.json({ error: 'Solo puedes cambiar tus propias notas' }, { status: 403 });
+      }
     }
 
     const { data, error } = await supabase

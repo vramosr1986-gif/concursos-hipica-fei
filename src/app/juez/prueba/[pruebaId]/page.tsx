@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
+import { JuezDeLaPrueba, pruebaJuezDeLaUrl, resolverPuntuador } from '@/lib/juez-actual';
 import { esPendienteConfirmacion, nombreConMarca } from '@/lib/rfhe-pruebas';
 
 type Concurso = {
@@ -56,6 +57,26 @@ export default function PuntuarPruebaPage() {
   const [participaciones, setParticipaciones] = useState<Participacion[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  // Admin: con qué juez puntúa (?pj= en la URL) y lista de jueces de la prueba.
+  const [pj, setPj] = useState<string | null>(null);
+  const [esAdmin, setEsAdmin] = useState(false);
+  const [jueces, setJueces] = useState<JuezDeLaPrueba[]>([]);
+  const [pjActual, setPjActual] = useState<string | null>(null);
+  const [listo, setListo] = useState(false);
+
+  useEffect(() => {
+    setPj(pruebaJuezDeLaUrl());
+    setListo(true);
+  }, []);
+
+  const elegirJuez = (id: string) => {
+    const url = new URL(window.location.href);
+    url.searchParams.set('pj', id);
+    window.history.replaceState(null, '', url.toString());
+    setLoading(true);
+    setError('');
+    setPj(id);
+  };
 
   useEffect(() => {
     const cargar = async () => {
@@ -80,17 +101,15 @@ export default function PuntuarPruebaPage() {
 
         if (pruebaErr) throw pruebaErr;
 
-        const { data: pruebaJuez } = await supabase
-          .from('prueba_jueces')
-          .select('id, letra')
-          .eq('prueba_id', pruebaId)
-          .eq('juez_id', user.id)
-          .single();
-
-        if (!pruebaJuez) {
-          setError('No tienes asignada esta prueba como juez.');
+        const puntuador = await resolverPuntuador(pruebaId, pj);
+        setEsAdmin(puntuador.esAdmin);
+        setJueces(puntuador.jueces);
+        if (!puntuador.ok) {
+          setError(puntuador.error);
           return;
         }
+        setPjActual(puntuador.pruebaJuezId);
+        const pruebaJuez = { id: puntuador.pruebaJuezId, letra: puntuador.letra };
 
         setPrueba({
           id: (pruebaData as any).id,
@@ -125,21 +144,20 @@ export default function PuntuarPruebaPage() {
         if (partsErr) throw partsErr;
 
         const parts: Participacion[] = [];
+        const ids = (partsData || []).map((p) => p.id);
+        const { data: hechas } = ids.length > 0
+          ? await supabase.from('puntuaciones').select('participacion_id').eq('prueba_juez_id', pruebaJuez.id).in('participacion_id', ids)
+          : { data: [] as { participacion_id: string }[] };
+        const puntuadas = new Set((hechas || []).map((h) => h.participacion_id));
 
         for (const p of partsData || []) {
-          const { count } = await supabase
-            .from('puntuaciones')
-            .select('id', { count: 'exact', head: true })
-            .eq('participacion_id', p.id)
-            .eq('prueba_juez_id', pruebaJuez.id);
-
           parts.push({
             id: p.id,
             orden_salida: p.orden_salida,
             dorsal: (p as any).inscripcion?.dorsal || 0,
             jinete: (p as any).inscripcion?.binomio?.nombre_jinete || '-',
             caballo: (p as any).inscripcion?.binomio?.nombre_caballo || '-',
-            puntuada: (count || 0) > 0,
+            puntuada: puntuadas.has(p.id),
             pendiente: esPendienteConfirmacion((p as any).observaciones),
           });
         }
@@ -152,9 +170,9 @@ export default function PuntuarPruebaPage() {
       }
     };
 
-    if (pruebaId) cargar();
+    if (pruebaId && listo) cargar();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pruebaId]);
+  }, [pruebaId, pj, listo]);
 
   const formatearFecha = (fecha: string | null | undefined) => {
     if (!fecha) return '-';
@@ -162,8 +180,26 @@ export default function PuntuarPruebaPage() {
     return d + '/' + m + '/' + y;
   };
 
+  const selectorJuez = esAdmin && jueces.length > 0 && (
+    <div className="card mb-4 flex flex-wrap items-center gap-3 p-4">
+      <label htmlFor="puntuar-como" className="font-semibold">Puntuando como:</label>
+      <select id="puntuar-como" value={pjActual || ''} onChange={(e) => elegirJuez(e.target.value)} className="input">
+        {!pjActual && <option value="">-- Elige el juez --</option>}
+        {jueces.map((j) => <option key={j.id} value={j.id}>Letra {j.letra} · {j.nombre}</option>)}
+      </select>
+      <span className="text-sm text-gray-600">Eres admin: las notas se guardan a nombre del juez que elijas.</span>
+    </div>
+  );
+
   if (loading) return <div className="container py-8 text-center">Cargando...</div>;
-  if (error) return <div className="container py-8 text-center text-red-600">{error}</div>;
+  if (error) {
+    return (
+      <div className="container max-w-5xl py-8">
+        {selectorJuez}
+        <p className={esAdmin && jueces.length > 0 ? 'text-center text-gray-700' : 'text-center text-red-600'}>{error}</p>
+      </div>
+    );
+  }
   if (!prueba) return <div className="container py-8 text-center">Prueba no encontrada</div>;
 
   const totalPuntuadas = participaciones.filter((p) => p.puntuada).length;
@@ -173,6 +209,7 @@ export default function PuntuarPruebaPage() {
       <Link href="/juez" className="text-primary mb-4 inline-block hover:underline">
         Volver al panel
       </Link>
+      {selectorJuez}
 
             {/* CABECERA COMPACTA */}
       <div className="card mb-6 overflow-hidden">
@@ -250,7 +287,7 @@ export default function PuntuarPruebaPage() {
                       </td>
                       <td className="text-right">
                         <Link
-                          href={'/juez/prueba/' + pruebaId + '/binomio/' + p.id}
+                          href={'/juez/prueba/' + pruebaId + '/binomio/' + p.id + (esAdmin && pjActual ? '?pj=' + pjActual : '')}
                           className="btn btn-primary text-sm"
                         >
                           {p.puntuada ? 'Editar' : 'Puntuar'}

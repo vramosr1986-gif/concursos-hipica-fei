@@ -403,7 +403,10 @@ export function TablaPruebas(props: Props) {
                         {!esAdmin && <td className="px-3 py-2 text-center">{p.num_puntuaciones ?? 0} / {p.num_binomios}</td>}
                         <td className="whitespace-nowrap px-3 py-2 text-right">
                           {modo === 'admin' ? (
-                            <Link href={`/admin/concursos/${p.concurso_id}/pruebas/${p.id}`} className="btn btn-outline text-sm" title="Ver y cambiar los jueces y los binomios (jinete y caballo) de esta prueba">Abrir prueba</Link>
+                            <>
+                              <Link href={`/admin/concursos/${p.concurso_id}/pruebas/${p.id}`} className="btn btn-outline text-sm" title="Ver y cambiar los jueces y los binomios (jinete y caballo) de esta prueba">Abrir prueba</Link>
+                              <Link href={`/juez/prueba/${p.id}`} className="btn btn-primary ml-2 text-sm" title="Poner notas en esta prueba eligiendo con qué juez">Puntuar</Link>
+                            </>
                           ) : (
                             <Link href={`/juez/prueba/${p.id}`} className="btn btn-primary text-sm" title="Ver los binomios de esta prueba y poner las notas">Puntuar</Link>
                           )}

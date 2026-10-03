@@ -11,6 +11,7 @@ export default function PanelJuezPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [nombreJuez, setNombreJuez] = useState('');
+  const [esAdmin, setEsAdmin] = useState(false);
 
   const cargarPruebas = async () => {
     setLoading(true);
@@ -28,40 +29,50 @@ export default function PanelJuezPage() {
 
       const { data: perfil } = await supabase
         .from('profiles')
-        .select('nombre, email')
+        .select('nombre, email, rol')
         .eq('id', user.id)
         .single();
 
       if (perfil) {
         setNombreJuez(perfil.nombre || perfil.email);
       }
+      const admin = perfil?.rol === 'admin';
+      setEsAdmin(admin);
 
-      const { data: asignaciones, error: dbError } = await supabase
-        .from('prueba_jueces')
-        .select(
-          'letra, prueba:prueba_id (id, concurso_id, nombre, fecha, hora_inicio, pista, categoria, estado, concurso:concurso_id (nombre), reprise:reprise_id (nombre, codigo), participaciones (id))'
-        )
-        .eq('juez_id', user.id);
+      const camposPrueba = 'id, concurso_id, nombre, fecha, hora_inicio, pista, categoria, estado, concurso:concurso_id (nombre), reprise:reprise_id (nombre, codigo), participaciones (id)';
 
-      if (dbError) throw dbError;
+      // Juez: sus asignaciones. Admin: todas las pruebas (puede puntuar en nombre de cualquier juez).
+      let filas: { letra: string; pruebaJuezId: string | null; prueba: any }[];
+      if (admin) {
+        const { data, error: dbError } = await supabase.from('pruebas').select(camposPrueba);
+        if (dbError) throw dbError;
+        filas = (data || []).map((prueba: any) => ({ letra: '—', pruebaJuezId: null, prueba }));
+      } else {
+        const { data, error: dbError } = await supabase
+          .from('prueba_jueces')
+          .select(`id, letra, prueba:prueba_id (${camposPrueba})`)
+          .eq('juez_id', user.id);
+        if (dbError) throw dbError;
+        filas = (data || []).filter((a: any) => a.prueba).map((a: any) => ({ letra: a.letra, pruebaJuezId: a.id, prueba: a.prueba }));
+      }
 
-      const filas = (asignaciones || []).map((a: any) => a.prueba && { letra: a.letra, prueba: a.prueba }).filter(Boolean);
       const participacionAPrueba = new Map<string, string>();
       for (const { prueba } of filas) {
         for (const p of prueba.participaciones || []) participacionAPrueba.set(p.id, prueba.id);
       }
 
-      // Una sola consulta para contar lo que este juez ya ha puntuado en cada prueba.
-      const puntuadasPorPrueba = new Map<string, number>();
-      if (participacionAPrueba.size > 0) {
-        const { data: puntuaciones } = await supabase
-          .from('puntuaciones')
-          .select('participacion_id')
-          .eq('juez_id', user.id)
-          .in('participacion_id', Array.from(participacionAPrueba.keys()));
-        for (const p of puntuaciones || []) {
-          const pruebaId = participacionAPrueba.get(p.participacion_id);
-          if (pruebaId) puntuadasPorPrueba.set(pruebaId, (puntuadasPorPrueba.get(pruebaId) || 0) + 1);
+      // Binomios ya puntuados por prueba (las notas se guardan por ejercicio: se cuentan binomios distintos).
+      const puntuadosPorPrueba = new Map<string, Set<string>>();
+      const ids = Array.from(participacionAPrueba.keys());
+      for (let i = 0; i < ids.length; i += 300) {
+        let consulta = supabase.from('puntuaciones').select('participacion_id').in('participacion_id', ids.slice(i, i + 300));
+        if (!admin) consulta = consulta.in('prueba_juez_id', filas.map((f) => f.pruebaJuezId as string));
+        const { data: notas } = await consulta;
+        for (const n of notas || []) {
+          const pruebaId = participacionAPrueba.get(n.participacion_id);
+          if (!pruebaId) continue;
+          if (!puntuadosPorPrueba.has(pruebaId)) puntuadosPorPrueba.set(pruebaId, new Set());
+          puntuadosPorPrueba.get(pruebaId)!.add(n.participacion_id);
         }
       }
 
@@ -80,7 +91,7 @@ export default function PanelJuezPage() {
         jueces: [],
         letra_juez: letra,
         num_binomios: (prueba.participaciones || []).length,
-        num_puntuaciones: puntuadasPorPrueba.get(prueba.id) || 0,
+        num_puntuaciones: puntuadosPorPrueba.get(prueba.id)?.size || 0,
       })));
     } catch (err: any) {
       setError(err.message || 'Error al cargar tus pruebas');
@@ -99,16 +110,19 @@ export default function PanelJuezPage() {
       <div className="mb-6">
         <h1 className="text-3xl font-bold">Panel del Juez</h1>
         <p className="text-gray-600 mt-1">Bienvenido/a, {nombreJuez}</p>
+        {esAdmin && (
+          <p className="mt-2 text-sm text-gray-600">Eres admin: ves todas las pruebas y puedes puntuar cualquiera eligiendo con qué juez.</p>
+        )}
       </div>
 
       <div className="card p-4 mb-6 bg-[#112d24] text-white">
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-sm opacity-75">Pruebas asignadas</p>
+            <p className="text-sm opacity-75">{esAdmin ? 'Pruebas' : 'Pruebas asignadas'}</p>
             <p className="text-3xl font-bold">{pruebas.length}</p>
           </div>
           <div className="text-right">
-            <p className="text-sm opacity-75">Puntuaciones registradas</p>
+            <p className="text-sm opacity-75">Binomios puntuados</p>
             <p className="text-3xl font-bold">
               {pruebas.reduce((sum, p) => sum + (p.num_puntuaciones || 0), 0)}
             </p>
