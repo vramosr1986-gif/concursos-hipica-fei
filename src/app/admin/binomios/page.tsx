@@ -48,8 +48,8 @@ const vieneDeRfhe = (b: Binomio) => b.concursos.some((c) => c.rfhe);
 
 function faltan(b: Binomio): string[] {
   const lista: string[] = [];
-  if (!b.fecha_nacimiento_jinete) lista.push('fecha de nacimiento del jinete');
-  if (!b.anio_nacimiento_caballo) lista.push('año de nacimiento del caballo');
+  if (!b.fecha_nacimiento_jinete) lista.push('Sin fecha del jinete');
+  if (!b.anio_nacimiento_caballo) lista.push('Sin año del caballo');
   return lista;
 }
 
@@ -223,11 +223,11 @@ export default function JinetesYCaballosPage() {
               <table className="min-w-full text-left text-sm">
                 <thead className="bg-[#f4f0e6] text-xs uppercase text-[#466257]">
                   <tr>
-                    <th className="px-3 py-2">Jinete</th>
-                    <th className="px-3 py-2">Caballo</th>
-                    <th className="px-3 py-2">Categoría</th>
-                    <th className="whitespace-nowrap px-3 py-2">Origen y concursos</th>
-                    <th className="whitespace-nowrap px-3 py-2">Comprobado</th>
+                    <th className="px-2 py-2">Jinete</th>
+                    <th className="px-2 py-2">Caballo</th>
+                    <th className="px-2 py-2">Categoría</th>
+                    <th className="px-2 py-2">Concursos</th>
+                    <th className="whitespace-nowrap px-2 py-2">Comprobado</th>
                     <th className="px-3 py-2" />
                   </tr>
                 </thead>
@@ -236,26 +236,27 @@ export default function JinetesYCaballosPage() {
                     const pendientes = faltan(b);
                     return (
                       <tr key={b.id} className="border-t border-[#eee9df] align-top even:bg-[#fffdfa]">
-                        <td className="px-3 py-2">
+                        <td className="px-2 py-2">
                           <span className="inline-flex items-center gap-1.5 font-medium"><BanderaFH codigo={b.fh_jinete} />{b.nombre_jinete}</span>
                           <span className="block text-xs text-gray-500">LDN {b.ldn_jinete || '—'}</span>
                         </td>
-                        <td className="px-3 py-2">
+                        <td className="px-2 py-2">
                           <span className="inline-flex items-center gap-1.5"><BanderaFH codigo={b.fh_caballo} />{b.nombre_caballo}</span>
                           <span className="block text-xs text-gray-500">LAC {b.lac_caballo || '—'}</span>
                         </td>
-                        <td className="px-3 py-2">
+                        <td className="px-2 py-2">
                           {b.categoria_principal ? NOMBRE_CATEGORIA[b.categoria_principal] || b.categoria_principal : <span className="text-gray-400">—</span>}
                           {pendientes.length > 0 && (
-                            <span className="mt-1 block text-xs text-amber-700">Falta: {pendientes.join(' y ')}</span>
+                            <span className="mt-1 flex flex-col gap-0.5" title="Sin estos datos no se puede calcular la categoría">
+                              {pendientes.map((p) => (
+                                <span key={p} className="w-fit whitespace-nowrap rounded bg-amber-50 px-1.5 py-0.5 text-xs text-amber-800">{p}</span>
+                              ))}
+                            </span>
                           )}
                         </td>
-                        <td className="px-3 py-2">
-                          <span className={`inline-block rounded px-2 py-0.5 text-xs font-medium ${vieneDeRfhe(b) ? 'bg-[#173b2f]/10 text-[#173b2f]' : 'bg-gray-100 text-gray-700'}`}>
-                            {vieneDeRfhe(b) ? 'RFHE' : 'Añadido a mano'}
-                          </span>
+                        <td className="px-2 py-2">
                           {b.concursos.length > 0 ? (
-                            <ul className="mt-1 space-y-0.5 text-xs">
+                            <ul className="space-y-0.5 text-xs">
                               {b.concursos.map((c) => (
                                 <li key={c.id}>
                                   <Link href={`/admin/concursos/${c.id}`} className="text-primary hover:underline">{c.nombre}</Link>
@@ -263,18 +264,18 @@ export default function JinetesYCaballosPage() {
                               ))}
                             </ul>
                           ) : (
-                            <span className="mt-1 block text-xs text-gray-500">Sin inscribir en ningún concurso</span>
+                            <span className="whitespace-nowrap text-xs text-gray-500">Ninguno</span>
                           )}
                         </td>
-                        <td className="px-3 py-2">
+                        <td className="px-2 py-2">
                           {vieneDeRfhe(b) ? (
-                            <span className="whitespace-nowrap text-sm text-[#173b2f]">Viene de la RFHE</span>
+                            <span className="whitespace-nowrap text-xs text-[#173b2f]">Viene de la RFHE</span>
                           ) : (
                           <select
                             aria-label={`Comprobado en la RFHE: ${b.nombre_jinete} / ${b.nombre_caballo}`}
                             value={b.estado_validacion}
                             onChange={(e) => cambiarValidacion(b, e.target.value as EstadoValidacion)}
-                            className="input w-40 text-sm"
+                            className="input w-36 text-xs"
                           >
                             <option value="pendiente">Sin comprobar</option>
                             <option value="valido">Sí, es correcto</option>
@@ -282,7 +283,7 @@ export default function JinetesYCaballosPage() {
                           </select>
                           )}
                         </td>
-                        <td className="whitespace-nowrap px-3 py-2 text-right">
+                        <td className="whitespace-nowrap px-2 py-2 text-right">
                           <div className="flex flex-col items-end gap-1">
                             <Link href={`/admin/binomios/${b.id}`} className="btn btn-outline btn-sm whitespace-nowrap">Editar datos</Link>
                             <button type="button" onClick={() => buscarJineteEnRfhe(b.nombre_jinete)} className="whitespace-nowrap text-xs text-primary hover:underline" title="Abre la búsqueda de jinetes de la RFHE en otra pestaña">
