@@ -281,7 +281,7 @@ export default function AdminReprisesPage() {
               onClick={() => setVistaAgrupada(!vistaAgrupada)}
               className="text-sm text-gray-600 hover:text-gray-900"
             >
-              {vistaAgrupada ? '📋 Ver lista plana' : 'Buscar“ Ver agrupado por categoría'}
+              {vistaAgrupada ? '📋 Ver lista plana' : '📂 Ver agrupado por nivel'}
             </button>
           </div>
 
