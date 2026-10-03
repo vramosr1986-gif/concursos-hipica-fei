@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { JSDOM } from 'jsdom';
+import { load } from 'cheerio';
 import { getDocument } from 'pdfjs-dist/legacy/build/pdf.mjs';
 import { verificarAdmin } from '@/lib/api-guard';
 
@@ -137,16 +137,15 @@ function normalizarEncabezado(valor: string): string {
   return valor.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
 }
 
-function extraerInscritos(document: Document): InscritoRfhe[] {
-  const tablas = Array.from(document.querySelectorAll('table')).filter(
-    (table) => !table.querySelector('table')
-  );
+function extraerInscritos($: ReturnType<typeof load>): InscritoRfhe[] {
+  const tablas = $('table').toArray().filter((table) => $(table).find('table').length === 0);
 
   for (const table of tablas) {
-    const filas = Array.from(table.querySelectorAll('tr'));
+    const filas = $(table).find('tr').toArray();
     const indiceEncabezado = filas.findIndex((row) => {
-      const celdas = Array.from(row.querySelectorAll(':scope > th, :scope > td'))
-        .map((cell) => normalizarEncabezado(cell.textContent || ''));
+      const celdas = $(row).children('th, td')
+        .map((_index, cell) => normalizarEncabezado($(cell).text()))
+        .toArray();
       return celdas.some((cell) => cell.includes('jinete')) &&
         celdas.some((cell) => cell === 'ldn') &&
         celdas.some((cell) => cell === 'lac') &&
@@ -159,8 +158,9 @@ function extraerInscritos(document: Document): InscritoRfhe[] {
     let actual: InscritoRfhe | null = null;
 
     for (const row of filas.slice(indiceEncabezado + 1)) {
-      const celdas = Array.from(row.querySelectorAll(':scope > th, :scope > td'))
-        .map((cell) => (cell.textContent || '').replace(/\s+/g, ' ').trim());
+      const celdas = $(row).children('th, td')
+        .map((_index, cell) => $(cell).text().replace(/\s+/g, ' ').trim())
+        .toArray();
       if (celdas.length === 0) continue;
 
       if (/^\d+$/.test(celdas[0] || '') && celdas.length >= 8) {
@@ -198,18 +198,17 @@ function extraerInscritos(document: Document): InscritoRfhe[] {
 }
 
 function extraerHtml(url: string, html: string): PaginaExtraida {
-  const dom = new JSDOM(html);
-  const document = dom.window.document;
+  const $ = load(html);
   const tablas: TablaExtraida[] = [];
 
-  document.querySelectorAll('table').forEach((table) => {
-    if (table.querySelector('table')) return;
-    const elementosFila = Array.from(table.querySelectorAll('tr'));
-    const indiceEncabezado = elementosFila.findIndex((row) => row.querySelector(':scope > th'));
-    const filas = elementosFila.map((tr) =>
-      Array.from(tr.querySelectorAll('th, td')).map((cell) =>
-        (cell.textContent || '').replace(/\s+/g, ' ').trim()
-      )
+  $('table').each((_tableIndex, table) => {
+    if ($(table).find('table').length > 0) return;
+    const elementosFila = $(table).find('tr').toArray();
+    const indiceEncabezado = elementosFila.findIndex((row) => $(row).children('th').length > 0);
+    const filas = elementosFila.map((row) =>
+      $(row).children('th, td')
+        .map((_cellIndex, cell) => $(cell).text().replace(/\s+/g, ' ').trim())
+        .toArray()
     ).filter((row) => row.some(Boolean));
 
     if (filas.length === 0) return;
@@ -222,32 +221,35 @@ function extraerHtml(url: string, html: string): PaginaExtraida {
 
   return {
     url,
-    titulo: document.title.trim() || document.querySelector('h1, h2, b')?.textContent?.trim() || '',
-    texto: (document.body?.textContent || '').replace(/\s+/g, ' ').trim(),
+    titulo: $('title').first().text().trim() || $('h1, h2, b').first().text().trim(),
+    texto: $('body').text().replace(/\s+/g, ' ').trim(),
     tablas,
-    inscritos: extraerInscritos(document),
+    inscritos: extraerInscritos($),
   };
 }
 
-function extraerConcursosCalendario(document: Document): ConcursoCalendarioRfhe[] {
+function extraerConcursosCalendario($: ReturnType<typeof load>): ConcursoCalendarioRfhe[] {
   const concursos: ConcursoCalendarioRfhe[] = [];
 
-  document.querySelectorAll('a[href*="PRGNAME=RFHECALCON"]').forEach((anchor) => {
-    const row = anchor.closest('tr');
-    if (!row) return;
+  $('a[href*="PRGNAME=RFHECALCON"]').each((_anchorIndex, anchor) => {
+    const row = $(anchor).closest('tr');
+    if (row.length === 0) return;
 
-    const cells = Array.from(row.querySelectorAll(':scope > td'))
-      .map((cell) => (cell.textContent || '').replace(/\s+/g, ' ').trim());
+    const cells = row.children('td')
+      .map((_cellIndex, cell) => $(cell).text().replace(/\s+/g, ' ').trim())
+      .toArray();
     if (cells.length < 6) return;
 
     try {
-      const urlDetalle = new URL((anchor as HTMLAnchorElement).href);
+      const href = $(anchor).attr('href');
+      if (!href) return;
+      const urlDetalle = new URL(href, 'https://www.cbservicios.net');
       if (urlDetalle.protocol !== 'https:' || !HOSTS_PERMITIDOS.has(urlDetalle.hostname.toLowerCase())) return;
 
       concursos.push({
         fecha: cells[0] || '',
         categoria: cells[1] || '',
-        nombre: (anchor.textContent || '').replace(/\s+/g, ' ').trim(),
+        nombre: $(anchor).text().replace(/\s+/g, ' ').trim(),
         provincia: cells[4] || '',
         sede: cells[5] || '',
         urlDetalle: urlDetalle.toString(),
@@ -359,9 +361,9 @@ export async function GET(request: NextRequest) {
   try {
     const { bytes, contentType } = await descargar(calendarUrl);
     const html = decodificarHtml(bytes, contentType);
-    const dom = new JSDOM(html);
-    const concursos = extraerConcursosCalendario(dom.window.document);
-    const titulo = dom.window.document.title.trim() || `Calendario RFHE ${year}`;
+    const $ = load(html);
+    const concursos = extraerConcursosCalendario($);
+    const titulo = $('title').first().text().trim() || `Calendario RFHE ${year}`;
 
     return NextResponse.json({
       year,
