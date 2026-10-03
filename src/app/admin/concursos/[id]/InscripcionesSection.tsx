@@ -330,7 +330,7 @@ export function InscripcionesSection({ concursoId, esRfhe }: { concursoId: strin
                       defaultValue={i.dorsal}
                       aria-label={`Dorsal de ${i.binomio?.nombre_jinete || 'este binomio'}`}
                       title="Escribe el dorsal y pulsa Intro o haz clic fuera para guardarlo"
-                      className="input w-20 font-bold"
+                      className="input w-20 min-w-20 font-bold"
                       onKeyDown={(e) => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); }}
                       onBlur={(e) => cambiarDorsal(i, e.target.value)}
                     />
@@ -342,8 +342,8 @@ export function InscripcionesSection({ concursoId, esRfhe }: { concursoId: strin
                       ? <span className="text-amber-700">En ninguna prueba</span>
                       : (pruebasPorInscripcion.get(i.id) || []).map((p) => nombreConMarca(p.nombre, p.pendiente)).join(', ')}
                   </td>
-                  <td className="text-right">
-                    <button type="button" disabled={ocupado} onClick={() => borrar(i)} className="text-sm text-danger hover:underline">
+                  <td className="whitespace-nowrap text-right">
+                    <button type="button" disabled={ocupado} onClick={() => borrar(i)} className="whitespace-nowrap text-sm text-danger hover:underline">
                       Quitar del concurso
                     </button>
                   </td>
