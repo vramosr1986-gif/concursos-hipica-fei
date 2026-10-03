@@ -1,7 +1,7 @@
 'use client';
 
 import { FormEvent, useState } from 'react';
-import { ArrowDownToLine, ExternalLink, FileSearch, LoaderCircle } from 'lucide-react';
+import { ArrowDown, ArrowDownToLine, ArrowDownUp, ArrowUp, ExternalLink, FileSearch, LoaderCircle } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 
 type RepriseInscrito = {
@@ -32,22 +32,14 @@ type HtmlData = {
   inscritos?: InscritoRfhe[];
 };
 
-type PdfData = {
-  url: string;
-  texto: string;
-  paginas: { numero: number; texto: string }[];
-};
-
-type SectionResult =
-  | { tipo: 'html'; datos: HtmlData }
-  | { tipo: 'pdf'; datos: PdfData }
-  | { error: string };
+type SectionResult = { tipo: 'html'; datos: HtmlData } | { error: string };
 
 type ExtractionResult = {
   concurso: SectionResult;
   inscritos: SectionResult;
-  avance: SectionResult;
 };
+
+type InscritoSortKey = 'numero' | 'jinete' | 'ldn' | 'federacionJinete' | 'caballo';
 
 type CalendarContest = {
   fecha: string;
@@ -69,7 +61,6 @@ type CalendarResult = {
 const CAMPOS = [
   { id: 'concursoUrl', label: 'URL del concurso' },
   { id: 'inscritosUrl', label: 'URL de admitidos e inscritos' },
-  { id: 'avanceUrl', label: 'URL del avance (PDF o página)' },
 ] as const;
 
 async function leerJsonApi<T>(response: Response): Promise<T> {
@@ -129,9 +120,42 @@ function TablasHtml({ datos }: { datos: HtmlData }) {
 
 function TablaInscritos({ datos }: { datos: HtmlData }) {
   const inscritos = datos.inscritos || [];
+  const [orden, setOrden] = useState<{ campo: InscritoSortKey; direccion: 'asc' | 'desc' }>({
+    campo: 'numero',
+    direccion: 'asc',
+  });
   if (inscritos.length === 0) return <TablasHtml datos={datos} />;
 
   const totalReprises = inscritos.reduce((total, inscrito) => total + inscrito.reprises.length, 0);
+  const cambiarOrden = (campo: InscritoSortKey) => {
+    setOrden((actual) => ({
+      campo,
+      direccion: actual.campo === campo && actual.direccion === 'asc' ? 'desc' : 'asc',
+    }));
+  };
+  const inscritosOrdenados = [...inscritos].sort((a, b) => {
+    let comparacion = 0;
+    if (orden.campo === 'numero') {
+      comparacion = Number(a.numero) - Number(b.numero);
+    } else if (orden.campo === 'caballo') {
+      const textoA = a.reprises.map((r) => `${r.caballo} ${r.lac} ${r.federacionCaballo} ${r.reprise}`).join(' | ');
+      const textoB = b.reprises.map((r) => `${r.caballo} ${r.lac} ${r.federacionCaballo} ${r.reprise}`).join(' | ');
+      comparacion = textoA.localeCompare(textoB, 'es', { numeric: true, sensitivity: 'base' });
+    } else {
+      comparacion = a[orden.campo].localeCompare(b[orden.campo], 'es', { numeric: true, sensitivity: 'base' });
+    }
+    return orden.direccion === 'asc' ? comparacion : -comparacion;
+  });
+  const cabeceraOrdenable = (campo: InscritoSortKey, titulo: string, className = 'whitespace-nowrap') => (
+    <th aria-sort={orden.campo === campo ? (orden.direccion === 'asc' ? 'ascending' : 'descending') : 'none'} className={`${className} px-3 py-2`}>
+      <button type="button" onClick={() => cambiarOrden(campo)} className="inline-flex items-center gap-1.5 text-left">
+        {titulo}
+        {orden.campo === campo
+          ? orden.direccion === 'asc' ? <ArrowUp className="size-3.5" aria-hidden="true" /> : <ArrowDown className="size-3.5" aria-hidden="true" />
+          : <ArrowDownUp className="size-3.5 opacity-50" aria-hidden="true" />}
+      </button>
+    </th>
+  );
 
   return (
     <div className="space-y-3">
@@ -146,15 +170,15 @@ function TablaInscritos({ datos }: { datos: HtmlData }) {
         <table className="min-w-full text-left text-sm">
           <thead className="bg-[#f4f0e6] text-xs uppercase text-[#466257]">
             <tr>
-              <th className="whitespace-nowrap px-3 py-2">Nº</th>
-              <th className="whitespace-nowrap px-3 py-2">Jinete/Amazona</th>
-              <th className="whitespace-nowrap px-3 py-2">LDN</th>
-              <th className="whitespace-nowrap px-3 py-2">FH jinete</th>
-              <th className="min-w-72 px-3 py-2">Caballo · LAC · FH · Reprise</th>
+              {cabeceraOrdenable('numero', 'Nº')}
+              {cabeceraOrdenable('jinete', 'Jinete/Amazona')}
+              {cabeceraOrdenable('ldn', 'LDN')}
+              {cabeceraOrdenable('federacionJinete', 'FH jinete')}
+              {cabeceraOrdenable('caballo', 'Caballo · LAC · FH · Reprise', 'min-w-72')}
             </tr>
           </thead>
           <tbody>
-            {inscritos.map((inscrito) => (
+            {inscritosOrdenados.map((inscrito) => (
               <tr key={`${inscrito.numero}-${inscrito.ldn}`} className="border-t border-[#eee9df] align-top even:bg-[#fffdfa]">
                 <td className="px-3 py-2">{inscrito.numero}</td>
                 <td className="whitespace-nowrap px-3 py-2">{inscrito.jinete}</td>
@@ -188,16 +212,8 @@ function ContenidoResultado({ titulo, resultado, inscritos = false }: {
       <h2 className="text-lg font-semibold text-[#173b2f]">{titulo}</h2>
       {'error' in resultado ? (
         <p className="rounded border border-red-200 bg-red-50 p-3 text-sm text-red-700">{resultado.error}</p>
-      ) : resultado.tipo === 'html' ? (
-        inscritos ? <TablaInscritos datos={resultado.datos} /> : <TablasHtml datos={resultado.datos} />
       ) : (
-        <div className="space-y-3">
-          <p className="break-all text-xs text-gray-500">{resultado.datos.url}</p>
-          <p className="text-sm text-gray-600">{resultado.datos.paginas.length} páginas con texto extraído</p>
-          <pre className="max-h-[32rem] overflow-auto whitespace-pre-wrap rounded border border-[#e4dfd4] bg-[#fffdfa] p-4 text-xs leading-5 text-gray-700">
-            {resultado.datos.texto || 'El PDF no contiene texto seleccionable.'}
-          </pre>
-        </div>
+        inscritos ? <TablaInscritos datos={resultado.datos} /> : <TablasHtml datos={resultado.datos} />
       )}
     </section>
   );
@@ -209,7 +225,7 @@ export default function RfheExtractionPage() {
   const [calendar, setCalendar] = useState<CalendarResult | null>(null);
   const [calendarError, setCalendarError] = useState('');
   const [loadingCalendar, setLoadingCalendar] = useState(false);
-  const [urls, setUrls] = useState({ concursoUrl: '', inscritosUrl: '', avanceUrl: '' });
+  const [urls, setUrls] = useState({ concursoUrl: '', inscritosUrl: '' });
   const [resultado, setResultado] = useState<ExtractionResult | null>(null);
   const [error, setError] = useState('');
   const [cargando, setCargando] = useState(false);
@@ -376,7 +392,6 @@ export default function RfheExtractionPage() {
         <div className="space-y-5 rounded-lg border border-[#e4dfd4] bg-white p-5">
           <ContenidoResultado titulo="Datos del concurso" resultado={resultado.concurso} />
           <ContenidoResultado titulo="Relación de admitidos" resultado={resultado.inscritos} inscritos />
-          <ContenidoResultado titulo="Avance" resultado={resultado.avance} />
         </div>
       )}
     </div>

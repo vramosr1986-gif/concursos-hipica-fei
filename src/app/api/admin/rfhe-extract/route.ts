@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { load } from 'cheerio';
-import { getDocument } from 'pdfjs-dist/legacy/build/pdf.mjs';
 import { verificarAdmin } from '@/lib/api-guard';
 
 export const runtime = 'nodejs';
@@ -269,31 +268,10 @@ function decodificarHtml(bytes: Buffer, contentType: string): string {
   return new TextDecoder(esLatin ? 'windows-1252' : 'utf-8').decode(bytes);
 }
 
-async function extraerPdf(url: string, bytes: Buffer) {
-  const pdf = await getDocument({ data: new Uint8Array(bytes) }).promise;
-  const paginas: { numero: number; texto: string }[] = [];
-
-  for (let numero = 1; numero <= pdf.numPages; numero += 1) {
-    const pagina = await pdf.getPage(numero);
-    const contenido = await pagina.getTextContent();
-    const texto = contenido.items
-      .map((item) => ('str' in item ? item.str : ''))
-      .filter(Boolean)
-      .join(' ')
-      .replace(/\s+/g, ' ')
-      .trim();
-    paginas.push({ numero, texto });
-  }
-
-  return { url, paginas, texto: paginas.map((pagina) => pagina.texto).join('\n\n') };
-}
-
-async function extraer(url: URL, tipo: 'html' | 'avance') {
+async function extraer(url: URL) {
   const { bytes, contentType } = await descargar(url);
-  const esPdf = contentType.toLowerCase().includes('pdf') || bytes.subarray(0, 5).toString() === '%PDF-';
-
-  if (tipo === 'avance' && esPdf) {
-    return { tipo: 'pdf' as const, datos: await extraerPdf(url.toString(), bytes) };
+  if (contentType.toLowerCase().includes('pdf') || bytes.subarray(0, 5).toString() === '%PDF-') {
+    throw new Error('Esta página no acepta avances PDF; introduce una URL HTML de concurso o admitidos');
   }
 
   const html = decodificarHtml(bytes, contentType);
@@ -311,12 +289,10 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const concursoUrl = validarUrl(body.concursoUrl, 'concurso');
     const inscritosUrl = validarUrl(body.inscritosUrl, 'inscritos');
-    const avanceUrl = validarUrl(body.avanceUrl, 'avance');
 
     const resultados = await Promise.allSettled([
-      extraer(concursoUrl, 'html'),
-      extraer(inscritosUrl, 'html'),
-      extraer(avanceUrl, 'avance'),
+      extraer(concursoUrl),
+      extraer(inscritosUrl),
     ]);
 
     const resultado = (index: number) => {
@@ -328,7 +304,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       concurso: resultado(0),
       inscritos: resultado(1),
-      avance: resultado(2),
     });
   } catch (error) {
     return NextResponse.json(
