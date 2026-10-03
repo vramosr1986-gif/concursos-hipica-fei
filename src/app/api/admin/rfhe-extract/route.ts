@@ -4,6 +4,7 @@ import { verificarAdmin } from '@/lib/api-guard';
 import { request as httpsRequest } from 'node:https';
 import { rootCertificates } from 'node:tls';
 import { RAPIDSSL_INTERMEDIATE_PEM } from '@/lib/rfhe-ca';
+import { compararPorInicio, parsearRangoRFHE } from '@/lib/fechas';
 
 export const runtime = 'nodejs';
 
@@ -42,7 +43,8 @@ type ListaInscritosExtraida = {
 };
 
 type ConcursoCalendarioRfhe = {
-  fecha: string;
+  fecha_inicio: string;
+  fecha_fin: string;
   categoria: string;
   nombre: string;
   provincia: string;
@@ -175,10 +177,19 @@ function extraerInscritos($: ReturnType<typeof load>): ListaInscritosExtraida {
     const indiceReprise = encabezados.findIndex((cell) => cell.includes('repris'));
     const indiceObservaciones = encabezados.findIndex((cell) => cell.includes('observ'));
 
+    // RFHE parte la lista en varias tablas; solo la primera lleva cabecera.
+    const filasContinuacion = [];
+    for (const siguiente of tablas.slice(tablas.indexOf(table) + 1)) {
+      const filasSiguiente = $(siguiente).find('tr').toArray().filter((row) => $(row).text().trim());
+      const esContinuacion = filasSiguiente.length > 0 && filasSiguiente.every((row) => $(row).children('th, td').length >= 5);
+      if (!esContinuacion) break;
+      filasContinuacion.push(...filasSiguiente);
+    }
+
     const inscritos: InscritoRfhe[] = [];
     let actual: InscritoRfhe | null = null;
 
-    for (const row of filas.slice(indiceEncabezado + 1)) {
+    for (const row of [...filas.slice(indiceEncabezado + 1), ...filasContinuacion]) {
       const celdas = $(row).children('th, td')
         .map((_index, cell) => $(cell).text().replace(/\s+/g, ' ').trim())
         .toArray();
@@ -273,8 +284,10 @@ function extraerHtml(url: string, html: string): PaginaExtraida {
   };
 }
 
-function extraerConcursosCalendario($: ReturnType<typeof load>): ConcursoCalendarioRfhe[] {
-  const concursos: ConcursoCalendarioRfhe[] = [];
+// RFHE lista cada concurso dos veces: una con el rango sin mes ("14-15", "28-01 Mar.")
+// y otra con la fecha de inicio completa ("14/02/2026"). Se agrupan por enlace.
+function extraerConcursosCalendario($: ReturnType<typeof load>, anio: number): ConcursoCalendarioRfhe[] {
+  const porEnlace = new Map<string, Omit<ConcursoCalendarioRfhe, 'fecha_inicio' | 'fecha_fin'> & { textosFecha: string[] }>();
 
   $('a[href*="PRGNAME=RFHECALCON"]').each((_anchorIndex, anchor) => {
     const row = $(anchor).closest('tr');
@@ -291,20 +304,35 @@ function extraerConcursosCalendario($: ReturnType<typeof load>): ConcursoCalenda
       const urlDetalle = new URL(href, 'https://www.cbservicios.net');
       if (urlDetalle.protocol !== 'https:' || !HOSTS_PERMITIDOS.has(urlDetalle.hostname.toLowerCase())) return;
 
-      concursos.push({
-        fecha: cells[0] || '',
+      const clave = urlDetalle.toString();
+      const existente = porEnlace.get(clave);
+      if (existente) {
+        if (cells[0]) existente.textosFecha.push(cells[0]);
+        return;
+      }
+      porEnlace.set(clave, {
+        textosFecha: cells[0] ? [cells[0]] : [],
         categoria: cells[1] || '',
         nombre: $(anchor).text().replace(/\s+/g, ' ').trim(),
         provincia: cells[4] || '',
         sede: cells[5] || '',
-        urlDetalle: urlDetalle.toString(),
+        urlDetalle: clave,
       });
     } catch {
       return;
     }
   });
 
-  return concursos;
+  const concursos: ConcursoCalendarioRfhe[] = [];
+  for (const { textosFecha, ...concurso } of porEnlace.values()) {
+    const fechaCompleta = textosFecha.find((texto) => /^\d{1,2}\/\d{1,2}\/\d{2,4}$/.test(texto));
+    const textoRango = textosFecha.find((texto) => texto !== fechaCompleta) || fechaCompleta || '';
+    const rango = parsearRangoRFHE(textoRango, anio, fechaCompleta);
+    if (!rango) continue;
+    concursos.push({ ...concurso, ...rango });
+  }
+
+  return concursos.sort(compararPorInicio);
 }
 
 function decodificarHtml(bytes: Buffer, contentType: string): string {
@@ -314,15 +342,34 @@ function decodificarHtml(bytes: Buffer, contentType: string): string {
   return new TextDecoder(esLatin ? 'windows-1252' : 'utf-8').decode(bytes);
 }
 
-async function extraer(url: URL) {
-  const { bytes, contentType } = await descargar(url);
-  if (contentType.toLowerCase().includes('pdf') || bytes.subarray(0, 5).toString() === '%PDF-') {
-    throw new Error('Esta página no acepta avances PDF; introduce una URL HTML de concurso o admitidos');
-  }
+// Algunas páginas RFHE (p. ej. RFHECONLISINS) solo contienen un salto por JavaScript
+// del estilo MM_goToURL('this','https://...') o location='https://...'.
+function buscarRedireccionJs(html: string): string | null {
+  const $ = load(html);
+  if ($('body').text().trim() || $('table').length > 0) return null;
+  const destino = html.match(/MM_goToURL\(\s*['"][^'"]*['"]\s*,\s*['"]([^'"]+)['"]/) ||
+    html.match(/location(?:\.href)?\s*=\s*['"]([^'"]+)['"]/);
+  return destino ? destino[1] : null;
+}
 
-  const html = decodificarHtml(bytes, contentType);
-  if (!html.trim()) throw new Error('RFHE devolvió una página vacía');
-  return { tipo: 'html' as const, datos: extraerHtml(url.toString(), html) };
+async function extraer(url: URL) {
+  let actual = url;
+  for (let saltos = 0; ; saltos++) {
+    const { bytes, contentType } = await descargar(actual);
+    if (contentType.toLowerCase().includes('pdf') || bytes.subarray(0, 5).toString() === '%PDF-') {
+      throw new Error('Esta página no acepta avances PDF; introduce una URL HTML de concurso o admitidos');
+    }
+
+    const html = decodificarHtml(bytes, contentType);
+    if (!html.trim()) throw new Error('RFHE devolvió una página vacía');
+
+    const redireccion = buscarRedireccionJs(html);
+    if (redireccion && saltos < 3) {
+      actual = validarUrl(new URL(redireccion, actual).toString(), 'redirección RFHE');
+      continue;
+    }
+    return { tipo: 'html' as const, datos: extraerHtml(actual.toString(), html) };
+  }
 }
 
 export async function POST(request: NextRequest) {
@@ -383,7 +430,7 @@ export async function GET(request: NextRequest) {
     const { bytes, contentType } = await descargar(calendarUrl);
     const html = decodificarHtml(bytes, contentType);
     const $ = load(html);
-    const concursos = extraerConcursosCalendario($);
+    const concursos = extraerConcursosCalendario($, year);
     const titulo = $('title').first().text().trim() || `Calendario RFHE ${year}`;
 
     return NextResponse.json({

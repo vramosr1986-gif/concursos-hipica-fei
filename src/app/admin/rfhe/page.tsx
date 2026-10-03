@@ -3,6 +3,7 @@
 import { FormEvent, useState } from 'react';
 import { ArrowDown, ArrowDownToLine, ArrowDownUp, ArrowUp, ExternalLink, FileSearch, LoaderCircle } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
+import { compararPorInicio, formatearRango } from '@/lib/fechas';
 
 type RepriseInscrito = {
   reprise: string;
@@ -56,7 +57,8 @@ function sugerirJornada(reprise: string): string {
 }
 
 type CalendarContest = {
-  fecha: string;
+  fecha_inicio: string;
+  fecha_fin: string;
   categoria: string;
   nombre: string;
   provincia: string;
@@ -76,27 +78,6 @@ type CalendarSortKey = 'fecha' | 'categoria' | 'nombre' | 'provincia' | 'sede';
 
 function normalizarTexto(texto: string): string {
   return texto.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLocaleLowerCase('es');
-}
-
-function formatearFechaCalendario(fecha: string): string {
-  const fechaIso = fecha.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
-  if (fechaIso) return `${fechaIso[3].padStart(2, '0')}/${fechaIso[2].padStart(2, '0')}/${fechaIso[1]}`;
-
-  const fechaRfhe = fecha.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
-  if (fechaRfhe) return `${fechaRfhe[1].padStart(2, '0')}/${fechaRfhe[2].padStart(2, '0')}/${fechaRfhe[3]}`;
-
-  return fecha;
-}
-
-function compararFechaRfhe(a: string, b: string): number {
-  const convertir = (fecha: string) => {
-    const partes = fecha.split('/').map(Number);
-    if (partes.length !== 3 || partes.some(Number.isNaN)) return Number.MAX_SAFE_INTEGER;
-    const [dia, mes, anioOriginal] = partes;
-    const anio = anioOriginal < 100 ? 2000 + anioOriginal : anioOriginal;
-    return Date.UTC(anio, mes - 1, dia);
-  };
-  return convertir(a) - convertir(b);
 }
 
 const CAMPOS = [
@@ -414,7 +395,7 @@ export default function RfheExtractionPage() {
 
   const concursosFiltrados = (calendar?.concursos || [])
     .filter((concurso) =>
-      normalizarTexto(concurso.fecha).includes(normalizarTexto(calendarFilters.fecha)) &&
+      normalizarTexto(formatearRango(concurso.fecha_inicio, concurso.fecha_fin)).includes(normalizarTexto(calendarFilters.fecha)) &&
       (!calendarFilters.categoria || concurso.categoria === calendarFilters.categoria) &&
       normalizarTexto(concurso.nombre).includes(normalizarTexto(calendarFilters.nombre)) &&
       (!calendarFilters.provincia || concurso.provincia === calendarFilters.provincia) &&
@@ -422,7 +403,7 @@ export default function RfheExtractionPage() {
     )
     .sort((a, b) => {
       const comparacion = calendarSort.campo === 'fecha'
-        ? compararFechaRfhe(a.fecha, b.fecha)
+        ? compararPorInicio(a, b)
         : a[calendarSort.campo].localeCompare(b[calendarSort.campo], 'es', { numeric: true, sensitivity: 'base' });
       return calendarSort.direccion === 'asc' ? comparacion : -comparacion;
     });
@@ -547,8 +528,8 @@ export default function RfheExtractionPage() {
                 </thead>
                 <tbody>
                   {concursosFiltrados.map((contest, index) => (
-                    <tr key={`${contest.urlDetalle}-${contest.fecha}-${index}`} className="border-t border-[#eee9df] even:bg-[#fffdfa]">
-                      <td className="whitespace-nowrap px-3 py-2">{formatearFechaCalendario(contest.fecha)}</td>
+                    <tr key={`${contest.urlDetalle}-${index}`} className="border-t border-[#eee9df] even:bg-[#fffdfa]">
+                      <td className="whitespace-nowrap px-3 py-2">{formatearRango(contest.fecha_inicio, contest.fecha_fin)}</td>
                       <td className="whitespace-nowrap px-3 py-2">{contest.categoria}</td>
                       <td className="px-3 py-2 font-medium text-[#173b2f]">{contest.nombre}</td>
                       <td className="whitespace-nowrap px-3 py-2">{contest.provincia}</td>
