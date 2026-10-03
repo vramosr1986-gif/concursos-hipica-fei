@@ -9,6 +9,7 @@ type RepriseInscrito = {
   caballo: string;
   lac: string;
   federacionCaballo: string;
+  observaciones: string;
 };
 
 type InscritoRfhe = {
@@ -30,6 +31,7 @@ type HtmlData = {
   texto: string;
   tablas: ExtractedTable[];
   inscritos?: InscritoRfhe[];
+  inscritosConNumero?: boolean;
 };
 
 type SectionResult = { tipo: 'html'; datos: HtmlData } | { error: string };
@@ -39,7 +41,19 @@ type ExtractionResult = {
   inscritos: SectionResult;
 };
 
-type InscritoSortKey = 'numero' | 'jinete' | 'ldn' | 'federacionJinete' | 'caballo';
+type InscritoSortKey = 'numero' | 'jinete' | 'ldn' | 'federacionJinete' | 'caballo' | 'lac' | 'federacionCaballo' | 'reprise' | 'observaciones';
+
+type FilaInscrito = InscritoRfhe & RepriseInscrito & { filaId: string };
+
+function sugerirJornada(reprise: string): string {
+  const nombre = reprise.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+  const domingo = /\b(final(?:es)?|individual(?:es)?|kur|san\s*jorge|intermedia|gran\s*premio|grand\s*prix|sj|int[\s._-]*(?:i{1,2}|[12])|gp)\b/;
+  const sabado = /\b(preliminar(?:es)?|equipos|promocion|infantil(?:es)?|alevin(?:es)?|benjamin(?:es)?|n[0-4]|rider\s*[1-3]|ponis?\s*[abc])\b/;
+
+  if (domingo.test(nombre)) return 'Domingo · jornada 2';
+  if (sabado.test(nombre)) return 'Sábado · jornada 1';
+  return 'Asignación manual';
+}
 
 type CalendarContest = {
   fecha: string;
@@ -58,6 +72,33 @@ type CalendarResult = {
   concursos: CalendarContest[];
 };
 
+type CalendarSortKey = 'fecha' | 'categoria' | 'nombre' | 'provincia' | 'sede';
+
+function normalizarTexto(texto: string): string {
+  return texto.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLocaleLowerCase('es');
+}
+
+function formatearFechaCalendario(fecha: string): string {
+  const fechaIso = fecha.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+  if (fechaIso) return `${fechaIso[3].padStart(2, '0')}/${fechaIso[2].padStart(2, '0')}/${fechaIso[1]}`;
+
+  const fechaRfhe = fecha.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  if (fechaRfhe) return `${fechaRfhe[1].padStart(2, '0')}/${fechaRfhe[2].padStart(2, '0')}/${fechaRfhe[3]}`;
+
+  return fecha;
+}
+
+function compararFechaRfhe(a: string, b: string): number {
+  const convertir = (fecha: string) => {
+    const partes = fecha.split('/').map(Number);
+    if (partes.length !== 3 || partes.some(Number.isNaN)) return Number.MAX_SAFE_INTEGER;
+    const [dia, mes, anioOriginal] = partes;
+    const anio = anioOriginal < 100 ? 2000 + anioOriginal : anioOriginal;
+    return Date.UTC(anio, mes - 1, dia);
+  };
+  return convertir(a) - convertir(b);
+}
+
 const CAMPOS = [
   { id: 'concursoUrl', label: 'URL del concurso' },
   { id: 'inscritosUrl', label: 'URL de admitidos e inscritos' },
@@ -70,6 +111,18 @@ async function leerJsonApi<T>(response: Response): Promise<T> {
   } catch {
     const resumen = body.replace(/\s+/g, ' ').slice(0, 180);
     throw new Error(`La API respondió HTTP ${response.status} sin JSON: ${resumen || response.statusText}`);
+  }
+}
+
+function crearUrlInscritos(concursoUrl: string): string | null {
+  try {
+    const url = new URL(concursoUrl);
+    const programa = url.searchParams.get('PRGNAME');
+    if (!programa || !['RFHECALCON', 'RFHECONADM', 'RFHECONLISINS'].includes(programa)) return null;
+    url.searchParams.set('PRGNAME', 'RFHECONLISINS');
+    return url.toString();
+  } catch {
+    return null;
   }
 }
 
@@ -121,28 +174,38 @@ function TablasHtml({ datos }: { datos: HtmlData }) {
 function TablaInscritos({ datos }: { datos: HtmlData }) {
   const inscritos = datos.inscritos || [];
   const [orden, setOrden] = useState<{ campo: InscritoSortKey; direccion: 'asc' | 'desc' }>({
-    campo: 'numero',
+    campo: datos.inscritosConNumero ? 'numero' : 'jinete',
     direccion: 'asc',
   });
+  const [jornadasPorReprise, setJornadasPorReprise] = useState<Record<string, string>>({});
   if (inscritos.length === 0) return <TablasHtml datos={datos} />;
 
+  const filasCompletas: FilaInscrito[] = inscritos.flatMap((inscrito) => {
+    const reprises = inscrito.reprises.length > 0
+      ? inscrito.reprises
+      : [{ reprise: '', caballo: '', lac: '', federacionCaballo: '', observaciones: '' }];
+    return reprises.map((reprise, index) => ({
+      ...inscrito,
+      ...reprise,
+      filaId: `${inscrito.numero || inscrito.ldn}-${inscrito.ldn}-${reprise.lac}-${index}`,
+    }));
+  });
   const totalReprises = inscritos.reduce((total, inscrito) => total + inscrito.reprises.length, 0);
+  const reprisesUnicas = Array.from(new Set(filasCompletas
+    .map((fila) => fila.reprise.trim())
+    .filter(Boolean))).sort((a, b) => a.localeCompare(b, 'es', { numeric: true, sensitivity: 'base' }));
   const cambiarOrden = (campo: InscritoSortKey) => {
     setOrden((actual) => ({
       campo,
       direccion: actual.campo === campo && actual.direccion === 'asc' ? 'desc' : 'asc',
     }));
   };
-  const inscritosOrdenados = [...inscritos].sort((a, b) => {
+  const filasOrdenadas = [...filasCompletas].sort((a, b) => {
     let comparacion = 0;
-    if (orden.campo === 'numero') {
+    if (orden.campo === 'numero' && /^\d+$/.test(a.numero) && /^\d+$/.test(b.numero)) {
       comparacion = Number(a.numero) - Number(b.numero);
-    } else if (orden.campo === 'caballo') {
-      const textoA = a.reprises.map((r) => `${r.caballo} ${r.lac} ${r.federacionCaballo} ${r.reprise}`).join(' | ');
-      const textoB = b.reprises.map((r) => `${r.caballo} ${r.lac} ${r.federacionCaballo} ${r.reprise}`).join(' | ');
-      comparacion = textoA.localeCompare(textoB, 'es', { numeric: true, sensitivity: 'base' });
     } else {
-      comparacion = a[orden.campo].localeCompare(b[orden.campo], 'es', { numeric: true, sensitivity: 'base' });
+      comparacion = String(a[orden.campo] || '').localeCompare(String(b[orden.campo] || ''), 'es', { numeric: true, sensitivity: 'base' });
     }
     return orden.direccion === 'asc' ? comparacion : -comparacion;
   });
@@ -170,34 +233,74 @@ function TablaInscritos({ datos }: { datos: HtmlData }) {
         <table className="min-w-full text-left text-sm">
           <thead className="bg-[#f4f0e6] text-xs uppercase text-[#466257]">
             <tr>
-              {cabeceraOrdenable('numero', 'Nº')}
+              {datos.inscritosConNumero && cabeceraOrdenable('numero', 'Nº')}
               {cabeceraOrdenable('jinete', 'Jinete/Amazona')}
               {cabeceraOrdenable('ldn', 'LDN')}
               {cabeceraOrdenable('federacionJinete', 'FH jinete')}
-              {cabeceraOrdenable('caballo', 'Caballo · LAC · FH · Reprise', 'min-w-72')}
+              {cabeceraOrdenable('caballo', 'Caballo')}
+              {cabeceraOrdenable('lac', 'LAC')}
+              {cabeceraOrdenable('federacionCaballo', 'FH caballo')}
+              {cabeceraOrdenable('reprise', 'Repris')}
+              {cabeceraOrdenable('observaciones', 'Observaciones', 'min-w-48')}
             </tr>
           </thead>
           <tbody>
-            {inscritosOrdenados.map((inscrito) => (
-              <tr key={`${inscrito.numero}-${inscrito.ldn}`} className="border-t border-[#eee9df] align-top even:bg-[#fffdfa]">
-                <td className="px-3 py-2">{inscrito.numero}</td>
-                <td className="whitespace-nowrap px-3 py-2">{inscrito.jinete}</td>
-                <td className="px-3 py-2">{inscrito.ldn}</td>
-                <td className="px-3 py-2">{inscrito.federacionJinete}</td>
-                <td className="px-3 py-2">
-                  <ul className="space-y-1">
-                    {inscrito.reprises.map((reprise, index) => (
-                      <li key={`${reprise.reprise}-${index}`}>
-                        {reprise.caballo} · LAC {reprise.lac} · {reprise.federacionCaballo} · {reprise.reprise}
-                      </li>
-                    ))}
-                  </ul>
-                </td>
+            {filasOrdenadas.map((fila) => (
+              <tr key={fila.filaId} className="border-t border-[#eee9df] align-top even:bg-[#fffdfa]">
+                {datos.inscritosConNumero && <td className="px-3 py-2">{fila.numero || '—'}</td>}
+                <td className="whitespace-nowrap px-3 py-2">{fila.jinete}</td>
+                <td className="px-3 py-2">{fila.ldn}</td>
+                <td className="px-3 py-2">{fila.federacionJinete}</td>
+                <td className="whitespace-nowrap px-3 py-2">{fila.caballo}</td>
+                <td className="px-3 py-2">{fila.lac}</td>
+                <td className="px-3 py-2">{fila.federacionCaballo}</td>
+                <td className="whitespace-nowrap px-3 py-2">{fila.reprise}</td>
+                <td className="px-3 py-2">{fila.observaciones}</td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
+      <section className="space-y-3 border-t border-[#e4dfd4] pt-4">
+        <div>
+          <h4 className="font-semibold text-[#173b2f]">Pruebas detectadas por reprise</h4>
+          <p className="mt-1 text-xs leading-5 text-gray-500">
+            “Equipos” es el nombre de la reprise; no se crea una competición por equipos. La jornada se sugiere solo para los tipos indicados y el resto queda manual.
+          </p>
+        </div>
+        <div className="overflow-auto rounded border border-[#e4dfd4]">
+          <table className="min-w-full text-left text-sm">
+            <thead className="bg-[#f4f0e6] text-xs uppercase text-[#466257]">
+              <tr>
+                <th className="px-3 py-2">Reprise</th>
+                <th className="px-3 py-2">Jornada sugerida</th>
+              </tr>
+            </thead>
+            <tbody>
+              {reprisesUnicas.map((reprise) => (
+                <tr key={reprise} className="border-t border-[#eee9df] even:bg-[#fffdfa]">
+                  <td className="px-3 py-2">{reprise}</td>
+                  <td className="px-3 py-2">
+                    <select
+                      aria-label={`Jornada para ${reprise}`}
+                      value={jornadasPorReprise[reprise] || sugerirJornada(reprise)}
+                      onChange={(event) => setJornadasPorReprise((actual) => ({
+                        ...actual,
+                        [reprise]: event.target.value,
+                      }))}
+                      className="input min-w-52"
+                    >
+                      <option value="Sábado · jornada 1">Sábado · jornada 1</option>
+                      <option value="Domingo · jornada 2">Domingo · jornada 2</option>
+                      <option value="Asignación manual">Asignación manual</option>
+                    </select>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </section>
     </div>
   );
 }
@@ -225,10 +328,30 @@ export default function RfheExtractionPage() {
   const [calendar, setCalendar] = useState<CalendarResult | null>(null);
   const [calendarError, setCalendarError] = useState('');
   const [loadingCalendar, setLoadingCalendar] = useState(false);
+  const [calendarSort, setCalendarSort] = useState<{ campo: CalendarSortKey; direccion: 'asc' | 'desc' }>({
+    campo: 'fecha',
+    direccion: 'asc',
+  });
+  const [calendarFilters, setCalendarFilters] = useState({
+    fecha: '',
+    categoria: '',
+    nombre: '',
+    provincia: '',
+    sede: '',
+  });
   const [urls, setUrls] = useState({ concursoUrl: '', inscritosUrl: '' });
   const [resultado, setResultado] = useState<ExtractionResult | null>(null);
   const [error, setError] = useState('');
   const [cargando, setCargando] = useState(false);
+
+  const cambiarUrlConcurso = (concursoUrl: string) => {
+    const inscritosUrl = crearUrlInscritos(concursoUrl);
+    setUrls((actuales) => ({
+      ...actuales,
+      concursoUrl,
+      ...(inscritosUrl ? { inscritosUrl } : {}),
+    }));
+  };
 
   const cargarCalendario = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -246,6 +369,7 @@ export default function RfheExtractionPage() {
       const data = await leerJsonApi<CalendarResult & { error?: string }>(response);
       if (!response.ok) throw new Error(data.error || 'No se pudo cargar el calendario RFHE.');
       setCalendar(data as CalendarResult);
+      setCalendarFilters({ fecha: '', categoria: '', nombre: '', provincia: '', sede: '' });
     } catch (err) {
       setCalendarError(err instanceof Error ? err.message : 'Error al cargar el calendario.');
     } finally {
@@ -281,6 +405,46 @@ export default function RfheExtractionPage() {
     }
   };
 
+  const cambiarOrdenCalendario = (campo: CalendarSortKey) => {
+    setCalendarSort((actual) => ({
+      campo,
+      direccion: actual.campo === campo && actual.direccion === 'asc' ? 'desc' : 'asc',
+    }));
+  };
+
+  const concursosFiltrados = (calendar?.concursos || [])
+    .filter((concurso) =>
+      normalizarTexto(concurso.fecha).includes(normalizarTexto(calendarFilters.fecha)) &&
+      (!calendarFilters.categoria || concurso.categoria === calendarFilters.categoria) &&
+      normalizarTexto(concurso.nombre).includes(normalizarTexto(calendarFilters.nombre)) &&
+      (!calendarFilters.provincia || concurso.provincia === calendarFilters.provincia) &&
+      normalizarTexto(concurso.sede).includes(normalizarTexto(calendarFilters.sede))
+    )
+    .sort((a, b) => {
+      const comparacion = calendarSort.campo === 'fecha'
+        ? compararFechaRfhe(a.fecha, b.fecha)
+        : a[calendarSort.campo].localeCompare(b[calendarSort.campo], 'es', { numeric: true, sensitivity: 'base' });
+      return calendarSort.direccion === 'asc' ? comparacion : -comparacion;
+    });
+
+  const categoriasCalendario = Array.from(new Set((calendar?.concursos || []).map((concurso) => concurso.categoria)))
+    .filter(Boolean)
+    .sort((a, b) => a.localeCompare(b, 'es', { numeric: true, sensitivity: 'base' }));
+  const provinciasCalendario = Array.from(new Set((calendar?.concursos || []).map((concurso) => concurso.provincia)))
+    .filter(Boolean)
+    .sort((a, b) => a.localeCompare(b, 'es', { numeric: true, sensitivity: 'base' }));
+
+  const cabeceraCalendario = (campo: CalendarSortKey, titulo: string, className = 'whitespace-nowrap') => (
+    <th aria-sort={calendarSort.campo === campo ? (calendarSort.direccion === 'asc' ? 'ascending' : 'descending') : 'none'} className={`${className} px-3 py-2`}>
+      <button type="button" onClick={() => cambiarOrdenCalendario(campo)} className="inline-flex items-center gap-1.5 text-left">
+        {titulo}
+        {calendarSort.campo === campo
+          ? calendarSort.direccion === 'asc' ? <ArrowUp className="size-3.5" aria-hidden="true" /> : <ArrowDown className="size-3.5" aria-hidden="true" />
+          : <ArrowDownUp className="size-3.5 opacity-50" aria-hidden="true" />}
+      </button>
+    </th>
+  );
+
   return (
     <div className="space-y-6">
       <header>
@@ -312,24 +476,79 @@ export default function RfheExtractionPage() {
           <div className="space-y-3">
             <div className="flex flex-wrap items-baseline justify-between gap-2">
               <h4 className="font-semibold text-[#173b2f]">{calendar.titulo}</h4>
-              <span className="text-sm text-gray-600">{calendar.total} concursos encontrados</span>
+              <span className="text-sm text-gray-600">{concursosFiltrados.length} de {calendar.total} concursos</span>
             </div>
             <div className="max-h-[36rem] overflow-auto rounded border border-[#e4dfd4]">
               <table className="min-w-full text-left text-sm">
                 <thead className="sticky top-0 bg-[#f4f0e6] text-xs uppercase text-[#466257]">
                   <tr>
-                    <th className="whitespace-nowrap px-3 py-2">Fecha</th>
-                    <th className="whitespace-nowrap px-3 py-2">Tipo</th>
-                    <th className="min-w-64 px-3 py-2">Concurso</th>
-                    <th className="whitespace-nowrap px-3 py-2">Provincia</th>
-                    <th className="min-w-48 px-3 py-2">Sede</th>
+                    {cabeceraCalendario('fecha', 'Fecha')}
+                    {cabeceraCalendario('categoria', 'Tipo')}
+                    {cabeceraCalendario('nombre', 'Concurso', 'min-w-64')}
+                    {cabeceraCalendario('provincia', 'Provincia')}
+                    {cabeceraCalendario('sede', 'Sede', 'min-w-48')}
                     <th className="px-3 py-2">Acciones</th>
+                  </tr>
+                  <tr className="border-t border-[#e4dfd4] bg-white">
+                    <th className="px-2 py-1.5">
+                      <input
+                        aria-label="Filtrar por fecha"
+                        type="search"
+                        placeholder="dd/mm/aaaa"
+                        value={calendarFilters.fecha}
+                        onChange={(event) => setCalendarFilters({ ...calendarFilters, fecha: event.target.value })}
+                        className="input w-32 text-xs font-normal normal-case"
+                      />
+                    </th>
+                    <th className="px-2 py-1.5">
+                      <select
+                        aria-label="Filtrar por tipo"
+                        value={calendarFilters.categoria}
+                        onChange={(event) => setCalendarFilters({ ...calendarFilters, categoria: event.target.value })}
+                        className="input min-w-32 text-xs font-normal normal-case"
+                      >
+                        <option value="">Todos</option>
+                        {categoriasCalendario.map((categoria) => <option key={categoria} value={categoria}>{categoria}</option>)}
+                      </select>
+                    </th>
+                    <th className="px-2 py-1.5">
+                      <input
+                        aria-label="Filtrar por concurso"
+                        type="search"
+                        placeholder="Buscar concurso"
+                        value={calendarFilters.nombre}
+                        onChange={(event) => setCalendarFilters({ ...calendarFilters, nombre: event.target.value })}
+                        className="input min-w-56 text-xs font-normal normal-case"
+                      />
+                    </th>
+                    <th className="px-2 py-1.5">
+                      <select
+                        aria-label="Filtrar por provincia"
+                        value={calendarFilters.provincia}
+                        onChange={(event) => setCalendarFilters({ ...calendarFilters, provincia: event.target.value })}
+                        className="input min-w-32 text-xs font-normal normal-case"
+                      >
+                        <option value="">Todas</option>
+                        {provinciasCalendario.map((provincia) => <option key={provincia} value={provincia}>{provincia}</option>)}
+                      </select>
+                    </th>
+                    <th className="px-2 py-1.5">
+                      <input
+                        aria-label="Filtrar por sede"
+                        type="search"
+                        placeholder="Buscar sede"
+                        value={calendarFilters.sede}
+                        onChange={(event) => setCalendarFilters({ ...calendarFilters, sede: event.target.value })}
+                        className="input min-w-44 text-xs font-normal normal-case"
+                      />
+                    </th>
+                    <th />
                   </tr>
                 </thead>
                 <tbody>
-                  {calendar.concursos.map((contest, index) => (
+                  {concursosFiltrados.map((contest, index) => (
                     <tr key={`${contest.urlDetalle}-${contest.fecha}-${index}`} className="border-t border-[#eee9df] even:bg-[#fffdfa]">
-                      <td className="whitespace-nowrap px-3 py-2">{contest.fecha}</td>
+                      <td className="whitespace-nowrap px-3 py-2">{formatearFechaCalendario(contest.fecha)}</td>
                       <td className="whitespace-nowrap px-3 py-2">{contest.categoria}</td>
                       <td className="px-3 py-2 font-medium text-[#173b2f]">{contest.nombre}</td>
                       <td className="whitespace-nowrap px-3 py-2">{contest.provincia}</td>
@@ -338,9 +557,9 @@ export default function RfheExtractionPage() {
                         <div className="flex items-center gap-2">
                           <button
                             type="button"
-                            onClick={() => setUrls((previous) => ({ ...previous, concursoUrl: contest.urlDetalle }))}
+                            onClick={() => cambiarUrlConcurso(contest.urlDetalle)}
                             className="btn btn-sm btn-outline"
-                            title="Usar esta URL en extracción de concurso"
+                            title="Cargar el concurso y generar la URL de inscritos"
                           >
                             <ArrowDownToLine className="size-4" aria-hidden="true" />
                           </button>
@@ -370,7 +589,9 @@ export default function RfheExtractionPage() {
               required
               value={urls[campo.id]}
               placeholder="https://www.cbservicios.net/..."
-              onChange={(event) => setUrls({ ...urls, [campo.id]: event.target.value })}
+              onChange={(event) => campo.id === 'concursoUrl'
+                ? cambiarUrlConcurso(event.target.value)
+                : setUrls({ ...urls, [campo.id]: event.target.value })}
               className="input w-full"
             />
           </div>

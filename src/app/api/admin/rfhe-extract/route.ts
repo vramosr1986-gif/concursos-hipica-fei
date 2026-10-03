@@ -22,6 +22,7 @@ type RepriseInscrito = {
   caballo: string;
   lac: string;
   federacionCaballo: string;
+  observaciones: string;
 };
 
 type InscritoRfhe = {
@@ -30,6 +31,11 @@ type InscritoRfhe = {
   ldn: string;
   federacionJinete: string;
   reprises: RepriseInscrito[];
+};
+
+type ListaInscritosExtraida = {
+  filas: InscritoRfhe[];
+  tieneNumero: boolean;
 };
 
 type ConcursoCalendarioRfhe = {
@@ -47,6 +53,7 @@ type PaginaExtraida = {
   texto: string;
   tablas: TablaExtraida[];
   inscritos?: InscritoRfhe[];
+  inscritosConNumero?: boolean;
 };
 
 function validarUrl(valor: unknown, campo: string): URL {
@@ -136,7 +143,7 @@ function normalizarEncabezado(valor: string): string {
   return valor.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
 }
 
-function extraerInscritos($: ReturnType<typeof load>): InscritoRfhe[] {
+function extraerInscritos($: ReturnType<typeof load>): ListaInscritosExtraida {
   const tablas = $('table').toArray().filter((table) => $(table).find('table').length === 0);
 
   for (const table of tablas) {
@@ -153,6 +160,22 @@ function extraerInscritos($: ReturnType<typeof load>): InscritoRfhe[] {
 
     if (indiceEncabezado < 0) continue;
 
+    const encabezados = $(filas[indiceEncabezado]).children('th, td')
+      .map((_index, cell) => normalizarEncabezado($(cell).text()))
+      .toArray();
+    const indiceNumero = encabezados.findIndex((cell) => ['nº', 'n°', 'no'].includes(cell));
+    const tieneNumero = indiceNumero >= 0;
+    const indiceJinete = encabezados.findIndex((cell) => cell.includes('jinete'));
+    const indiceLdn = encabezados.findIndex((cell) => cell === 'ldn');
+    const indicesFh = encabezados.reduce<number[]>((indices, cell, index) => {
+      if (cell === 'fh') indices.push(index);
+      return indices;
+    }, []);
+    const indiceCaballo = encabezados.findIndex((cell) => cell.includes('caballo'));
+    const indiceLac = encabezados.findIndex((cell) => cell === 'lac');
+    const indiceReprise = encabezados.findIndex((cell) => cell.includes('repris'));
+    const indiceObservaciones = encabezados.findIndex((cell) => cell.includes('observ'));
+
     const inscritos: InscritoRfhe[] = [];
     let actual: InscritoRfhe | null = null;
 
@@ -162,7 +185,7 @@ function extraerInscritos($: ReturnType<typeof load>): InscritoRfhe[] {
         .toArray();
       if (celdas.length === 0) continue;
 
-      if (/^\d+$/.test(celdas[0] || '') && celdas.length >= 8) {
+      if (tieneNumero && /^\d+$/.test(celdas[0] || '') && celdas.length >= 8) {
         actual = {
           numero: celdas[0],
           jinete: celdas[1] || '',
@@ -176,29 +199,52 @@ function extraerInscritos($: ReturnType<typeof load>): InscritoRfhe[] {
           caballo: celdas[5] || '',
           lac: celdas[6] || '',
           federacionCaballo: celdas[7] || '',
+          observaciones: celdas[8] || '',
         });
         continue;
       }
 
-      if (actual && !(celdas[0] || '') && celdas.length >= 5 && (celdas[1] || '')) {
+      if (!tieneNumero && indiceJinete >= 0 && indiceLdn >= 0 && celdas[indiceJinete] && celdas[indiceLdn]) {
+        actual = {
+          numero: '',
+          jinete: celdas[indiceJinete],
+          ldn: celdas[indiceLdn],
+          federacionJinete: celdas[indicesFh[0]] || '',
+          reprises: [],
+        };
+        inscritos.push(actual);
+      } else if (tieneNumero && actual && !(celdas[0] || '') && celdas.length >= 5 && (celdas[1] || '')) {
         actual.reprises.push({
           reprise: celdas[1],
           caballo: celdas[2] || '',
           lac: celdas[3] || '',
           federacionCaballo: celdas[4] || '',
+          observaciones: '',
+        });
+        continue;
+      }
+
+      if (actual && !tieneNumero && (celdas[indiceCaballo] || celdas[indiceLac] || celdas[indiceReprise])) {
+        actual.reprises.push({
+          reprise: celdas[indiceReprise] || '',
+          caballo: celdas[indiceCaballo] || '',
+          lac: celdas[indiceLac] || '',
+          federacionCaballo: celdas[indicesFh[1]] || '',
+          observaciones: celdas[indiceObservaciones] || '',
         });
       }
     }
 
-    if (inscritos.length > 0) return inscritos;
+    if (inscritos.length > 0) return { filas: inscritos, tieneNumero };
   }
 
-  return [];
+  return { filas: [], tieneNumero: false };
 }
 
 function extraerHtml(url: string, html: string): PaginaExtraida {
   const $ = load(html);
   const tablas: TablaExtraida[] = [];
+  const resultadoInscritos = extraerInscritos($);
 
   $('table').each((_tableIndex, table) => {
     if ($(table).find('table').length > 0) return;
@@ -223,7 +269,8 @@ function extraerHtml(url: string, html: string): PaginaExtraida {
     titulo: $('title').first().text().trim() || $('h1, h2, b').first().text().trim(),
     texto: $('body').text().replace(/\s+/g, ' ').trim(),
     tablas,
-    inscritos: extraerInscritos($),
+    inscritos: resultadoInscritos.filas,
+    inscritosConNumero: resultadoInscritos.tieneNumero,
   };
 }
 
