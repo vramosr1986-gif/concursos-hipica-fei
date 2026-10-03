@@ -118,7 +118,7 @@ function TablasHtml({ datos }: { datos: HtmlData }) {
     <div className="space-y-4">
       <div>
         <h3 className="font-semibold text-[#173b2f]">{datos.titulo || 'Página RFHE'}</h3>
-        <p className="mt-1 break-all text-xs text-gray-500">{datos.url}</p>
+        <p className="mt-1 break-all text-xs text-gray-500">Fuente: <a href={datos.url} target="_blank" rel="noopener noreferrer" className="underline hover:text-[#173b2f]">{datos.url}</a></p>
         {datos.fecha_inicio && (
           <dl className="mt-2 flex flex-wrap gap-x-6 gap-y-1 text-sm">
             <div className="flex gap-1.5"><dt className="font-semibold text-[#33483f]">Fecha inicio:</dt><dd>{formatearFecha(datos.fecha_inicio)}</dd></div>
@@ -217,7 +217,7 @@ function TablaInscritos({ datos }: { datos: HtmlData }) {
     <div className="space-y-3">
       <div>
         <h3 className="font-semibold text-[#173b2f]">{datos.titulo || 'Relación de admitidos'}</h3>
-        <p className="mt-1 break-all text-xs text-gray-500">{datos.url}</p>
+        <p className="mt-1 break-all text-xs text-gray-500">Fuente: <a href={datos.url} target="_blank" rel="noopener noreferrer" className="underline hover:text-[#173b2f]">{datos.url}</a></p>
         <p className="mt-2 text-sm text-gray-600">
           {inscritos.length} inscritos · {totalReprises} participaciones en reprises
         </p>
@@ -484,7 +484,13 @@ export default function RfheExtractionPage() {
         {calendar && (
           <div className="space-y-3">
             <div className="flex flex-wrap items-baseline justify-between gap-2">
-              <h4 className="font-semibold text-[#173b2f]">{calendar.titulo}</h4>
+              <div className="min-w-0">
+                <h4 className="font-semibold text-[#173b2f]">{calendar.titulo}</h4>
+                <p className="mt-1 break-all text-xs text-gray-500">
+                  Fuente:{' '}
+                  <a href={calendar.url} target="_blank" rel="noopener noreferrer" className="underline hover:text-[#173b2f]">{calendar.url}</a>
+                </p>
+              </div>
               <span className="text-sm text-gray-600">{concursosFiltrados.length} de {calendar.total} concursos</span>
             </div>
             <div className="max-h-[36rem] overflow-auto rounded border border-[#e4dfd4]">
@@ -644,7 +650,8 @@ export default function RfheExtractionPage() {
 
         <div className="flex flex-wrap items-center justify-between gap-3 border-t border-[#eee9df] pt-4">
           <p className="max-w-xl text-xs leading-5 text-gray-500">
-            Solo muestra los datos para que los revises: no guarda nada ni crea concursos ni inscripciones.
+            Datos públicos de la web de la RFHE, que cualquiera puede consultar en cualquier momento sin usuario ni contraseña.
+            Junto a cada dato se indica la dirección de la que procede. Esta pantalla solo los muestra para revisarlos: no guarda nada.
           </p>
           <button type="submit" disabled={cargando} className="btn btn-primary shrink-0">
             {cargando ? <LoaderCircle className="size-4 animate-spin" /> : <FileSearch className="size-4" />}
