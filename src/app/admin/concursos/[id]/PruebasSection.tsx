@@ -326,7 +326,7 @@ export function PruebasSection({ concursoId, fechaInicio, fechaFin }: Props) {
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-xl font-bold">Pruebas del Concurso</h2>
         <button onClick={() => setModalAbierto(!modalAbierto)} className="btn btn-primary text-sm">
-          + Anadir Prueba
+          + Añadir prueba
         </button>
       </div>
 
@@ -547,7 +547,7 @@ export function PruebasSection({ concursoId, fechaInicio, fechaFin }: Props) {
                 Cancelar
               </button>
               <button type="submit" className="btn btn-primary text-sm" disabled={guardando}>
-                {guardando ? 'Guardando...' : 'Guardar Prueba'}
+                {guardando ? 'Guardando...' : 'Guardar prueba'}
               </button>
             </div>
           </form>
@@ -557,7 +557,7 @@ export function PruebasSection({ concursoId, fechaInicio, fechaFin }: Props) {
       {loading ? (
         <p className="text-center text-gray-600 py-4">Cargando pruebas...</p>
       ) : pruebas.length === 0 ? (
-        <p className="text-gray-600">No hay pruebas creadas. Pulsa «+ Anadir Prueba» para empezar.</p>
+        <p className="text-gray-600">No hay pruebas creadas. Pulsa «+ Añadir prueba» para empezar.</p>
       ) : (
         <div className="table-responsive">
           <table className="table">
@@ -594,10 +594,10 @@ export function PruebasSection({ concursoId, fechaInicio, fechaFin }: Props) {
                   <td className="text-right">
                     <div className="flex gap-2 justify-end">
                       <Link href={`/admin/concursos/${concursoId}/pruebas/${p.id}`} className="text-primary hover:underline text-sm font-medium">
-                        Gestionar
+                        Abrir prueba
                       </Link>
                       <button onClick={() => eliminarPrueba(p.id, p.nombre)} className="text-danger hover:underline text-sm">
-                        Eliminar
+                        Borrar prueba
                       </button>
                     </div>
                   </td>

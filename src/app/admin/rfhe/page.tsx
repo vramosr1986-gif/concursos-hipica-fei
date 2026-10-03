@@ -2,7 +2,7 @@
 
 import { FormEvent, useState } from 'react';
 import Link from 'next/link';
-import { ArrowDown, ArrowDownToLine, ArrowDownUp, ArrowUp, CalendarPlus, ExternalLink, FileSearch, LoaderCircle } from 'lucide-react';
+import { ArrowDown, ArrowDownUp, ArrowUp, CalendarPlus, ExternalLink, FileSearch, LoaderCircle, Users } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { compararPorInicio, formatearFecha } from '@/lib/fechas';
 
@@ -87,8 +87,8 @@ function normalizarTexto(texto: string): string {
 }
 
 const CAMPOS = [
-  { id: 'concursoUrl', label: 'URL del concurso' },
-  { id: 'inscritosUrl', label: 'URL de admitidos e inscritos' },
+  { id: 'concursoUrl', label: 'Dirección (enlace) del concurso en RFHE' },
+  { id: 'inscritosUrl', label: 'Dirección (enlace) de la lista de inscritos' },
 ] as const;
 
 async function leerJsonApi<T>(response: Response): Promise<T> {
@@ -371,8 +371,20 @@ export default function RfheExtractionPage() {
     }
   };
 
-  const extraerDatos = async (event: FormEvent<HTMLFormElement>) => {
+  const extraerDatos = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    consultarConcurso(urls);
+  };
+
+  // Desde el calendario: rellena las dos URL y carga ya los datos e inscritos.
+  const verInscritos = (concursoUrl: string) => {
+    const nuevas = { concursoUrl, inscritosUrl: crearUrlInscritos(concursoUrl) || urls.inscritosUrl };
+    setUrls(nuevas);
+    consultarConcurso(nuevas);
+    document.getElementById('datos-concurso')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
+
+  const consultarConcurso = async (urls: { concursoUrl: string; inscritosUrl: string }) => {
     setError('');
     setResultado(null);
     setCargando(true);
@@ -445,7 +457,7 @@ export default function RfheExtractionPage() {
   return (
     <div className="space-y-6">
       <header>
-        <p className="text-xs font-bold uppercase tracking-[0.2em] text-[#b88746]">Prototipo de lectura</p>
+        <p className="text-xs font-bold uppercase tracking-[0.2em] text-[#b88746]">Federación Hípica Española</p>
         <h2 className="mt-1 text-2xl font-semibold text-[#173b2f]">Extraer datos de RFHE</h2>
       </header>
 
@@ -465,7 +477,7 @@ export default function RfheExtractionPage() {
           </div>
           <button type="submit" disabled={loadingCalendar} className="btn btn-primary">
             {loadingCalendar ? <LoaderCircle className="size-4 animate-spin" /> : <FileSearch className="size-4" />}
-            {loadingCalendar ? 'Cargando…' : 'Cargar calendario'}
+            {loadingCalendar ? 'Buscando concursos…' : 'Ver concursos de ese año'}
           </button>
         </form>
         {calendarError && <p role="alert" className="rounded border border-red-200 bg-red-50 p-3 text-sm text-red-700">{calendarError}</p>}
@@ -566,11 +578,12 @@ export default function RfheExtractionPage() {
                         <div className="flex items-center gap-2">
                           <button
                             type="button"
-                            onClick={() => cambiarUrlConcurso(contest.urlDetalle)}
+                            onClick={() => verInscritos(contest.urlDetalle)}
                             className="btn btn-sm btn-outline"
-                            title="Cargar el concurso y generar la URL de inscritos"
+                            title="Muestra abajo los datos del concurso y la lista de jinetes y caballos inscritos"
                           >
-                            <ArrowDownToLine className="size-4" aria-hidden="true" />
+                            <Users className="size-4" aria-hidden="true" />
+                            Ver inscritos
                           </button>
                           <Link
                             href={`/admin/concursos/nuevo?${new URLSearchParams({
@@ -583,12 +596,14 @@ export default function RfheExtractionPage() {
                               ubicacion: contest.sede,
                             })}`}
                             className="btn btn-sm btn-outline"
-                            title="Crear el concurso con estos datos"
+                            title="Abre el formulario de nuevo concurso con estos datos ya rellenos"
                           >
                             <CalendarPlus className="size-4" aria-hidden="true" />
+                            Crear concurso
                           </Link>
-                          <a href={contest.urlDetalle} target="_blank" rel="noopener noreferrer" className="btn btn-sm btn-outline" title="Abrir detalle RFHE">
+                          <a href={contest.urlDetalle} target="_blank" rel="noopener noreferrer" className="btn btn-sm btn-outline" title="Abre la ficha del concurso en la web de la Federación, en otra pestaña">
                             <ExternalLink className="size-4" aria-hidden="true" />
+                            Ver en la web de RFHE
                           </a>
                         </div>
                       </td>
@@ -601,7 +616,13 @@ export default function RfheExtractionPage() {
         )}
       </section>
 
-      <form onSubmit={extraerDatos} className="space-y-4 rounded-lg border border-[#e4dfd4] bg-white p-5">
+      <form id="datos-concurso" onSubmit={extraerDatos} className="scroll-mt-24 space-y-4 rounded-lg border border-[#e4dfd4] bg-white p-5">
+        <div>
+          <h3 className="text-lg font-semibold text-[#173b2f]">Datos e inscritos de un concurso</h3>
+          <p className="mt-1 text-sm text-gray-600">
+            Pulsa «Ver inscritos» en un concurso del calendario, o pega aquí la dirección de su página en RFHE.
+          </p>
+        </div>
         {CAMPOS.map((campo) => (
           <div key={campo.id}>
             <label htmlFor={campo.id} className="mb-1.5 block text-sm font-semibold text-[#33483f]">
@@ -623,11 +644,11 @@ export default function RfheExtractionPage() {
 
         <div className="flex flex-wrap items-center justify-between gap-3 border-t border-[#eee9df] pt-4">
           <p className="max-w-xl text-xs leading-5 text-gray-500">
-            Solo consulta los dominios RFHE permitidos. La extracción se muestra para revisión; no guarda datos ni crea concursos o inscripciones.
+            Solo muestra los datos para que los revises: no guarda nada ni crea concursos ni inscripciones.
           </p>
           <button type="submit" disabled={cargando} className="btn btn-primary shrink-0">
             {cargando ? <LoaderCircle className="size-4 animate-spin" /> : <FileSearch className="size-4" />}
-            {cargando ? 'Extrayendo…' : 'Extraer datos'}
+            {cargando ? 'Cargando datos…' : 'Ver datos e inscritos'}
           </button>
         </div>
         {error && <p role="alert" className="rounded border border-red-200 bg-red-50 p-3 text-sm text-red-700">{error}</p>}

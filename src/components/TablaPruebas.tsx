@@ -237,7 +237,7 @@ export function TablaPruebas(props: Props) {
       {/* ACCIONES SOBRE VARIAS PRUEBAS (ADMIN) */}
       {props.modo === 'admin' && seleccionVisible.length > 0 && (
         <div className="flex flex-wrap items-end gap-3 rounded border border-[#b88746]/40 bg-[#b88746]/10 p-3">
-          <p className="w-full text-sm font-semibold">{seleccionVisible.length} pruebas seleccionadas</p>
+          <p className="w-full text-sm font-semibold">{seleccionVisible.length} pruebas marcadas: puedes ponerles la misma pista o el mismo juez a la vez</p>
           <form
             className="flex items-end gap-2"
             onSubmit={(e) => {
@@ -249,7 +249,7 @@ export function TablaPruebas(props: Props) {
               <label htmlFor="masivo-pista" className="mb-1 block text-xs font-bold">Pista</label>
               <input id="masivo-pista" type="text" value={masivo.pista} onChange={(e) => setMasivo({ ...masivo, pista: e.target.value })} placeholder="Ej. Pista A" className="input w-36" />
             </div>
-            <button type="submit" disabled={ocupado} className="btn btn-primary text-sm">Asignar pista</button>
+            <button type="submit" disabled={ocupado} className="btn btn-primary text-sm">Poner esta pista a las marcadas</button>
           </form>
           <form
             className="flex flex-wrap items-end gap-2"
@@ -272,9 +272,9 @@ export function TablaPruebas(props: Props) {
                 {LETRAS_JUEZ.map((l) => <option key={l} value={l}>{l}</option>)}
               </select>
             </div>
-            <button type="submit" disabled={ocupado || !masivo.juezId} className="btn btn-primary text-sm">Asignar juez</button>
+            <button type="submit" disabled={ocupado || !masivo.juezId} className="btn btn-primary text-sm">Añadir este juez a las marcadas</button>
           </form>
-          <button type="button" className="btn btn-outline text-sm" onClick={() => setSeleccion(new Set())}>Quitar selección</button>
+          <button type="button" className="btn btn-outline text-sm" onClick={() => setSeleccion(new Set())}>Desmarcar todas</button>
         </div>
       )}
 
@@ -298,7 +298,8 @@ export function TablaPruebas(props: Props) {
                   <th className="px-3 py-2">
                     <input
                       type="checkbox"
-                      aria-label="Seleccionar todas las pruebas visibles"
+                      aria-label="Marcar todas las pruebas de la lista"
+                      title="Marcar todas las pruebas de la lista"
                       checked={todasMarcadas}
                       onChange={() => setSeleccion(todasMarcadas ? new Set() : new Set(visibles.map((p) => p.id)))}
                     />
@@ -352,7 +353,7 @@ export function TablaPruebas(props: Props) {
                               type="text"
                               aria-label={`Pista de ${p.nombre}`}
                               defaultValue={p.pista || ''}
-                              placeholder="—"
+                              placeholder="Escribe la pista"
                               disabled={ocupado}
                               className="input w-28 text-sm"
                               onKeyDown={(e) => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); }}
@@ -374,6 +375,7 @@ export function TablaPruebas(props: Props) {
                                     aria-label={`Quitar a ${j.nombre} de ${p.nombre}`}
                                     disabled={ocupado}
                                     onClick={() => ejecutar(() => props.onQuitarJuez(j.id), 'Juez quitado')}
+                                    title="Quitar este juez de la prueba"
                                     className="rounded hover:bg-amber-200"
                                   >
                                     <X className="size-3" aria-hidden="true" />
@@ -390,7 +392,7 @@ export function TablaPruebas(props: Props) {
                                 }}
                                 className="inline-flex items-center gap-0.5 rounded border border-dashed border-gray-400 px-1.5 py-0.5 text-xs text-gray-600 hover:bg-gray-100"
                               >
-                                <Plus className="size-3" aria-hidden="true" /> Juez
+                                <Plus className="size-3" aria-hidden="true" /> Añadir juez
                               </button>
                             </div>
                           ) : (
@@ -401,9 +403,9 @@ export function TablaPruebas(props: Props) {
                         {!esAdmin && <td className="px-3 py-2 text-center">{p.num_puntuaciones ?? 0} / {p.num_binomios}</td>}
                         <td className="whitespace-nowrap px-3 py-2 text-right">
                           {modo === 'admin' ? (
-                            <Link href={`/admin/concursos/${p.concurso_id}/pruebas/${p.id}`} className="text-sm font-medium text-primary hover:underline">Gestionar</Link>
+                            <Link href={`/admin/concursos/${p.concurso_id}/pruebas/${p.id}`} className="btn btn-outline text-sm" title="Ver y cambiar los jueces y los binomios (jinete y caballo) de esta prueba">Abrir prueba</Link>
                           ) : (
-                            <Link href={`/juez/prueba/${p.id}`} className="btn btn-primary text-sm">Puntuar</Link>
+                            <Link href={`/juez/prueba/${p.id}`} className="btn btn-primary text-sm" title="Ver los binomios de esta prueba y poner las notas">Puntuar</Link>
                           )}
                         </td>
                       </tr>
@@ -433,7 +435,7 @@ export function TablaPruebas(props: Props) {
                                   <option key={l} value={l} disabled={p.jueces.some((j) => j.letra === l)}>{l}</option>
                                 ))}
                               </select>
-                              <button type="submit" disabled={ocupado || !nuevoJuez.juezId} className="btn btn-primary text-sm">Añadir</button>
+                              <button type="submit" disabled={ocupado || !nuevoJuez.juezId} className="btn btn-primary text-sm">Guardar juez</button>
                               <button type="button" onClick={() => setFilaJuezAbierta(null)} className="btn btn-outline text-sm">Cancelar</button>
                             </form>
                           </td>
