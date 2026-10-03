@@ -60,6 +60,16 @@ export function emparejarReprise<T extends { nombre: string }>(nombreRfhe: strin
   return catalogo.find((r) => claveReprise(r.nombre) === clave) || null;
 }
 
+/** "Pte. Confirmación" (o "Pendiente de confirmación") en las observaciones de la RFHE. */
+export function esPendienteConfirmacion(observaciones: string | null | undefined): boolean {
+  return /\b(pte|pendiente)\b.*confirm/i.test(observaciones || '');
+}
+
+/** Nombre con "*" si la inscripción está pendiente de confirmación. */
+export function nombreConMarca(nombre: string, pendiente: boolean): string {
+  return pendiente ? `${nombre} *` : nombre;
+}
+
 /** A partir del enlace de un concurso RFHE, el de su relación de inscritos/admitidos. */
 export function crearUrlInscritos(concursoUrl: string): string | null {
   try {
@@ -71,4 +81,18 @@ export function crearUrlInscritos(concursoUrl: string): string | null {
   } catch {
     return null;
   }
+}
+
+/** Categoría de edad que corresponde a una reprise del catálogo (Alevines, Caballos Jóvenes 5 años...). */
+export function categoriaDeReprise<C extends { codigo: string; nombre: string }>(
+  reprise: { nombre: string; categoria: string | null } | null,
+  categorias: C[],
+): C | null {
+  if (!reprise?.categoria) return null;
+  const cat = sinAcentos(reprise.categoria);
+  if (cat.startsWith('caballos jovenes')) {
+    const anios = reprise.nombre.match(/\b([4-7])\s*a/)?.[1];
+    return anios ? categorias.find((c) => c.codigo === `CJ${anios}`) || null : null;
+  }
+  return categorias.find((c) => sinAcentos(c.nombre) === cat) || null;
 }

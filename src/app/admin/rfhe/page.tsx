@@ -4,7 +4,7 @@ import { FormEvent, useState } from 'react';
 import Link from 'next/link';
 import { ArrowDown, ArrowDownUp, ArrowUp, CalendarPlus, ExternalLink, FileSearch, LoaderCircle, Users } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
-import { crearUrlInscritos, sugerirJornada } from '@/lib/rfhe-pruebas';
+import { crearUrlInscritos, esPendienteConfirmacion, nombreConMarca, sugerirJornada } from '@/lib/rfhe-pruebas';
 import { compararPorInicio, formatearFecha } from '@/lib/fechas';
 
 type RepriseInscrito = {
@@ -217,7 +217,7 @@ function TablaInscritos({ datos }: { datos: HtmlData }) {
             {filasOrdenadas.map((fila) => (
               <tr key={fila.filaId} className="border-t border-[#eee9df] align-top even:bg-[#fffdfa]">
                 {datos.inscritosConNumero && <td className="px-3 py-2">{fila.numero || '—'}</td>}
-                <td className="whitespace-nowrap px-3 py-2">{fila.jinete}</td>
+                <td className="whitespace-nowrap px-3 py-2">{nombreConMarca(fila.jinete, esPendienteConfirmacion(fila.observaciones))}</td>
                 <td className="px-3 py-2">{fila.ldn}</td>
                 <td className="px-3 py-2">{fila.federacionJinete}</td>
                 <td className="whitespace-nowrap px-3 py-2">{fila.caballo}</td>

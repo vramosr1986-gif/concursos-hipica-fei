@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
+import { esPendienteConfirmacion, nombreConMarca } from '@/lib/rfhe-pruebas';
 
 const LETRAS = ['A', 'B', 'C', 'D', 'E'];
 
@@ -40,6 +41,7 @@ type BinomioParticipante = {
   dorsal: number;
   jinete: string;
   caballo: string;
+  pendiente: boolean;
 };
 
 type UserJuezOption = {
@@ -124,7 +126,7 @@ export default function DetallePruebaPage() {
   const cargarBinomios = async () => {
     const { data, error: dbError } = await supabase
       .from('participaciones')
-      .select('id, inscripcion_id, orden_salida, inscripcion:inscripcion_id(dorsal, binomio:binomio_id(nombre_jinete, nombre_caballo))')
+      .select('id, inscripcion_id, orden_salida, observaciones, inscripcion:inscripcion_id(dorsal, binomio:binomio_id(nombre_jinete, nombre_caballo))')
       .eq('prueba_id', pruebaId)
       .order('orden_salida', { ascending: true });
 
@@ -137,6 +139,7 @@ export default function DetallePruebaPage() {
       dorsal: b.inscripcion?.dorsal || 0,
       jinete: b.inscripcion?.binomio?.nombre_jinete || '-',
       caballo: b.inscripcion?.binomio?.nombre_caballo || '-',
+      pendiente: esPendienteConfirmacion(b.observaciones),
     }));
 
     setBinomios(formateados);
@@ -628,7 +631,7 @@ export default function DetallePruebaPage() {
                   <tr key={b.id}>
                     <td className="font-bold">{b.orden_salida}</td>
                     <td>{b.dorsal}</td>
-                    <td>{b.jinete}</td>
+                    <td>{nombreConMarca(b.jinete, b.pendiente)}</td>
                     <td>{b.caballo}</td>
                     <td>
                       <button

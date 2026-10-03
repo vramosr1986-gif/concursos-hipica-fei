@@ -2,7 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { verificarAdmin } from '@/lib/api-guard';
 import { supabaseAdmin } from '@/lib/supabase-admin';
 import { extraer, validarUrl } from '@/lib/rfhe';
-import { claveReprise, crearUrlInscritos, emparejarReprise, fechaDeJornada, sugerirJornada } from '@/lib/rfhe-pruebas';
+import {
+  categoriaDeReprise, claveReprise, crearUrlInscritos, emparejarReprise, esPendienteConfirmacion, fechaDeJornada, sugerirJornada,
+} from '@/lib/rfhe-pruebas';
 
 export const runtime = 'nodejs';
 
@@ -15,17 +17,6 @@ const clave = (texto: string | null | undefined) =>
 
 function lanzar(error: { message: string } | null, que: string) {
   if (error) throw new Error(`${que}: ${error.message}`);
-}
-
-/** Categoría de edad que corresponde a una reprise del catálogo (Alevines, Caballos Jóvenes 5 años...). */
-function categoriaDeReprise(reprise: Reprise | null, categorias: CategoriaEdad[]): CategoriaEdad | null {
-  if (!reprise?.categoria) return null;
-  const cat = clave(reprise.categoria);
-  if (cat.startsWith('caballos jovenes')) {
-    const anios = reprise.nombre.match(/\b([4-7])\s*a/)?.[1];
-    return anios ? categorias.find((c) => c.codigo === `CJ${anios}`) || null : null;
-  }
-  return categorias.find((c) => clave(c.nombre) === cat) || null;
 }
 
 /**
@@ -50,6 +41,10 @@ export async function POST(request: NextRequest) {
     lanzar(errConcurso, 'No se encontró el concurso');
     if (!concurso) throw new Error('No se encontró el concurso');
 
+    // Marca el concurso como importado de la RFHE (los inscritos vienen de allí, no se añaden a mano).
+    const { error: errUrl } = await supabaseAdmin.from('concursos').update({ rfhe_url: urlConcurso.toString() }).eq('id', concursoId);
+    lanzar(errUrl, 'No se pudo guardar el enlace RFHE del concurso (¿falta ejecutar la migración 047?)');
+
     const pagina = await extraer(urlInscritos);
     const inscritos = pagina.datos.inscritos || [];
     if (inscritos.length === 0) {
@@ -65,10 +60,10 @@ export async function POST(request: NextRequest) {
     const categorias = (catRes.data || []) as CategoriaEdad[];
 
     // ---- 1. Binomios (jinete + caballo), en el orden de la lista RFHE ----
-    type Fila = { jinete: string; ldn: string; caballo: string; lac: string; reprise: string };
+    type Fila = { jinete: string; ldn: string; caballo: string; lac: string; reprise: string; observaciones: string };
     const filas: Fila[] = inscritos.flatMap((i) => i.reprises
       .filter((r) => r.caballo && r.reprise)
-      .map((r) => ({ jinete: i.jinete, ldn: i.ldn, caballo: r.caballo, lac: r.lac, reprise: r.reprise })));
+      .map((r) => ({ jinete: i.jinete, ldn: i.ldn, caballo: r.caballo, lac: r.lac, reprise: r.reprise, observaciones: r.observaciones })));
     const claveBinomio = (f: { ldn: string; lac: string; jinete: string; caballo: string }) =>
       f.ldn && f.lac ? `${f.ldn}|${f.lac}` : `${clave(f.jinete)}|${clave(f.caballo)}`;
 
@@ -176,27 +171,42 @@ export async function POST(request: NextRequest) {
     // ---- 4. Participantes de cada prueba (orden = orden de la lista RFHE) ----
     const pruebaIds = Array.from(new Set(nombresReprise.map((n) => pruebaPorNombre.get(claveReprise(n))!).filter(Boolean)));
     const { data: partActuales, error: errPart } = await supabaseAdmin
-      .from('participaciones').select('prueba_id, inscripcion_id, orden_salida').in('prueba_id', pruebaIds);
+      .from('participaciones').select('id, prueba_id, inscripcion_id, orden_salida, observaciones').in('prueba_id', pruebaIds);
     lanzar(errPart, 'No se pudieron leer los participantes');
-    const yaEsta = new Set((partActuales || []).map((p) => `${p.prueba_id}|${p.inscripcion_id}`));
+    const yaEsta = new Map((partActuales || []).map((p) => [`${p.prueba_id}|${p.inscripcion_id}`, p]));
     const ordenPorPrueba = new Map<string, number>();
     for (const p of partActuales || []) {
       ordenPorPrueba.set(p.prueba_id, Math.max(ordenPorPrueba.get(p.prueba_id) || 0, Number(p.orden_salida) || 0));
     }
 
-    const nuevasParticipaciones: { prueba_id: string; inscripcion_id: string; orden_salida: number; estado: string }[] = [];
+    const nuevasParticipaciones: { prueba_id: string; inscripcion_id: string; orden_salida: number; estado: string; observaciones: string | null }[] = [];
+    const cambiosObservaciones: { id: string; observaciones: string | null }[] = [];
     for (const f of filas) {
       const pruebaId = pruebaPorNombre.get(claveReprise(f.reprise));
       const inscripcionId = inscripcionPorBinomio.get(binomioPorClave.get(claveBinomio(f)) || '');
-      if (!pruebaId || !inscripcionId || yaEsta.has(`${pruebaId}|${inscripcionId}`)) continue;
-      yaEsta.add(`${pruebaId}|${inscripcionId}`);
+      if (!pruebaId || !inscripcionId) continue;
+      const observaciones = f.observaciones.trim() || null;
+      const existente = yaEsta.get(`${pruebaId}|${inscripcionId}`);
+      if (existente) {
+        // La RFHE quita el "Pte. Confirmación" al confirmar: se actualiza.
+        if (existente.id && (existente.observaciones || null) !== observaciones) {
+          cambiosObservaciones.push({ id: existente.id, observaciones });
+          existente.observaciones = observaciones;
+        }
+        continue;
+      }
+      yaEsta.set(`${pruebaId}|${inscripcionId}`, { id: '', prueba_id: pruebaId, inscripcion_id: inscripcionId, orden_salida: 0, observaciones });
       const siguiente = (ordenPorPrueba.get(pruebaId) || 0) + 1;
       ordenPorPrueba.set(pruebaId, siguiente);
-      nuevasParticipaciones.push({ prueba_id: pruebaId, inscripcion_id: inscripcionId, orden_salida: siguiente, estado: 'pendiente' });
+      nuevasParticipaciones.push({ prueba_id: pruebaId, inscripcion_id: inscripcionId, orden_salida: siguiente, estado: 'pendiente', observaciones });
     }
     for (let i = 0; i < nuevasParticipaciones.length; i += 500) {
       const { error } = await supabaseAdmin.from('participaciones').insert(nuevasParticipaciones.slice(i, i + 500));
       lanzar(error, 'No se pudieron crear los participantes');
+    }
+    for (const c of cambiosObservaciones) {
+      const { error } = await supabaseAdmin.from('participaciones').update({ observaciones: c.observaciones }).eq('id', c.id);
+      lanzar(error, 'No se pudieron actualizar las observaciones');
     }
 
     return NextResponse.json({
@@ -206,6 +216,8 @@ export async function POST(request: NextRequest) {
       inscripciones_nuevas: nuevasInscripciones.length,
       pruebas_nuevas: nuevasPruebas.length,
       participaciones_nuevas: nuevasParticipaciones.length,
+      observaciones_actualizadas: cambiosObservaciones.length,
+      pendientes_confirmacion: filas.filter((f) => esPendienteConfirmacion(f.observaciones)).length,
       pruebas_sin_reprise: sinReprise,
     });
   } catch (error) {

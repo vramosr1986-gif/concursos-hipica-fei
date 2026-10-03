@@ -59,6 +59,8 @@ export interface Concurso {
   provincia?: string | null;
   tipo?: string | null;
   federacion?: string | null;
+  /** Enlace del concurso en la RFHE; si está vacío, el concurso es manual. */
+  rfhe_url?: string | null;
   created_at: string;
   created_by: string;
 }

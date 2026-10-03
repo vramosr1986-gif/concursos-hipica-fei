@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
+import { esPendienteConfirmacion, nombreConMarca } from '@/lib/rfhe-pruebas';
 
 type Concurso = {
   id: string;
@@ -44,6 +45,7 @@ type Participacion = {
   jinete: string;
   caballo: string;
   puntuada: boolean;
+  pendiente: boolean;
 };
 
 export default function PuntuarPruebaPage() {
@@ -111,6 +113,7 @@ export default function PuntuarPruebaPage() {
           .select(`
             id,
             orden_salida,
+            observaciones,
             inscripcion:inscripcion_id(
               dorsal,
               binomio:binomio_id(nombre_jinete, nombre_caballo)
@@ -137,6 +140,7 @@ export default function PuntuarPruebaPage() {
             jinete: (p as any).inscripcion?.binomio?.nombre_jinete || '-',
             caballo: (p as any).inscripcion?.binomio?.nombre_caballo || '-',
             puntuada: (count || 0) > 0,
+            pendiente: esPendienteConfirmacion((p as any).observaciones),
           });
         }
 
@@ -228,7 +232,7 @@ export default function PuntuarPruebaPage() {
                     <tr key={p.id} className="hover:bg-gray-50">
                       <td className="text-center font-bold text-lg">{p.orden_salida}</td>
                       <td className="text-center font-bold">{p.dorsal}</td>
-                      <td className="font-medium">{p.jinete}</td>
+                      <td className="font-medium">{nombreConMarca(p.jinete, p.pendiente)}</td>
                       <td>{p.caballo}</td>
                       <td className="text-sm text-gray-600">
                         {prueba.concurso?.nombre || '-'}
