@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase-admin';
 import { verificarAdmin } from '@/lib/api-guard';
+import { datosQueFaltan, esMismoBinomio } from '@/lib/binomios';
 
 export async function POST(request: NextRequest) {
   const auth = await verificarAdmin(request);
@@ -31,35 +32,48 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const datos = {
+      nombre_jinete,
+      nombre_caballo,
+      // Sin permiso expreso no se guardan fechas de nacimiento.
+      anio_nacimiento_caballo: consentimiento_datos_at ? anio_nacimiento_caballo || null : null,
+      fecha_nacimiento_jinete: consentimiento_datos_at ? fecha_nacimiento_jinete || null : null,
+      consentimiento_datos_at: consentimiento_datos_at || null,
+      licencia_federativa: licencia_federativa || null,
+      ldn_jinete: ldn_jinete || null,
+      lac_caballo: lac_caballo || null,
+      fh_jinete: fh_jinete || null,
+      fh_caballo: fh_caballo || null,
+    };
+
+    // Si el binomio ya existe no se duplica: se rellenan los datos que le falten.
+    const { data: todos, error: errTodos } = await supabaseAdmin
+      .from('binomios')
+      .select('id, nombre_jinete, nombre_caballo, ldn_jinete, lac_caballo, licencia_federativa, fh_jinete, fh_caballo, fecha_nacimiento_jinete, anio_nacimiento_caballo, consentimiento_datos_at');
+    if (errTodos) throw errTodos;
+    const existente = (todos || []).find((b) => esMismoBinomio(b, datos));
+
+    if (existente) {
+      const cambios = datosQueFaltan(existente, datos);
+      // Las fechas solo se completan junto con su permiso.
+      if (!existente.consentimiento_datos_at && !cambios.consentimiento_datos_at) {
+        delete cambios.fecha_nacimiento_jinete;
+        delete cambios.anio_nacimiento_caballo;
+      }
+      if (Object.keys(cambios).length > 0) {
+        const { error: errUpd } = await supabaseAdmin.from('binomios').update(cambios).eq('id', existente.id);
+        if (errUpd) throw errUpd;
+      }
+      return NextResponse.json({ ...existente, ...cambios, ya_existia: true, completados: Object.keys(cambios) }, { status: 200 });
+    }
+
     const { data, error } = await supabaseAdmin
       .from('binomios')
-      .insert([
-        {
-          nombre_jinete,
-          nombre_caballo,
-          anio_nacimiento_caballo: consentimiento_datos_at ? anio_nacimiento_caballo || null : null,
-          fecha_nacimiento_jinete: consentimiento_datos_at ? fecha_nacimiento_jinete || null : null,
-          licencia_federativa: licencia_federativa || null,
-          ldn_jinete: ldn_jinete || null,
-          lac_caballo: lac_caballo || null,
-          fh_jinete: fh_jinete || null,
-          fh_caballo: fh_caballo || null,
-          // Sin permiso expreso no se guardan fechas de nacimiento.
-          consentimiento_datos_at: consentimiento_datos_at || null,
-        },
-      ])
+      .insert([datos])
       .select()
       .single();
 
-    if (error) {
-      if ((error as any).code === '23505') {
-        return NextResponse.json(
-          { error: 'Ya existe un binomio con esa licencia federativa' },
-          { status: 409 }
-        );
-      }
-      throw error;
-    }
+    if (error) throw error;
 
     return NextResponse.json(data, { status: 201 });
   } catch (error) {

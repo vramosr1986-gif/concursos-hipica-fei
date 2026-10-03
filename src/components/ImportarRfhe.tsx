@@ -8,6 +8,7 @@ export type ResultadoImportacion = {
   fuente: string;
   jinetes: number;
   binomios_nuevos: number;
+  binomios_completados?: number;
   inscripciones_nuevas: number;
   pruebas_nuevas: number;
   participaciones_nuevas: number;
@@ -38,6 +39,7 @@ export function ResumenImportacion({ resultado }: { resultado: ResultadoImportac
       <ul className="mt-1 list-disc pl-5">
         <li>{resultado.pruebas_nuevas} pruebas nuevas</li>
         <li>{resultado.inscripciones_nuevas} binomios inscritos ({resultado.binomios_nuevos} no estaban en el catálogo y se han dado de alta)</li>
+        {(resultado.binomios_completados || 0) > 0 && <li>{resultado.binomios_completados} binomios que ya existían han recibido los datos que les faltaban (sin duplicarlos)</li>}
         <li>{resultado.participaciones_nuevas} participaciones en pruebas</li>
         {resultado.observaciones_actualizadas > 0 && <li>{resultado.observaciones_actualizadas} participaciones han cambiado de estado en la RFHE (p. ej. ya confirmadas)</li>}
         {resultado.pendientes_confirmacion > 0 && <li>{resultado.pendientes_confirmacion} participaciones pendientes de confirmación en la RFHE (salen con *)</li>}

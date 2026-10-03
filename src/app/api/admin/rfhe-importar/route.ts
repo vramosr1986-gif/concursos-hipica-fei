@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verificarAdmin } from '@/lib/api-guard';
 import { supabaseAdmin } from '@/lib/supabase-admin';
+import { datosQueFaltan, esMismoBinomio } from '@/lib/binomios';
 import { extraer, validarUrl } from '@/lib/rfhe';
 import {
   categoriaDeReprise, claveReprise, crearUrlInscritos, emparejarReprise, esPendienteConfirmacion, fechaDeJornada, sugerirJornada,
@@ -12,7 +13,7 @@ type Reprise = { id: string; nombre: string; categoria: string | null };
 type CategoriaEdad = { id: string; codigo: string; nombre: string };
 type Binomio = {
   id: string; nombre_jinete: string; nombre_caballo: string; ldn_jinete: string | null; lac_caballo: string | null;
-  fh_jinete: string | null; fh_caballo: string | null;
+  fh_jinete: string | null; fh_caballo: string | null; licencia_federativa?: string | null;
 };
 
 const clave = (texto: string | null | undefined) =>
@@ -76,44 +77,51 @@ export async function POST(request: NextRequest) {
     const unicos = new Map<string, Fila>();
     for (const f of filas) if (!unicos.has(claveBinomio(f))) unicos.set(claveBinomio(f), f);
 
-    const lacs = Array.from(new Set(Array.from(unicos.values()).map((f) => f.lac).filter(Boolean)));
+    // Binomios que ya existen (también los añadidos a mano): no se duplican,
+    // solo se les rellenan los datos que les falten (LDN, LAC, federación).
     const existentes: Binomio[] = [];
-    for (let i = 0; i < lacs.length; i += 200) {
+    for (let desde = 0; ; desde += 1000) {
       const { data, error } = await supabaseAdmin
-        .from('binomios').select('id, nombre_jinete, nombre_caballo, ldn_jinete, lac_caballo, fh_jinete, fh_caballo')
-        .in('lac_caballo', lacs.slice(i, i + 200));
+        .from('binomios').select('id, nombre_jinete, nombre_caballo, ldn_jinete, lac_caballo, fh_jinete, fh_caballo, licencia_federativa')
+        .range(desde, desde + 999);
       lanzar(error, 'No se pudieron leer los binomios');
       existentes.push(...((data || []) as Binomio[]));
+      if (!data || data.length < 1000) break;
     }
+    const comoBinomio = (f: Fila) => ({
+      nombre_jinete: f.jinete, nombre_caballo: f.caballo, ldn_jinete: f.ldn || null, lac_caballo: f.lac || null,
+      fh_jinete: f.fhJinete || null, fh_caballo: f.fhCaballo || null,
+    });
+
     const binomioPorClave = new Map<string, string>();
-    for (const b of existentes) {
-      binomioPorClave.set(claveBinomio({ ldn: b.ldn_jinete || '', lac: b.lac_caballo || '', jinete: b.nombre_jinete, caballo: b.nombre_caballo }), b.id);
-    }
-
-    for (const b of existentes) {
-      const fila = unicos.get(claveBinomio({ ldn: b.ldn_jinete || '', lac: b.lac_caballo || '', jinete: b.nombre_jinete, caballo: b.nombre_caballo }));
-      if (!fila) continue;
-      const cambios: Record<string, string> = {};
-      if (!b.fh_jinete && fila.fhJinete) cambios.fh_jinete = fila.fhJinete;
-      if (!b.fh_caballo && fila.fhCaballo) cambios.fh_caballo = fila.fhCaballo;
+    const nuevosBinomios: [string, Fila][] = [];
+    let binomiosCompletados = 0;
+    for (const [k, fila] of unicos) {
+      const datos = comoBinomio(fila);
+      const existente = existentes.find((b) => esMismoBinomio(b, datos));
+      if (!existente) {
+        nuevosBinomios.push([k, fila]);
+        continue;
+      }
+      binomioPorClave.set(k, existente.id);
+      const { nombre_jinete: _j, nombre_caballo: _c, ...completables } = datos;
+      const cambios = datosQueFaltan(existente, completables);
       if (Object.keys(cambios).length === 0) continue;
-      const { error } = await supabaseAdmin.from('binomios').update(cambios).eq('id', b.id);
-      lanzar(error, 'No se pudo guardar la federación del binomio (¿falta ejecutar la migración 048?)');
+      const { error } = await supabaseAdmin.from('binomios').update(cambios).eq('id', existente.id);
+      lanzar(error, 'No se pudieron completar los datos del binomio');
+      Object.assign(existente, cambios);
+      binomiosCompletados++;
     }
 
-    const nuevosBinomios = Array.from(unicos.entries()).filter(([k]) => !binomioPorClave.has(k));
     if (nuevosBinomios.length > 0) {
-      const { data, error } = await supabaseAdmin.from('binomios').insert(nuevosBinomios.map(([, f]) => ({
-        nombre_jinete: f.jinete,
-        nombre_caballo: f.caballo,
-        ldn_jinete: f.ldn || null,
-        lac_caballo: f.lac || null,
-        fh_jinete: f.fhJinete || null,
-        fh_caballo: f.fhCaballo || null,
-      }))).select('id, nombre_jinete, nombre_caballo, ldn_jinete, lac_caballo, fh_jinete, fh_caballo');
+      const { data, error } = await supabaseAdmin.from('binomios')
+        .insert(nuevosBinomios.map(([, f]) => comoBinomio(f)))
+        .select('id, nombre_jinete, nombre_caballo, ldn_jinete, lac_caballo, fh_jinete, fh_caballo, licencia_federativa');
       lanzar(error, 'No se pudieron crear los binomios');
-      for (const b of (data || []) as Binomio[]) {
-        binomioPorClave.set(claveBinomio({ ldn: b.ldn_jinete || '', lac: b.lac_caballo || '', jinete: b.nombre_jinete, caballo: b.nombre_caballo }), b.id);
+      const creados = (data || []) as Binomio[];
+      for (const [k, f] of nuevosBinomios) {
+        const creado = creados.find((b) => esMismoBinomio(b, comoBinomio(f)));
+        if (creado) binomioPorClave.set(k, creado.id);
       }
     }
 
@@ -232,6 +240,7 @@ export async function POST(request: NextRequest) {
       fuente: pagina.datos.url,
       jinetes: inscritos.length,
       binomios_nuevos: nuevosBinomios.length,
+      binomios_completados: binomiosCompletados,
       inscripciones_nuevas: nuevasInscripciones.length,
       pruebas_nuevas: nuevasPruebas.length,
       participaciones_nuevas: nuevasParticipaciones.length,

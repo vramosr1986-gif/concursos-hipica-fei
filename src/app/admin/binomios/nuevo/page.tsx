@@ -11,6 +11,7 @@ import { FechasConPermiso, FechasNacimiento, fechasParaGuardar } from '@/compone
 export default function NuevoBinomioPage() {
   const router = useRouter();
 
+  const [yaExistia, setYaExistia] = useState<string | null>(null);
   const [fechas, setFechas] = useState<FechasNacimiento>({ consentimiento: false, fecha_nacimiento_jinete: '', anio_nacimiento_caballo: '' });
   const [formData, setFormData] = useState({
     nombre_jinete: '',
@@ -105,6 +106,17 @@ export default function NuevoBinomioPage() {
         return;
       }
 
+      const guardado = await res.json().catch(() => ({}));
+      if (guardado.ya_existia) {
+        // No se duplica: se avisa de que ya estaba y de qué datos se han completado.
+        const nombres: Record<string, string> = {"ldn_jinete":"LDN","lac_caballo":"LAC","licencia_federativa":"licencia","fh_jinete":"federación del jinete","fh_caballo":"federación del caballo","fecha_nacimiento_jinete":"fecha de nacimiento del jinete","anio_nacimiento_caballo":"año del caballo","consentimiento_datos_at":"permiso de datos"};
+        const completados = (guardado.completados || []).map((c: string) => nombres[c]).filter(Boolean);
+        setYaExistia(completados.length > 0
+          ? `Este jinete con este caballo ya estaba registrado. Se han completado: ${completados.join(', ')}.`
+          : 'Este jinete con este caballo ya estaba registrado con todos sus datos. No se ha cambiado nada.');
+        return;
+      }
+
       router.push('/admin/binomios');
       router.refresh();
     } catch (err: unknown) {
@@ -125,6 +137,12 @@ export default function NuevoBinomioPage() {
       <div className="card p-6">
         {error && (
           <div className="mb-4 p-3 bg-danger text-white rounded text-sm">{error}</div>
+        )}
+        {yaExistia && (
+          <div role="status" className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded border border-green-200 bg-green-50 p-3 text-sm text-green-900">
+            <span>{yaExistia}</span>
+            <Link href="/admin/binomios" className="btn btn-outline btn-sm">Volver al listado</Link>
+          </div>
         )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
