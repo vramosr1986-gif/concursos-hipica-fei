@@ -41,15 +41,15 @@ const modulos = [
     color: 'bg-[#b88746]/15 text-[#b88746] group-hover:bg-[#b88746] group-hover:text-white',
   },
     {
-    href: '/admin/Resultados',
+    href: '/Resultados',
     titulo: 'Resultados',
     descripcion: 'Resultados y Clasificaciones',
     Icon: Users,
     color: 'bg-[#b88746]/15 text-[#b88746] group-hover:bg-[#b88746] group-hover:text-white',
   },
     {
-    href: '/admin/Etadisticas',
-    titulo: 'Etadisticas',
+    href: '/Estadisticas',
+    titulo: 'Estadisticas',
     descripcion: 'Estadísticas y Curiosidades.',
     Icon: Users,
     color: 'bg-[#b88746]/15 text-[#b88746] group-hover:bg-[#b88746] group-hover:text-white',
