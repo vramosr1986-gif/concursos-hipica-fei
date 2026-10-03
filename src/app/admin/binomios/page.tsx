@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 
 type BinomioConCategoria = {
@@ -102,26 +101,6 @@ export default function AdminBinomiosPage() {
   useEffect(() => {
     cargarBinomios();
   }, []);
-
-  const eliminarBinomio = async (id: string, jinete: string, caballo: string) => {
-    const confirmar = window.confirm(
-      'Eliminar el binomio ' + jinete + ' / ' + caballo + '? Se eliminaran tambien sus inscripciones en todos los concursos.'
-    );
-    if (!confirmar) return;
-
-    try {
-      const { error: dbError } = await supabase
-        .from('binomios')
-        .delete()
-        .eq('id', id);
-
-      if (dbError) throw dbError;
-
-      setBinomios((actuales) => actuales.filter((b) => b.binomio_id !== id));
-    } catch (err: any) {
-      alert(err.message || 'Error al eliminar el binomio');
-    }
-  };
 
   const changeEstadoValidacion = async (id: string, nuevoEstado: 'pendiente' | 'valido' | 'no_valido') => {
     try {
@@ -228,92 +207,72 @@ export default function AdminBinomiosPage() {
           </div>
 
           <div className="overflow-x-auto">
-            <table className="w-full">
+            <table className="w-full text-sm">
               <thead>
                 <tr className="border-b bg-gray-50">
-                  <th className="text-left p-3">Jinete</th>
-                  <th className="text-left p-3">Caballo</th>
-                  <th className="text-center p-3">Edad jinete</th>
-                  <th className="text-center p-3">Cat. jinete</th>
-                  <th className="text-center p-3">Edad caballo</th>
-                  <th className="text-center p-3">Cat. caballo</th>
-                  <th className="text-center p-3">Categoria principal</th>
-                  <th className="text-left p-3">Licencia</th>
-                  <th className="text-center p-3">Estado RFHE</th>
-                  <th className="text-right p-3">Acciones</th>
+                  <th className="text-left p-2 font-medium">Jinete</th>
+                  <th className="text-left p-2 font-medium">Caballo</th>
+                  <th className="text-center p-2 font-medium hidden sm:table-cell">Edad</th>
+                  <th className="text-center p-2 font-medium hidden md:table-cell">Cat. jinete</th>
+                  <th className="text-center p-2 font-medium hidden md:table-cell">E.Cab</th>
+                  <th className="text-center p-2 font-medium hidden lg:table-cell">Cat. cab</th>
+                  <th className="text-center p-2 font-medium hidden lg:table-cell">Cat.Ppal</th>
+                  <th className="text-center p-2 font-medium">RFHE</th>
+                  <th className="text-center p-2 font-medium">Acciones</th>
                 </tr>
               </thead>
 
               <tbody>
                 {binomios.map((b) => (
                   <tr key={b.binomio_id} className="border-b hover:bg-gray-50">
-                    <td className="p-3 font-medium">{b.nombre_jinete}</td>
-                    <td className="p-3">{b.nombre_caballo}</td>
-                    <td className="p-3 text-center text-sm text-gray-600">
-                      {b.edad_jinete !== null ? b.edad_jinete + ' anos' : '-'}
+                    <td className="p-2 font-medium text-xs sm:text-sm">{b.nombre_jinete}</td>
+                    <td className="p-2 text-xs sm:text-sm">{b.nombre_caballo}</td>
+                    <td className="p-2 text-center text-xs text-gray-600 hidden sm:table-cell">
+                      {b.edad_jinete || '-'}
                     </td>
-                    <td className="p-3 text-center">{chipCategoria(b.categoria_jinete)}</td>
-                    <td className="p-3 text-center text-sm text-gray-600">
-                      {b.edad_caballo !== null ? b.edad_caballo + ' anos' : '-'}
+                    <td className="p-2 text-center hidden md:table-cell">{chipCategoria(b.categoria_jinete)}</td>
+                    <td className="p-2 text-center text-xs text-gray-600 hidden md:table-cell">
+                      {b.edad_caballo || '-'}
                     </td>
-                    <td className="p-3 text-center">{chipCategoria(b.categoria_caballo)}</td>
-                    <td className="p-3 text-center">
+                    <td className="p-2 text-center hidden lg:table-cell">{chipCategoria(b.categoria_caballo)}</td>
+                    <td className="p-2 text-center hidden lg:table-cell">
                       <span className="font-medium">{chipCategoria(b.categoria_principal)}</span>
                     </td>
-                    <td className="p-3 text-sm text-gray-600">
-                      {b.licencia_federativa || '-'}
-                    </td>
-                    <td className="p-3 text-center">
+                    <td className="p-2 text-center">
                       {chipEstadoValidacion(b.estado_validacion)}
                     </td>
-                    <td className="p-3 text-right">
-                      <div className="flex flex-col gap-2">
-                        <div className="flex gap-1 justify-end flex-wrap">
+                    <td className="p-2">
+                      <div className="flex flex-col gap-1">
+                        <div className="flex gap-0.5 justify-center flex-wrap">
                           <button
                             onClick={() => changeEstadoValidacion(b.binomio_id, 'valido')}
-                            className={`btn text-xs px-2 py-1 ${b.estado_validacion === 'valido' ? 'btn-success' : 'btn-outline'}`}
-                            title="Marcar como válido"
+                            className={`btn btn-sm text-xs px-1.5 py-0.5 ${b.estado_validacion === 'valido' ? 'btn-success' : 'btn-outline'}`}
+                            title="Válido"
                           >
                             ✓
                           </button>
                           <button
                             onClick={() => changeEstadoValidacion(b.binomio_id, 'no_valido')}
-                            className={`btn text-xs px-2 py-1 ${b.estado_validacion === 'no_valido' ? 'btn-danger' : 'btn-outline'}`}
-                            title="Marcar como no válido"
+                            className={`btn btn-sm text-xs px-1.5 py-0.5 ${b.estado_validacion === 'no_valido' ? 'btn-danger' : 'btn-outline'}`}
+                            title="No válido"
                           >
                             ✗
                           </button>
                           <button
                             onClick={() => changeEstadoValidacion(b.binomio_id, 'pendiente')}
-                            className={`btn text-xs px-2 py-1 ${b.estado_validacion === 'pendiente' ? 'btn-warning' : 'btn-outline'}`}
-                            title="Marcar como pendiente"
+                            className={`btn btn-sm text-xs px-1.5 py-0.5 ${b.estado_validacion === 'pendiente' ? 'btn-warning' : 'btn-outline'}`}
+                            title="Pendiente"
                           >
                             🔄
                           </button>
                         </div>
-                        <div className="flex gap-1 justify-end">
-                          <button
-                            onClick={() => abrirRfhe()}
-                            className="btn btn-outline text-xs px-2 py-1"
-                            title="Abrir búsqueda RFHE"
-                          >
-                            🔍 RFHE
-                          </button>
-                          <Link
-                            href={'/admin/binomios/' + b.binomio_id}
-                            className="btn btn-outline text-xs px-2 py-1"
-                          >
-                            Editar
-                          </Link>
-                          <button
-                            onClick={() =>
-                              eliminarBinomio(b.binomio_id, b.nombre_jinete, b.nombre_caballo)
-                            }
-                            className="btn btn-outline text-danger text-xs px-2 py-1"
-                          >
-                            Eliminar
-                          </button>
-                        </div>
+                        <button
+                          onClick={() => abrirRfhe()}
+                          className="btn btn-sm btn-outline text-xs px-1.5 py-0.5"
+                          title="Abrir RFHE"
+                        >
+                          🔍
+                        </button>
                       </div>
                     </td>
                   </tr>
