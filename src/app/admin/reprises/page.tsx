@@ -290,7 +290,7 @@ export default function AdminReprisesPage() {
               onClick={limpiarFiltros}
               className="text-sm text-danger hover:underline"
             >
-              âœ• Limpiar filtros
+              ✕ Limpiar filtros
             </button>
           )}
         </div>
@@ -321,7 +321,7 @@ export default function AdminReprisesPage() {
                   className={`w-full p-4 flex items-center justify-between border-l-4 ${caballosJovenes ? 'bg-amber-100 text-amber-800 border-amber-200' : 'bg-gray-100 text-gray-800 border-gray-300'} hover:opacity-90 transition`}
                 >
                   <div className="flex items-center gap-3">
-                    <span className="text-lg">{abierta ? '▼' : 'â–¶'}</span>
+                    <span className="text-lg">{abierta ? '▼' : '▶'}</span>
                     <span className="text-lg font-bold">{cat}</span>
                     <span className="text-sm opacity-75">
                       ({items.length} {items.length === 1 ? 'reprise' : 'reprisas'})
