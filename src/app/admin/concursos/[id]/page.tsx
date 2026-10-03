@@ -8,6 +8,7 @@ import { concursoService } from '@/lib/services';
 import { supabase } from '@/lib/supabase';
 import { PruebasSection } from './PruebasSection';
 import { ImportarRfhe } from '@/components/ImportarRfhe';
+import { InscripcionesSection } from './InscripcionesSection';
 import {
   ConcursoCampos, DatosConcurso, concursoVacio, datosParaGuardar, validarConcurso,
 } from '@/components/ConcursoCampos';
@@ -16,47 +17,6 @@ import {
 // TIPOS
 // ============================================================
 
-interface Inscripcion {
-  id: string;
-  binomio_id: string;
-  concurso_id: string;
-  dorsal: number;
-  categoria: string | null;
-  categoria_edad_id: string | null;
-  orden_salida: number | null;
-  binomio: {
-    id: string;
-    nombre_jinete: string;
-    nombre_caballo: string;
-    anio: number | null;
-    licencia_federativa: string | null;
-  };
-}
-
-interface BinomioCatalogo {
-  id: string;
-  nombre_jinete: string;
-  nombre_caballo: string;
-  categoria_principal: string | null;
-  edad_jinete: number | null;
-  edad_caballo: number | null;
-  categoria_jinete: string | null;
-  categoria_caballo: string | null;
-}
-
-interface CategoriaEdad {
-  id: string;
-  codigo: string;
-  nombre: string;
-  orden: number | null;
-}
-
-interface NuevaInscripcionForm {
-  binomio_id: string;
-  dorsal: string;
-  categoria_edad_id: string;
-}
-
 interface JuezResumen {
   juez_id: string;
   nombre: string;
@@ -64,10 +24,6 @@ interface JuezResumen {
   num_pruebas: number;
   letras: string;
   pruebas: string;
-}
-
-function inscripcionVacia(): NuevaInscripcionForm {
-  return { binomio_id: '', dorsal: '', categoria_edad_id: '' };
 }
 
 // ============================================================
@@ -84,66 +40,13 @@ export default function EditarConcursoPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState('');
-  const [recargaPruebas, setRecargaPruebas] = useState(0);
+  const [recarga, setRecarga] = useState(0);
 
-  const [inscripciones, setInscripciones] = useState<Inscripcion[]>([]);
-  const [nuevaInscripcion, setNuevaInscripcion] = useState<NuevaInscripcionForm>(inscripcionVacia());
-  const [inscripcionError, setInscripcionError] = useState('');
-  const [guardandoInscripcion, setGuardandoInscripcion] = useState(false);
-
-  const [binomiosCatalogo, setBinomiosCatalogo] = useState<BinomioCatalogo[]>([]);
-  const [categorias, setCategorias] = useState<CategoriaEdad[]>([]);
-  const [categoriaSugerida, setCategoriaSugerida] = useState<string | null>(null);
   const [juecesResumen, setJuecesResumen] = useState<JuezResumen[]>([]);
-
-  const [modalCoherencia, setModalCoherencia] = useState<{
-    abierto: boolean;
-    sugeridaId: string;
-    sugeridaNombre: string;
-    elegidaId: string;
-    elegidaNombre: string;
-  }>({ abierto: false, sugeridaId: '', sugeridaNombre: '', elegidaId: '', elegidaNombre: '' });
 
   // ============================================================
   // CARGA DE DATOS
   // ============================================================
-
-  const cargarInscripciones = async () => {
-    const res = await fetch('/api/inscripciones?concursoId=' + concursoId);
-    if (res.ok) {
-      const data = await res.json();
-      setInscripciones(data || []);
-    }
-  };
-
-  const cargarBinomiosCatalogo = async () => {
-    const { data } = await supabase
-      .from('v_binomios_categorias')
-      .select('binomio_id, nombre_jinete, nombre_caballo, categoria_principal, edad_jinete, edad_caballo, categoria_jinete, categoria_caballo')
-      .order('nombre_jinete');
-    if (data) {
-      setBinomiosCatalogo(
-        data.map((b: any) => ({
-          id: b.binomio_id,
-          nombre_jinete: b.nombre_jinete,
-          nombre_caballo: b.nombre_caballo,
-          categoria_principal: b.categoria_principal,
-          edad_jinete: b.edad_jinete,
-          edad_caballo: b.edad_caballo,
-          categoria_jinete: b.categoria_jinete,
-          categoria_caballo: b.categoria_caballo,
-        }))
-      );
-    }
-  };
-
-  const cargarCategorias = async () => {
-    const { data } = await supabase
-      .from('categorias_edad')
-      .select('id, codigo, nombre, orden')
-      .order('orden');
-    if (data) setCategorias(data);
-  };
 
   const cargarJuecesResumen = async () => {
     const { data: pruebas } = await supabase
@@ -219,56 +122,12 @@ export default function EditarConcursoPage() {
           federacion: data.federacion || '',
         });
       }
-      await Promise.all([
-        cargarInscripciones(),
-        cargarBinomiosCatalogo(),
-        cargarCategorias(),
-        cargarJuecesResumen(),
-      ]);
+      await cargarJuecesResumen();
       setLoading(false);
     };
     fetchConcurso();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [concursoId]);
-
-  // ============================================================
-  // LOGICA: al elegir binomio, preseleccionar categoria sugerida
-  // ============================================================
-
-  const handleSeleccionarBinomio = (binomioId: string) => {
-    const binomio = binomiosCatalogo.find((b) => b.id === binomioId);
-    const sugeridaCodigo = binomio?.categoria_principal || null;
-    const sugeridaObj = sugeridaCodigo
-      ? categorias.find((c) => c.codigo === sugeridaCodigo)
-      : null;
-
-    setCategoriaSugerida(sugeridaCodigo);
-    setNuevaInscripcion({
-      ...nuevaInscripcion,
-      binomio_id: binomioId,
-      categoria_edad_id: sugeridaObj?.id || '',
-    });
-  };
-
-  const handleCambiarCategoria = (categoriaId: string) => {
-    setNuevaInscripcion({ ...nuevaInscripcion, categoria_edad_id: categoriaId });
-
-    // Si el admin cambia la categoria y NO coincide con la sugerida, avisar
-    if (categoriaSugerida && categoriaId) {
-      const sugeridaObj = categorias.find((c) => c.codigo === categoriaSugerida);
-      const elegidaObj = categorias.find((c) => c.id === categoriaId);
-
-      if (sugeridaObj && elegidaObj && sugeridaObj.id !== elegidaObj.id) {
-        setModalCoherencia({
-          abierto: true,
-          sugeridaId: sugeridaObj.id,
-          sugeridaNombre: sugeridaObj.nombre,
-          elegidaId: elegidaObj.id,
-          elegidaNombre: elegidaObj.nombre,
-        });
-      }
-    }
-  };
 
   // ============================================================
   // GUARDAR
@@ -292,76 +151,6 @@ export default function EditarConcursoPage() {
     router.push('/admin/concursos');
   };
 
-  const handleAddInscripcion = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setInscripcionError('');
-
-    if (!nuevaInscripcion.binomio_id) {
-      setInscripcionError('Debes seleccionar un binomio');
-      return;
-    }
-
-    if (!nuevaInscripcion.dorsal.trim()) {
-      setInscripcionError('El dorsal es obligatorio');
-      return;
-    }
-
-    if (!nuevaInscripcion.categoria_edad_id) {
-      setInscripcionError('La categoria es obligatoria');
-      return;
-    }
-
-    setGuardandoInscripcion(true);
-    try {
-      const categoriaObj = categorias.find((c) => c.id === nuevaInscripcion.categoria_edad_id);
-
-      const res = await fetch('/api/inscripciones', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          binomio_id: nuevaInscripcion.binomio_id,
-          concurso_id: concursoId,
-          dorsal: parseInt(nuevaInscripcion.dorsal, 10),
-          categoria: categoriaObj?.nombre || null,
-          categoria_edad_id: nuevaInscripcion.categoria_edad_id,
-          orden_salida: inscripciones.length + 1,
-        }),
-      });
-
-      if (!res.ok) {
-        const body = await res.json().catch(() => ({}));
-        setInscripcionError(body.error || 'No se pudo guardar la inscripcion');
-        return;
-      }
-
-      setNuevaInscripcion(inscripcionVacia());
-      setCategoriaSugerida(null);
-      await cargarInscripciones();
-    } finally {
-      setGuardandoInscripcion(false);
-    }
-  };
-
-  const handleDeleteInscripcion = async (id: string) => {
-    if (!confirm('Eliminar esta inscripcion?')) return;
-    const res = await fetch('/api/inscripciones?id=' + id, { method: 'DELETE' });
-    if (res.ok) {
-      setInscripciones(inscripciones.filter((i) => i.id !== id));
-    } else {
-      const body = await res.json().catch(() => ({}));
-      setInscripcionError(body.error || 'No se pudo eliminar la inscripcion');
-    }
-  };
-
-  // ============================================================
-  // HELPERS
-  // ============================================================
-
-  const formatearEdad = (edad: number | null) => {
-    if (edad === null || edad === undefined) return '-';
-    return edad + ' anos';
-  };
-
   if (loading) return <div className="container py-8">Cargando...</div>;
   if (!concurso) return <div className="container py-8">Concurso no encontrado</div>;
 
@@ -383,150 +172,19 @@ export default function EditarConcursoPage() {
         </form>
       </div>
 
-      {/* IMPORTAR DESDE RFHE */}
+      {/* PARTICIPANTES DE LA RFHE (actualizar o importar por primera vez) */}
       <ImportarRfhe
         concursoId={concursoId}
+        urlGuardada={concurso.rfhe_url}
         onImportado={() => {
-          cargarInscripciones();
+          concursoService.getById(concursoId).then(({ data }) => data && setConcurso(data));
           cargarJuecesResumen();
-          setRecargaPruebas((n) => n + 1);
+          setRecarga((n) => n + 1);
         }}
       />
 
       {/* INSCRIPCIONES */}
-      <div className="card p-6 max-w-4xl mb-8">
-        <div className="flex items-center justify-between mb-4">
-          <div>
-            <h2 className="text-xl font-bold">Inscripciones</h2>
-            <p className="text-sm text-gray-600 mt-1">
-              Categoria calculada automaticamente segun edad del jinete y del caballo (segun RFHE)
-            </p>
-          </div>
-          <div className="text-right">
-            <p className="text-xs text-gray-500">Total inscritos</p>
-            <p className="text-2xl font-bold">{inscripciones.length}</p>
-          </div>
-        </div>
-
-        {inscripcionError && (
-          <div className="mb-4 p-3 bg-danger text-white rounded text-sm">{inscripcionError}</div>
-        )}
-
-        {inscripciones.length > 0 ? (
-          <div className="table-responsive mb-6">
-            <table className="table">
-              <thead>
-                <tr>
-                  <th>N</th>
-                  <th>Jinete</th>
-                  <th>Caballo</th>
-                  <th>Categoria</th>
-                  <th></th>
-                </tr>
-              </thead>
-              <tbody>
-                {inscripciones.map((i) => (
-                  <tr key={i.id}>
-                    <td className="font-bold">{i.dorsal}</td>
-                    <td>{i.binomio?.nombre_jinete || '-'}</td>
-                    <td>{i.binomio?.nombre_caballo || '-'}</td>
-                    <td>
-                      {i.categoria ? (
-                        <span className="px-2 py-1 rounded text-xs bg-blue-100 text-blue-800 font-medium">
-                          {i.categoria}
-                        </span>
-                      ) : (
-                        <span className="px-2 py-1 rounded text-xs bg-red-100 text-red-800 font-medium">
-                          Sin categoria
-                        </span>
-                      )}
-                    </td>
-                    <td>
-                      <button
-                        onClick={() => handleDeleteInscripcion(i.id)}
-                        className="text-danger text-sm hover:underline"
-                      >
-                        Eliminar
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        ) : (
-          <p className="text-gray-600 mb-6">No hay inscripciones todavia</p>
-        )}
-
-        <h3 className="font-bold mb-2">Anadir inscripcion</h3>
-        <form onSubmit={handleAddInscripcion} className="space-y-2">
-          <select
-            value={nuevaInscripcion.binomio_id}
-            onChange={(e) => handleSeleccionarBinomio(e.target.value)}
-            className="input w-full"
-            required
-          >
-            <option value="">-- Elegir binomio --</option>
-            {binomiosCatalogo.map((b) => (
-              <option key={b.id} value={b.id}>
-                {b.nombre_jinete} / {b.nombre_caballo}
-                {b.categoria_principal && ' (' + b.categoria_principal + ')'}
-              </option>
-            ))}
-          </select>
-
-          {nuevaInscripcion.binomio_id && categoriaSugerida && (
-            <div className="p-2 bg-blue-50 border border-blue-200 rounded text-sm">
-              <strong>Categoria sugerida:</strong> {categoriaSugerida}
-              {binomiosCatalogo.find((b) => b.id === nuevaInscripcion.binomio_id)?.edad_caballo !== null && (
-                <span className="text-gray-600">
-                  {' '}· Caballo: {formatearEdad(binomiosCatalogo.find((b) => b.id === nuevaInscripcion.binomio_id)?.edad_caballo || null)}
-                </span>
-              )}
-              {binomiosCatalogo.find((b) => b.id === nuevaInscripcion.binomio_id)?.edad_jinete !== null && (
-                <span className="text-gray-600">
-                  {' '}· Jinete: {formatearEdad(binomiosCatalogo.find((b) => b.id === nuevaInscripcion.binomio_id)?.edad_jinete || null)}
-                </span>
-              )}
-            </div>
-          )}
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-            <input
-              type="number"
-              placeholder="N (dorsal)"
-              value={nuevaInscripcion.dorsal}
-              onChange={(e) =>
-                setNuevaInscripcion({ ...nuevaInscripcion, dorsal: e.target.value })
-              }
-              className="input"
-              required
-            />
-            <select
-              value={nuevaInscripcion.categoria_edad_id}
-              onChange={(e) => handleCambiarCategoria(e.target.value)}
-              className="input"
-              required
-            >
-              <option value="">-- Categoria --</option>
-              {categorias.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.nombre}
-                  {c.codigo === categoriaSugerida ? ' (sugerida)' : ''}
-                </option>
-              ))}
-            </select>
-          </div>
-          <button
-            type="submit"
-            disabled={guardandoInscripcion || !nuevaInscripcion.binomio_id}
-            className="btn btn-secondary disabled:opacity-50"
-          >
-            {guardandoInscripcion ? 'Anadiendo...' : '+ Anadir inscripcion'}
-          </button>
-        </form>
-      </div>
-
+      <InscripcionesSection key={`insc-${recarga}`} concursoId={concursoId} esRfhe={Boolean(concurso.rfhe_url)} />
 
       {/* RESUMEN DE JUECES */}
       <div className="card p-6 max-w-4xl mb-8">
@@ -583,45 +241,8 @@ export default function EditarConcursoPage() {
       </div>
 
       {/* PRUEBAS */}
-      <PruebasSection key={recargaPruebas} concursoId={concursoId} fechaInicio={concurso.fecha_inicio} fechaFin={concurso.fecha_fin} />
+      <PruebasSection key={`pruebas-${recarga}`} concursoId={concursoId} esRfhe={Boolean(concurso.rfhe_url)} fechaInicio={concurso.fecha_inicio} fechaFin={concurso.fecha_fin} />
 
-      {/* MODAL DE COHERENCIA */}
-      {modalCoherencia.abierto && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg p-6 max-w-md w-full">
-            <h3 className="text-lg font-bold mb-3">Aviso de coherencia</h3>
-            <p className="text-sm text-gray-700 mb-4">
-              La categoria sugerida para este binomio es{' '}
-              <strong>{modalCoherencia.sugeridaNombre}</strong>, pero has elegido{' '}
-              <strong>{modalCoherencia.elegidaNombre}</strong>.
-            </p>
-            <p className="text-xs text-gray-500 mb-4">
-              Segun el reglamento RFHE, la categoria sugerida es la que corresponde por edad del
-              jinete y del caballo. Puedes continuar si es una excepcion justificada.
-            </p>
-            <div className="flex justify-end gap-2">
-              <button
-                onClick={() => {
-                  setNuevaInscripcion({
-                    ...nuevaInscripcion,
-                    categoria_edad_id: modalCoherencia.sugeridaId,
-                  });
-                  setModalCoherencia({ ...modalCoherencia, abierto: false });
-                }}
-                className="btn btn-primary text-sm"
-              >
-                Usar la sugerida
-              </button>
-              <button
-                onClick={() => setModalCoherencia({ ...modalCoherencia, abierto: false })}
-                className="btn btn-outline text-sm"
-              >
-                Mantener mi eleccion
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

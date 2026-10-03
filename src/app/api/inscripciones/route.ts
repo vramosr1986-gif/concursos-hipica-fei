@@ -11,7 +11,7 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
 
-    const { binomio_id, concurso_id, dorsal, categoria, orden_salida } = body;
+    const { binomio_id, concurso_id, dorsal, categoria, categoria_edad_id, orden_salida } = body;
 
     if (!binomio_id || !concurso_id || !dorsal) {
       return NextResponse.json(
@@ -28,7 +28,7 @@ export async function POST(request: NextRequest) {
           concurso_id,
           dorsal,
           categoria: categoria || null,
-          
+          categoria_edad_id: categoria_edad_id || null,
           orden_salida: orden_salida || null,
         },
       ])

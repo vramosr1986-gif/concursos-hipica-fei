@@ -1,611 +1,289 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { FormEvent, useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 import { compararRfhe } from '@/lib/orden-reprises';
-
-// ============================================================
-// TABLA DE COMPATIBILIDAD NIVEL -> CATEGORIAS Y TIPOS
-// Basada en el Reglamento RFHE 2026
-// ============================================================
-const NIVEL_COMPATIBILIDAD: Record<string, { categorias: string[]; tipos: string[] }> = {
-  N0: { categorias: ['BENJAMIN', 'ALEVIN'], tipos: ['PRE', 'IND', 'AP'] },
-  N1: { categorias: ['ALEVIN'], tipos: ['PRE', 'EQU', 'IND', 'FIN'] },
-  N2: { categorias: ['INFANTIL', 'CJ5'], tipos: ['PRE', 'EQU', 'IND', 'FIN'] },
-  N3: { categorias: ['JUVENIL_0', 'PONI'], tipos: ['PRE', 'EQU', 'IND'] },
-  N4: { categorias: ['JUVENIL', 'JUNIOR', 'CJ6'], tipos: ['PRE', 'EQU', 'IND', 'FIN'] },
-  SJ: { categorias: ['JOVEN_JINETE', 'CJ7', 'VETERANO'], tipos: ['PRE', 'EQU', 'IND', 'FIN'] },
-  INT_I: { categorias: ['ADULTO', 'JOVEN_JINETE', 'VETERANO'], tipos: ['IND'] },
-  INT_II: { categorias: ['ADULTO'], tipos: ['IND'] },
-  GP: { categorias: ['ADULTO', 'CJ8_10'], tipos: ['IND'] },
-  KUR: {
-    categorias: ['PONI', 'JUVENIL_0', 'JUVENIL', 'JUNIOR', 'JOVEN_JINETE', 'ADULTO', 'VETERANO'],
-    tipos: ['KUR'],
-  },
-};
+import { formatearFecha } from '@/lib/fechas';
+import { categoriaDeReprise } from '@/lib/rfhe-pruebas';
 
 type Prueba = {
   id: string;
-  concurso_id: string;
-  reprise_id: string | null;
-  jornada_id: string | null;
-  nivel_id: string | null;
-  categoria_edad_id: string | null;
-  tipo_prueba_id: string | null;
   nombre: string;
-  categoria: string | null;
   fecha: string;
-  hora_inicio: string;
+  hora_inicio: string | null;
   pista: string | null;
-  orden: number;
-  estado: string;
-  coeficiente: number | null;
-  es_caballos_jovenes: boolean | null;
-  reprise_nombre?: string;
-  jornada_nombre?: string;
-  nivel_codigo?: string;
-  categoria_edad_nombre?: string;
-  tipo_prueba_nombre?: string;
-  num_jueces?: number;
-  num_participantes?: number;
+  orden: number | null;
+  reprise_nombre: string | null;
+  num_jueces: number;
+  num_binomios: number;
 };
 
-type Reprise = { id: string; codigo: string; nombre: string; tipo?: string | null };
-type Jornada = { id: string; fecha: string; numero: number; pista: string | null };
-type Nivel = { id: string; codigo: string; nombre: string; orden: number; color: string | null };
-type CategoriaEdad = { id: string; codigo: string; nombre: string; orden: number | null };
-type TipoPrueba = { id: string; codigo: string; nombre: string; coeficiente: number; orden: number | null };
+type Reprise = { id: string; codigo: string; nombre: string; categoria: string | null };
+type CategoriaEdad = { id: string; codigo: string; nombre: string };
 
-type NuevaPruebaForm = {
-  nombre: string;
-  fecha: string;
-  jornada_id: string;
-  nivel_id: string;
-  categoria_edad_id: string;
-  tipo_prueba_id: string;
-  reprise_id: string;
-  categoria: string;
-  hora_inicio: string;
-  pista: string;
-  orden: string;
-};
-
-interface Props { concursoId: string; fechaInicio: string; fechaFin: string }
-
-function pruebaVacia(fecha: string): NuevaPruebaForm {
-  return {
-    nombre: '', fecha, categoria: '', jornada_id: '', nivel_id: '',
-    categoria_edad_id: '', tipo_prueba_id: '', reprise_id: '',
-    hora_inicio: '09:00', pista: '', orden: '',
-  };
+interface Props {
+  concursoId: string;
+  esRfhe: boolean;
+  fechaInicio: string;
+  fechaFin: string;
 }
 
-export function PruebasSection({ concursoId, fechaInicio, fechaFin }: Props) {
+const DIAS = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+const diaSemana = (iso: string) => {
+  const [a, m, d] = iso.split('-').map(Number);
+  return DIAS[new Date(Date.UTC(a, m - 1, d)).getUTCDay()];
+};
+
+/**
+ * Pruebas del concurso. En los de la RFHE llegan ya con día y reprise: solo
+ * hay que poner hora y pista. También se pueden añadir a mano (como extra).
+ */
+export function PruebasSection({ concursoId, esRfhe, fechaInicio, fechaFin }: Props) {
   const [pruebas, setPruebas] = useState<Prueba[]>([]);
   const [reprises, setReprises] = useState<Reprise[]>([]);
-  const [jornadas, setJornadas] = useState<Jornada[]>([]);
-  const [niveles, setNiveles] = useState<Nivel[]>([]);
   const [categorias, setCategorias] = useState<CategoriaEdad[]>([]);
-  const [tipos, setTipos] = useState<TipoPrueba[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [aviso, setAviso] = useState('');
   const [guardando, setGuardando] = useState(false);
-  const [modalAbierto, setModalAbierto] = useState(false);
+  const [nueva, setNueva] = useState({ reprise_id: '', nombre: '', fecha: fechaInicio, hora: '09:00', pista: '' });
 
-  const [nuevaPrueba, setNuevaPrueba] = useState<NuevaPruebaForm>(pruebaVacia(fechaInicio));
-
-  const nivelSeleccionado = niveles.find((n) => n.id === nuevaPrueba.nivel_id);
-  const compat = nivelSeleccionado ? NIVEL_COMPATIBILIDAD[nivelSeleccionado.codigo] : null;
-
-  const categoriasCompatibles = compat
-    ? categorias.filter((c) => compat.categorias.includes(c.codigo))
-    : categorias;
-
-  const tiposCompatibles = compat
-    ? tipos.filter((t) => compat.tipos.includes(t.codigo))
-    : tipos;
-
-  const esRepriseEquipos = (repriseId: string): boolean => {
-    const reprise = reprises.find((r) => r.id === repriseId);
-    if (!reprise) return false;
-    const tipo = (reprise.tipo || '').toLowerCase();
-    const codigo = (reprise.codigo || '').toUpperCase();
-    return tipo === 'equipos' || codigo.includes('EQU');
-  };
-
-  const repriseSeleccionadaEsEquipos = nuevaPrueba.reprise_id
-    ? esRepriseEquipos(nuevaPrueba.reprise_id)
-    : false;
-
-  const cargarPruebas = async () => {
-    setLoading(true);
+  const cargarPruebas = useCallback(async () => {
     setError('');
-    try {
-      const { data, error: dbError } = await supabase
-        .from('pruebas')
-        .select(`
-          id, concurso_id, reprise_id, jornada_id, nivel_id, categoria_edad_id, tipo_prueba_id,
-          nombre, categoria, fecha, hora_inicio, pista, orden, estado, coeficiente, es_caballos_jovenes,
-          reprise:reprise_id(nombre, codigo),
-          jornada:jornada_id(fecha, numero),
-          nivel:nivel_id(codigo, nombre),
-          categoria_edad:categoria_edad_id(nombre),
-          tipo_prueba:tipo_prueba_id(nombre)
-        `)
-        .eq('concurso_id', concursoId)
-        .order('fecha', { ascending: true })
-        .order('orden', { ascending: true });
-
-      if (dbError) throw dbError;
-
-      const enriquecidas: Prueba[] = [];
-      for (const p of data || []) {
-        const [juecesRes, participacionesRes] = await Promise.all([
-          supabase.from('prueba_jueces').select('id', { count: 'exact', head: true }).eq('prueba_id', p.id),
-          supabase.from('participaciones').select('id', { count: 'exact', head: true }).eq('prueba_id', p.id),
-        ]);
-
-        enriquecidas.push({
-          ...(p as any),
-          reprise_nombre: (p as any).reprise?.nombre || undefined,
-          jornada_nombre: (p as any).jornada
-            ? `J${(p as any).jornada.numero} - ${(p as any).jornada.fecha}`
-            : undefined,
-          nivel_codigo: (p as any).nivel?.codigo || undefined,
-          categoria_edad_nombre: (p as any).categoria_edad?.nombre || undefined,
-          tipo_prueba_nombre: (p as any).tipo_prueba?.nombre || undefined,
-          num_jueces: juecesRes.count || 0,
-          num_participantes: participacionesRes.count || 0,
-        });
-      }
-      setPruebas(enriquecidas);
-    } catch (err: any) {
-      setError(err.message || 'Error al cargar las pruebas');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const cargarCatalogos = async () => {
-    const [jornadasRes, nivelesRes, categoriasRes, tiposRes] = await Promise.all([
-      supabase.from('jornadas').select('id, fecha, numero, pista').eq('concurso_id', concursoId).order('fecha'),
-      supabase.from('niveles').select('id, codigo, nombre, orden, color').order('orden'),
-      supabase.from('categorias_edad').select('id, codigo, nombre, orden').order('orden'),
-      supabase.from('tipos_prueba').select('id, codigo, nombre, coeficiente, orden').order('orden'),
-    ]);
-    if (jornadasRes.data) setJornadas(jornadasRes.data as any);
-    if (nivelesRes.data) setNiveles(nivelesRes.data as any);
-    if (categoriasRes.data) setCategorias(categoriasRes.data as any);
-    if (tiposRes.data) setTipos(tiposRes.data as any);
-  };
-
-  const cargarReprisesPorNivel = async (nivelId: string) => {
-    if (!nivelId) {
-      setReprises([]);
-      return;
-    }
     const { data, error: dbError } = await supabase
-      .from('niveles_reprises')
-      .select('reprise_id, reprise:reprise_id(id, codigo, nombre, tipo)')
-      .eq('nivel_id', nivelId);
-
+      .from('pruebas')
+      .select('id, nombre, fecha, hora_inicio, pista, orden, reprise:reprise_id(nombre), prueba_jueces(count), participaciones(count)')
+      .eq('concurso_id', concursoId)
+      .order('fecha', { ascending: true })
+      .order('hora_inicio', { ascending: true })
+      .order('orden', { ascending: true });
     if (dbError) {
-      console.error(dbError);
-      setReprises([]);
-      return;
+      setError(dbError.message);
+    } else {
+      setPruebas((data || []).map((p: any) => ({
+        id: p.id,
+        nombre: p.nombre,
+        fecha: p.fecha,
+        hora_inicio: p.hora_inicio,
+        pista: p.pista,
+        orden: p.orden,
+        reprise_nombre: p.reprise?.nombre || null,
+        num_jueces: p.prueba_jueces?.[0]?.count ?? 0,
+        num_binomios: p.participaciones?.[0]?.count ?? 0,
+      })));
     }
-
-    const formateadas: Reprise[] = (data || [])
-      .map((r: any) => ({ id: r.reprise.id, codigo: r.reprise.codigo, nombre: r.reprise.nombre, tipo: r.reprise.tipo }))
-      .sort(compararRfhe);
-
-    setReprises(formateadas);
-  };
-
-  useEffect(() => {
-    cargarPruebas();
-    cargarCatalogos();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    setLoading(false);
   }, [concursoId]);
 
   useEffect(() => {
-    if (nuevaPrueba.nivel_id) {
-      cargarReprisesPorNivel(nuevaPrueba.nivel_id);
-    } else {
-      setReprises([]);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [nuevaPrueba.nivel_id]);
+    cargarPruebas();
+    Promise.all([
+      supabase.from('reprises').select('id, codigo, nombre, categoria'),
+      supabase.from('categorias_edad').select('id, codigo, nombre'),
+    ]).then(([repRes, catRes]) => {
+      setReprises(((repRes.data || []) as Reprise[]).sort(compararRfhe));
+      setCategorias(catRes.data || []);
+    });
+  }, [cargarPruebas]);
 
-  const handleAddPrueba = async (e: React.FormEvent) => {
+  const guardarCampo = async (prueba: Prueba, campo: 'hora_inicio' | 'pista', valor: string) => {
+    let nuevoValor: string | null;
+    if (campo === 'hora_inicio') {
+      if (!valor || valor === prueba.hora_inicio?.slice(0, 5)) return; // la hora es obligatoria
+      nuevoValor = `${valor.slice(0, 5)}:00`;
+    } else {
+      nuevoValor = valor.trim() || null;
+      if (nuevoValor === (prueba.pista || null)) return;
+    }
+    setError('');
+    setAviso('');
+    const { error: dbError } = await supabase.from('pruebas').update({ [campo]: nuevoValor }).eq('id', prueba.id);
+    if (dbError) {
+      setError(`No se pudo guardar: ${dbError.message}`);
+      return;
+    }
+    setPruebas((ps) => ps.map((p) => (p.id === prueba.id ? { ...p, [campo]: nuevoValor } : p)));
+    setAviso(campo === 'hora_inicio' ? `Hora de «${prueba.nombre}» guardada` : `Pista de «${prueba.nombre}» guardada`);
+  };
+
+  const anadirPrueba = async (e: FormEvent) => {
     e.preventDefault();
     setError('');
-
-    if (!nuevaPrueba.nombre.trim()) { setError('El nombre es obligatorio'); return; }
-    if (!nuevaPrueba.fecha) { setError('La fecha es obligatoria'); return; }
-    if (nuevaPrueba.fecha < fechaInicio || nuevaPrueba.fecha > fechaFin) {
-      setError(`La fecha debe estar entre ${formatearFecha(fechaInicio)} y ${formatearFecha(fechaFin)}`);
+    setAviso('');
+    const reprise = reprises.find((r) => r.id === nueva.reprise_id);
+    if (!reprise) { setError('Elige la reprise'); return; }
+    if (nueva.fecha < fechaInicio || nueva.fecha > fechaFin) {
+      setError(`El día debe estar entre ${formatearFecha(fechaInicio)} y ${formatearFecha(fechaFin)}`);
       return;
     }
-    if (!nuevaPrueba.nivel_id) { setError('El nivel es obligatorio'); return; }
-    if (!nuevaPrueba.categoria_edad_id) { setError('La categoria de edad es obligatoria'); return; }
-
-    const jornadaSel = jornadas.find((j) => j.id === nuevaPrueba.jornada_id);
-    if (nuevaPrueba.jornada_id && !jornadaSel) { setError('Jornada no valida'); return; }
-
-    const nivelObj = niveles.find((n) => n.id === nuevaPrueba.nivel_id);
-    const catObj = categorias.find((c) => c.id === nuevaPrueba.categoria_edad_id);
-    const tipoObj = tipos.find((t) => t.id === nuevaPrueba.tipo_prueba_id);
-
-    if (nivelObj && compat) {
-      if (catObj && !compat.categorias.includes(catObj.codigo)) {
-        setError(`La categoria "${catObj.nombre}" no es compatible con el nivel "${nivelObj.nombre}"`);
-        return;
-      }
-      if (tipoObj && !compat.tipos.includes(tipoObj.codigo)) {
-        setError(`El tipo "${tipoObj.nombre}" no es compatible con el nivel "${nivelObj.nombre}"`);
-        return;
-      }
-    }
-
-    if (tipoObj?.codigo === 'EQU' && nuevaPrueba.reprise_id && !esRepriseEquipos(nuevaPrueba.reprise_id)) {
-      setError('La prueba es individual: la reprise seleccionada no es por equipos.');
-      return;
-    }
-
     setGuardando(true);
-    try {
-      const categoriaTexto = catObj?.nombre || null;
-      const nuevoOrden = nuevaPrueba.orden.trim() !== ''
-        ? parseInt(nuevaPrueba.orden, 10)
-        : pruebas.length + 1;
-
-      const { error: dbError } = await supabase.from('pruebas').insert({
-        concurso_id: concursoId,
-        jornada_id: nuevaPrueba.jornada_id || null,
-        nivel_id: nuevaPrueba.nivel_id,
-        categoria_edad_id: nuevaPrueba.categoria_edad_id || null,
-        categoria: categoriaTexto,
-        tipo_prueba_id: nuevaPrueba.tipo_prueba_id || null,
-        reprise_id: nuevaPrueba.reprise_id || null,
-        es_caballos_jovenes: esCaballosJovenes(nuevaPrueba.reprise_id),
-        nombre: nuevaPrueba.nombre.trim(),
-        fecha: nuevaPrueba.fecha,
-        hora_inicio: nuevaPrueba.hora_inicio.length === 5
-          ? nuevaPrueba.hora_inicio + ':00'
-          : nuevaPrueba.hora_inicio,
-        pista: nuevaPrueba.pista.trim() || null,
-        orden: nuevoOrden,
-        estado: 'programada',
-      });
-
-      if (dbError) throw dbError;
-
-      await cargarPruebas();
-      setModalAbierto(false);
-      setNuevaPrueba(pruebaVacia(nuevaPrueba.fecha));
-    } catch (err: any) {
-      setError(err.message || 'Error al crear la prueba');
-    } finally {
-      setGuardando(false);
+    const categoria = categoriaDeReprise(reprise, categorias);
+    const { error: dbError } = await supabase.from('pruebas').insert({
+      concurso_id: concursoId,
+      reprise_id: reprise.id,
+      nombre: nueva.nombre.trim() || reprise.nombre,
+      categoria: categoria?.nombre || null,
+      categoria_edad_id: categoria?.id || null,
+      es_caballos_jovenes: /CJ[4-8]/.test(reprise.codigo),
+      fecha: nueva.fecha,
+      hora_inicio: `${nueva.hora || '09:00'}:00`,
+      pista: nueva.pista.trim() || null,
+      orden: Math.max(0, ...pruebas.map((p) => p.orden || 0)) + 1,
+      estado: 'programada',
+    });
+    setGuardando(false);
+    if (dbError) {
+      setError(dbError.message);
+      return;
     }
+    setNueva({ ...nueva, reprise_id: '', nombre: '' });
+    setAviso('Prueba añadida');
+    cargarPruebas();
   };
 
-  const eliminarPrueba = async (id: string, nombre: string) => {
-    if (!confirm(`Eliminar la prueba "${nombre}"? Se eliminaran tambien sus jueces y participantes.`)) return;
-    try {
-      const { error: dbError } = await supabase.from('pruebas').delete().eq('id', id);
-      if (dbError) throw dbError;
-      setPruebas((actuales) => actuales.filter((p) => p.id !== id));
-    } catch (err: any) {
-      alert(err.message || 'Error al eliminar la prueba');
+  const borrarPrueba = async (prueba: Prueba) => {
+    if (!confirm(`¿Borrar la prueba «${prueba.nombre}»? Se quitan también sus jueces y binomios.`)) return;
+    const { error: dbError } = await supabase.from('pruebas').delete().eq('id', prueba.id);
+    if (dbError) {
+      setError(dbError.message);
+      return;
     }
+    setPruebas((ps) => ps.filter((p) => p.id !== prueba.id));
   };
 
-  const esCaballosJovenes = (repriseId: string | null): boolean => {
-    if (!repriseId) return false;
-    const reprise = reprises.find((r) => r.id === repriseId);
-    if (!reprise) return false;
-    const codigo = reprise.codigo || '';
-    return (
-      codigo.includes('CJ4') || codigo.includes('CJ5') ||
-      codigo.includes('CJ6') || codigo.includes('CJ7') ||
-      codigo.includes('CJ8')
-    );
-  };
-
-  const formatearFecha = (fecha: string) => {
-    if (!fecha) return '-';
-    const [y, m, d] = fecha.split('-');
-    return `${d}/${m}/${y}`;
-  };
+  const formulario = (
+    <form onSubmit={anadirPrueba} className="grid gap-3 sm:grid-cols-2 lg:grid-cols-6">
+      <div className="lg:col-span-2">
+        <label htmlFor="nueva-reprise" className="mb-1 block text-xs font-bold">Reprise *</label>
+        <select
+          id="nueva-reprise"
+          required
+          value={nueva.reprise_id}
+          onChange={(e) => setNueva({ ...nueva, reprise_id: e.target.value })}
+          className="input w-full"
+        >
+          <option value="">-- Elegir reprise --</option>
+          {reprises.map((r) => <option key={r.id} value={r.id}>{r.nombre}</option>)}
+        </select>
+      </div>
+      <div className="lg:col-span-2">
+        <label htmlFor="nueva-nombre" className="mb-1 block text-xs font-bold">Nombre (solo si es distinto de la reprise)</label>
+        <input id="nueva-nombre" type="text" value={nueva.nombre} onChange={(e) => setNueva({ ...nueva, nombre: e.target.value })} className="input w-full" />
+      </div>
+      <div>
+        <label htmlFor="nueva-fecha" className="mb-1 block text-xs font-bold">Día *</label>
+        <input id="nueva-fecha" type="date" required min={fechaInicio} max={fechaFin} value={nueva.fecha} onChange={(e) => setNueva({ ...nueva, fecha: e.target.value })} className="input w-full" />
+      </div>
+      <div>
+        <label htmlFor="nueva-hora" className="mb-1 block text-xs font-bold">Hora</label>
+        <input id="nueva-hora" type="time" value={nueva.hora} onChange={(e) => setNueva({ ...nueva, hora: e.target.value })} className="input w-full" />
+      </div>
+      <div className="lg:col-span-2">
+        <label htmlFor="nueva-pista" className="mb-1 block text-xs font-bold">Pista</label>
+        <input id="nueva-pista" type="text" placeholder="Ej. Pista A" value={nueva.pista} onChange={(e) => setNueva({ ...nueva, pista: e.target.value })} className="input w-full" />
+      </div>
+      <div className="flex items-end lg:col-span-4">
+        <button type="submit" disabled={guardando} className="btn btn-primary">
+          {guardando ? 'Guardando…' : 'Añadir prueba'}
+        </button>
+      </div>
+    </form>
+  );
 
   return (
     <div className="card p-6 max-w-6xl mb-8">
-      <div className="flex items-center justify-between mb-4">
-        <h2 className="text-xl font-bold">Pruebas del Concurso</h2>
-        <button onClick={() => setModalAbierto(!modalAbierto)} className="btn btn-primary text-sm">
-          + Añadir prueba
-        </button>
-      </div>
+      <h2 className="text-xl font-bold">Pruebas del concurso</h2>
+      <p className="mt-1 text-sm text-gray-600">
+        {esRfhe
+          ? 'Las pruebas vienen de la RFHE con su día y su reprise, y cada binomio ya está en las pruebas de las reprises en las que se inscribió. Solo tienes que poner la hora y la pista: escríbelas en la tabla y se guardan solas.'
+          : 'Añade las pruebas abajo. La hora y la pista se pueden cambiar en la tabla y se guardan solas.'}
+      </p>
 
-      {error && <div className="mb-4 p-3 bg-danger text-white rounded text-sm">{error}</div>}
-
-      {modalAbierto && (
-        <div className="mb-6 p-4 border border-primary rounded bg-blue-50">
-          <h3 className="font-bold mb-3">Nueva Prueba</h3>
-          <form onSubmit={handleAddPrueba} className="space-y-3">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div>
-                <label className="block text-xs font-bold mb-1">Nombre *</label>
-                <input
-                  type="text"
-                  value={nuevaPrueba.nombre}
-                  onChange={(e) => setNuevaPrueba({ ...nuevaPrueba, nombre: e.target.value })}
-                  placeholder="Ej. Clasica 1 - Alevines"
-                  className="input w-full"
-                  required
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="block text-xs font-bold mb-1">Fecha *</label>
-                <input
-                  type="date"
-                  value={nuevaPrueba.fecha}
-                  min={fechaInicio}
-                  max={fechaFin}
-                  onChange={(e) => setNuevaPrueba({ ...nuevaPrueba, fecha: e.target.value, jornada_id: '' })}
-                  className="input w-full"
-                  required
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-bold mb-1">Jornada (opcional)</label>
-                <select
-                  value={nuevaPrueba.jornada_id}
-                  onChange={(e) => {
-                    const jornada = jornadas.find((j) => j.id === e.target.value);
-                    setNuevaPrueba({
-                      ...nuevaPrueba,
-                      jornada_id: e.target.value,
-                      fecha: jornada?.fecha || nuevaPrueba.fecha,
-                      pista: nuevaPrueba.pista || jornada?.pista || '',
-                    });
-                  }}
-                  className="input w-full"
-                >
-                  <option value="">-- Sin jornada --</option>
-                  {jornadas.map((j) => (
-                    <option key={j.id} value={j.id}>
-                      J{j.numero} - {formatearFecha(j.fecha)}{j.pista ? ` (${j.pista})` : ''}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              <div>
-                <label className="block text-xs font-bold mb-1">Nivel *</label>
-                <select
-                  value={nuevaPrueba.nivel_id}
-                  onChange={(e) => {
-                    setNuevaPrueba({
-                      ...nuevaPrueba,
-                      nivel_id: e.target.value,
-                      categoria_edad_id: '',
-                      categoria: '',
-                      tipo_prueba_id: '',
-                      reprise_id: '',
-                    });
-                  }}
-                  className="input w-full"
-                  required
-                >
-                  <option value="">-- Elegir nivel --</option>
-                  {niveles.map((n) => (
-                    <option key={n.id} value={n.id}>
-                      {n.codigo} - {n.nombre}
-                    </option>
-                  ))}
-                </select>
-                {compat && (
-                  <p className="text-xs text-gray-500 mt-1">
-                    {compat.categorias.length} cat. · {compat.tipos.length} tipos
-                  </p>
-                )}
-              </div>
-              <div>
-                <label className="block text-xs font-bold mb-1">Categoria edad *</label>
-                <select
-                  value={nuevaPrueba.categoria_edad_id}
-                  onChange={(e) => {
-                    const catId = e.target.value;
-                    const catObj = categorias.find((c) => c.id === catId);
-                    setNuevaPrueba({
-                      ...nuevaPrueba,
-                      categoria_edad_id: catId,
-                      categoria: catObj?.nombre || '',
-                    });
-                  }}
-                  className="input w-full"
-                  required
-                  disabled={!nuevaPrueba.nivel_id}
-                >
-                  <option value="">
-                    {nuevaPrueba.nivel_id ? '-- Elegir categoria --' : '-- Elige un nivel primero --'}
-                  </option>
-                  {categoriasCompatibles.map((c) => (
-                    <option key={c.id} value={c.id}>{c.nombre}</option>
-                  ))}
-                </select>
-                {nuevaPrueba.nivel_id && categoriasCompatibles.length === 0 && (
-                  <p className="text-xs text-orange-600 mt-1">Sin categorias compatibles.</p>
-                )}
-              </div>
-              <div>
-                <label className="block text-xs font-bold mb-1">Tipo de prueba</label>
-                <select
-                  value={nuevaPrueba.tipo_prueba_id}
-                  onChange={(e) => setNuevaPrueba({ ...nuevaPrueba, tipo_prueba_id: e.target.value })}
-                  className="input w-full"
-                  disabled={!nuevaPrueba.nivel_id || repriseSeleccionadaEsEquipos}
-                >
-                  <option value="">
-                    {repriseSeleccionadaEsEquipos
-                      ? 'Equipos (auto por reprise)'
-                      : nuevaPrueba.nivel_id ? '-- Elegir tipo --' : '-- Elige un nivel primero --'}
-                  </option>
-                  {!repriseSeleccionadaEsEquipos && tiposCompatibles.map((t) => (
-                    <option key={t.id} value={t.id}>
-                      {t.nombre} (coef {t.coeficiente})
-                    </option>
-                  ))}
-                </select>
-                {repriseSeleccionadaEsEquipos && (
-                  <p className="text-xs text-teal-700 mt-1">Por equipos: tipo fijado automáticamente.</p>
-                )}
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-xs font-bold mb-1">
-                Reprise {nuevaPrueba.nivel_id ? '(filtrada por nivel)' : '(elige un nivel primero)'}
-              </label>
-              <select
-                value={nuevaPrueba.reprise_id}
-                onChange={(e) => {
-                  const repId = e.target.value;
-                  setNuevaPrueba((prev) => {
-                    if (repId && esRepriseEquipos(repId)) {
-                      const tipoEqu = tipos.find((t) => t.codigo === 'EQU');
-                      return {
-                        ...prev,
-                        reprise_id: repId,
-                        tipo_prueba_id: tipoEqu ? tipoEqu.id : prev.tipo_prueba_id,
-                      };
-                    }
-                    return { ...prev, reprise_id: repId };
-                  });
-                }}
-                className="input w-full"
-                disabled={!nuevaPrueba.nivel_id}
-              >
-                <option value="">-- Elegir reprise --</option>
-                {reprises.map((r) => (
-                  <option key={r.id} value={r.id}>{r.nombre} ({r.codigo})</option>
-                ))}
-              </select>
-              {repriseSeleccionadaEsEquipos && (
-                <p className="text-xs text-teal-700 mt-1 font-semibold">
-                  Reprise por equipos: la prueba se marcará como Equipos.
-                </p>
-              )}
-              {nuevaPrueba.nivel_id && reprises.length === 0 && (
-                <p className="text-xs text-orange-600 mt-1">No hay reprises para este nivel.</p>
-              )}
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              <div>
-                <label className="block text-xs font-bold mb-1">Hora Inicio *</label>
-                <input
-                  type="time"
-                  value={nuevaPrueba.hora_inicio}
-                  onChange={(e) => setNuevaPrueba({ ...nuevaPrueba, hora_inicio: e.target.value })}
-                  className="input w-full"
-                  required
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-bold mb-1">Pista</label>
-                <input
-                  type="text"
-                  value={nuevaPrueba.pista}
-                  onChange={(e) => setNuevaPrueba({ ...nuevaPrueba, pista: e.target.value })}
-                  placeholder="Ej. Pista A"
-                  className="input w-full"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-bold mb-1">Orden</label>
-                <input
-                  type="number"
-                  value={nuevaPrueba.orden}
-                  onChange={(e) => setNuevaPrueba({ ...nuevaPrueba, orden: e.target.value })}
-                  placeholder="Auto"
-                  className="input w-full"
-                />
-              </div>
-            </div>
-
-            <div className="flex justify-end gap-2 pt-2">
-              <button type="button" onClick={() => setModalAbierto(false)} className="btn btn-outline text-sm" disabled={guardando}>
-                Cancelar
-              </button>
-              <button type="submit" className="btn btn-primary text-sm" disabled={guardando}>
-                {guardando ? 'Guardando...' : 'Guardar prueba'}
-              </button>
-            </div>
-          </form>
-        </div>
-      )}
+      {error && <p role="alert" className="mt-3 rounded border border-red-200 bg-red-50 p-3 text-sm text-red-700">{error}</p>}
+      {aviso && !error && <p role="status" className="mt-3 text-sm text-green-700">{aviso}</p>}
 
       {loading ? (
-        <p className="text-center text-gray-600 py-4">Cargando pruebas...</p>
+        <p className="py-4 text-center text-gray-600">Cargando pruebas…</p>
       ) : pruebas.length === 0 ? (
-        <p className="text-gray-600">No hay pruebas creadas. Pulsa «+ Añadir prueba» para empezar.</p>
+        <p className="mt-4 text-gray-600">Todavía no hay pruebas.</p>
       ) : (
-        <div className="table-responsive">
-          <table className="table">
-            <thead>
+        <div className="mt-4 overflow-x-auto rounded border border-[#e4dfd4]">
+          <table className="min-w-full text-left text-sm">
+            <thead className="bg-[#f4f0e6] text-xs uppercase text-[#466257]">
               <tr>
-                <th>Orden</th><th>Nombre</th><th>Fecha / jornada</th><th>Nivel</th>
-                <th>Tipo</th><th>Categoria edad</th><th>Hora</th><th>Reprise</th>
-                <th className="text-center">Jueces</th>
-                <th className="text-center">Binomios</th>
-                <th></th>
+                <th className="px-3 py-2">Día</th>
+                <th className="px-3 py-2">Prueba</th>
+                <th className="px-3 py-2">Hora</th>
+                <th className="px-3 py-2">Pista</th>
+                <th className="px-3 py-2 text-center">Jueces</th>
+                <th className="px-3 py-2 text-center">Binomios</th>
+                <th className="px-3 py-2" />
               </tr>
             </thead>
             <tbody>
               {pruebas.map((p) => (
-                <tr key={p.id}>
-                  <td className="font-bold">{p.orden}</td>
-                  <td className="font-medium">{p.nombre}</td>
-                  <td className="text-sm">{p.jornada_nombre || formatearFecha(p.fecha)}</td>
-                  <td className="text-sm">{p.nivel_codigo || '-'}</td>
-                  <td className="text-sm">{p.tipo_prueba_nombre || '-'}</td>
-                  <td className="text-sm">{p.categoria_edad_nombre || '-'}</td>
-                  <td className="text-sm">{p.hora_inicio.substring(0, 5)}</td>
-                  <td className="text-sm">{p.reprise_nombre || '-'}</td>
-                  <td className="text-center">
-                    <span className="px-2 py-1 rounded text-xs bg-amber-100 text-amber-800 font-medium">
-                      {p.num_jueces || 0}
-                    </span>
+                <tr key={p.id} className="border-t border-[#eee9df] align-middle even:bg-[#fffdfa]">
+                  <td className="whitespace-nowrap px-3 py-2">
+                    {diaSemana(p.fecha)}
+                    <span className="block text-xs text-gray-500">{formatearFecha(p.fecha)}</span>
                   </td>
-                  <td className="text-center">
-                    <span className="px-2 py-1 rounded text-xs bg-blue-100 text-blue-800 font-medium">
-                      {p.num_participantes || 0}
-                    </span>
+                  <td className="min-w-48 px-3 py-2 font-medium text-[#173b2f]">
+                    {p.nombre}
+                    {p.reprise_nombre && p.reprise_nombre !== p.nombre && (
+                      <span className="block text-xs font-normal text-gray-500">Reprise: {p.reprise_nombre}</span>
+                    )}
+                    {!p.reprise_nombre && <span className="block text-xs font-normal text-amber-700">Sin reprise: ábrela para elegirla</span>}
                   </td>
-                  <td className="text-right">
-                    <div className="flex gap-2 justify-end">
-                      <Link href={`/admin/concursos/${concursoId}/pruebas/${p.id}`} className="text-primary hover:underline text-sm font-medium">
-                        Abrir prueba
-                      </Link>
-                      <button onClick={() => eliminarPrueba(p.id, p.nombre)} className="text-danger hover:underline text-sm">
-                        Borrar prueba
-                      </button>
-                    </div>
+                  <td className="px-3 py-2">
+                    <input
+                      key={`${p.id}-h-${p.hora_inicio}`}
+                      type="time"
+                      aria-label={`Hora de ${p.nombre}`}
+                      defaultValue={p.hora_inicio?.slice(0, 5) || ''}
+                      onBlur={(e) => guardarCampo(p, 'hora_inicio', e.target.value)}
+                      className="input w-28"
+                    />
+                  </td>
+                  <td className="px-3 py-2">
+                    <input
+                      key={`${p.id}-p-${p.pista}`}
+                      type="text"
+                      aria-label={`Pista de ${p.nombre}`}
+                      defaultValue={p.pista || ''}
+                      placeholder="Escribe la pista"
+                      onKeyDown={(e) => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); }}
+                      onBlur={(e) => guardarCampo(p, 'pista', e.target.value)}
+                      className="input w-32"
+                    />
+                  </td>
+                  <td className="px-3 py-2 text-center">{p.num_jueces}</td>
+                  <td className="px-3 py-2 text-center">{p.num_binomios}</td>
+                  <td className="whitespace-nowrap px-3 py-2 text-right">
+                    <Link href={`/admin/concursos/${concursoId}/pruebas/${p.id}`} className="btn btn-outline btn-sm" title="Ver y cambiar los jueces y los binomios de esta prueba">
+                      Abrir prueba
+                    </Link>
+                    <button type="button" onClick={() => borrarPrueba(p)} className="ml-2 text-sm text-danger hover:underline">
+                      Borrar
+                    </button>
                   </td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
+      )}
+
+      {esRfhe ? (
+        <details className="mt-6 border-t pt-4">
+          <summary className="cursor-pointer font-semibold text-[#173b2f]">Añadir a mano una prueba que no viene de la RFHE (extra)</summary>
+          <div className="mt-3">{formulario}</div>
+        </details>
+      ) : (
+        <section className="mt-6 border-t pt-4">
+          <h3 className="mb-3 font-bold">Añadir prueba</h3>
+          {formulario}
+        </section>
       )}
     </div>
   );
