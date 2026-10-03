@@ -59,6 +59,7 @@ type TipoPrueba = { id: string; codigo: string; nombre: string; coeficiente: num
 
 type NuevaPruebaForm = {
   nombre: string;
+  fecha: string;
   jornada_id: string;
   nivel_id: string;
   categoria_edad_id: string;
@@ -70,9 +71,17 @@ type NuevaPruebaForm = {
   orden: string;
 };
 
-interface Props { concursoId: string }
+interface Props { concursoId: string; fechaInicio: string; fechaFin: string }
 
-export function PruebasSection({ concursoId }: Props) {
+function pruebaVacia(fecha: string): NuevaPruebaForm {
+  return {
+    nombre: '', fecha, categoria: '', jornada_id: '', nivel_id: '',
+    categoria_edad_id: '', tipo_prueba_id: '', reprise_id: '',
+    hora_inicio: '09:00', pista: '', orden: '',
+  };
+}
+
+export function PruebasSection({ concursoId, fechaInicio, fechaFin }: Props) {
   const [pruebas, setPruebas] = useState<Prueba[]>([]);
   const [reprises, setReprises] = useState<Reprise[]>([]);
   const [jornadas, setJornadas] = useState<Jornada[]>([]);
@@ -84,18 +93,7 @@ export function PruebasSection({ concursoId }: Props) {
   const [guardando, setGuardando] = useState(false);
   const [modalAbierto, setModalAbierto] = useState(false);
 
-  const [nuevaPrueba, setNuevaPrueba] = useState<NuevaPruebaForm>({
-    nombre: '',
-    categoria: '',
-    jornada_id: '',
-    nivel_id: '',
-    categoria_edad_id: '',
-    tipo_prueba_id: '',
-    reprise_id: '',
-    hora_inicio: '09:00',
-    pista: '',
-    orden: '',
-  });
+  const [nuevaPrueba, setNuevaPrueba] = useState<NuevaPruebaForm>(pruebaVacia(fechaInicio));
 
   const nivelSeleccionado = niveles.find((n) => n.id === nuevaPrueba.nivel_id);
   const compat = nivelSeleccionado ? NIVEL_COMPATIBILIDAD[nivelSeleccionado.codigo] : null;
@@ -225,12 +223,16 @@ export function PruebasSection({ concursoId }: Props) {
     setError('');
 
     if (!nuevaPrueba.nombre.trim()) { setError('El nombre es obligatorio'); return; }
-    if (!nuevaPrueba.jornada_id) { setError('La jornada es obligatoria'); return; }
+    if (!nuevaPrueba.fecha) { setError('La fecha es obligatoria'); return; }
+    if (nuevaPrueba.fecha < fechaInicio || nuevaPrueba.fecha > fechaFin) {
+      setError(`La fecha debe estar entre ${formatearFecha(fechaInicio)} y ${formatearFecha(fechaFin)}`);
+      return;
+    }
     if (!nuevaPrueba.nivel_id) { setError('El nivel es obligatorio'); return; }
     if (!nuevaPrueba.categoria_edad_id) { setError('La categoria de edad es obligatoria'); return; }
 
     const jornadaSel = jornadas.find((j) => j.id === nuevaPrueba.jornada_id);
-    if (!jornadaSel) { setError('Jornada no valida'); return; }
+    if (nuevaPrueba.jornada_id && !jornadaSel) { setError('Jornada no valida'); return; }
 
     const nivelObj = niveles.find((n) => n.id === nuevaPrueba.nivel_id);
     const catObj = categorias.find((c) => c.id === nuevaPrueba.categoria_edad_id);
@@ -261,7 +263,7 @@ export function PruebasSection({ concursoId }: Props) {
 
       const { error: dbError } = await supabase.from('pruebas').insert({
         concurso_id: concursoId,
-        jornada_id: nuevaPrueba.jornada_id,
+        jornada_id: nuevaPrueba.jornada_id || null,
         nivel_id: nuevaPrueba.nivel_id,
         categoria_edad_id: nuevaPrueba.categoria_edad_id || null,
         categoria: categoriaTexto,
@@ -269,7 +271,7 @@ export function PruebasSection({ concursoId }: Props) {
         reprise_id: nuevaPrueba.reprise_id || null,
         es_caballos_jovenes: esCaballosJovenes(nuevaPrueba.reprise_id),
         nombre: nuevaPrueba.nombre.trim(),
-        fecha: jornadaSel.fecha,
+        fecha: nuevaPrueba.fecha,
         hora_inicio: nuevaPrueba.hora_inicio.length === 5
           ? nuevaPrueba.hora_inicio + ':00'
           : nuevaPrueba.hora_inicio,
@@ -282,11 +284,7 @@ export function PruebasSection({ concursoId }: Props) {
 
       await cargarPruebas();
       setModalAbierto(false);
-      setNuevaPrueba({
-        nombre: '', categoria: '', jornada_id: '', nivel_id: '',
-        categoria_edad_id: '', tipo_prueba_id: '', reprise_id: '',
-        hora_inicio: '09:00', pista: '', orden: '',
-      });
+      setNuevaPrueba(pruebaVacia(nuevaPrueba.fecha));
     } catch (err: any) {
       setError(err.message || 'Error al crear la prueba');
     } finally {
@@ -350,21 +348,42 @@ export function PruebasSection({ concursoId }: Props) {
                   required
                 />
               </div>
+              <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-xs font-bold mb-1">Jornada *</label>
-                <select
-                  value={nuevaPrueba.jornada_id}
-                  onChange={(e) => setNuevaPrueba({ ...nuevaPrueba, jornada_id: e.target.value })}
+                <label className="block text-xs font-bold mb-1">Fecha *</label>
+                <input
+                  type="date"
+                  value={nuevaPrueba.fecha}
+                  min={fechaInicio}
+                  max={fechaFin}
+                  onChange={(e) => setNuevaPrueba({ ...nuevaPrueba, fecha: e.target.value, jornada_id: '' })}
                   className="input w-full"
                   required
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-bold mb-1">Jornada (opcional)</label>
+                <select
+                  value={nuevaPrueba.jornada_id}
+                  onChange={(e) => {
+                    const jornada = jornadas.find((j) => j.id === e.target.value);
+                    setNuevaPrueba({
+                      ...nuevaPrueba,
+                      jornada_id: e.target.value,
+                      fecha: jornada?.fecha || nuevaPrueba.fecha,
+                      pista: nuevaPrueba.pista || jornada?.pista || '',
+                    });
+                  }}
+                  className="input w-full"
                 >
-                  <option value="">-- Elegir jornada --</option>
+                  <option value="">-- Sin jornada --</option>
                   {jornadas.map((j) => (
                     <option key={j.id} value={j.id}>
                       J{j.numero} - {formatearFecha(j.fecha)}{j.pista ? ` (${j.pista})` : ''}
                     </option>
                   ))}
                 </select>
+              </div>
               </div>
             </div>
 
@@ -538,13 +557,13 @@ export function PruebasSection({ concursoId }: Props) {
       {loading ? (
         <p className="text-center text-gray-600 py-4">Cargando pruebas...</p>
       ) : pruebas.length === 0 ? (
-        <p className="text-gray-600">No hay pruebas creadas. Pulsa "+ Anadir Prueba" para empezar.</p>
+        <p className="text-gray-600">No hay pruebas creadas. Pulsa «+ Anadir Prueba» para empezar.</p>
       ) : (
         <div className="table-responsive">
           <table className="table">
             <thead>
               <tr>
-                <th>Orden</th><th>Nombre</th><th>Jornada</th><th>Nivel</th>
+                <th>Orden</th><th>Nombre</th><th>Fecha / jornada</th><th>Nivel</th>
                 <th>Tipo</th><th>Categoria edad</th><th>Hora</th><th>Reprise</th>
                 <th className="text-center">Jueces</th>
                 <th className="text-center">Binomios</th>
@@ -556,7 +575,7 @@ export function PruebasSection({ concursoId }: Props) {
                 <tr key={p.id}>
                   <td className="font-bold">{p.orden}</td>
                   <td className="font-medium">{p.nombre}</td>
-                  <td className="text-sm">{p.jornada_nombre || '-'}</td>
+                  <td className="text-sm">{p.jornada_nombre || formatearFecha(p.fecha)}</td>
                   <td className="text-sm">{p.nivel_codigo || '-'}</td>
                   <td className="text-sm">{p.tipo_prueba_nombre || '-'}</td>
                   <td className="text-sm">{p.categoria_edad_nombre || '-'}</td>

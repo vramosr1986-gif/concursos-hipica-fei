@@ -8,6 +8,9 @@ import { concursoService } from '@/lib/services';
 import { supabase } from '@/lib/supabase';
 import { PruebasSection } from './PruebasSection';
 import { EquiposSection } from './EquiposSection';
+import {
+  ConcursoCampos, DatosConcurso, concursoVacio, datosParaGuardar, validarConcurso,
+} from '@/components/ConcursoCampos';
 
 // ============================================================
 // TIPOS
@@ -77,15 +80,10 @@ export default function EditarConcursoPage() {
   const concursoId = params.id as string;
 
   const [concurso, setConcurso] = useState<Concurso | null>(null);
-  const [formData, setFormData] = useState({
-    nombre: '',
-    fecha_inicio: '',
-    fecha_fin: '',
-    ubicacion: '',
-    organizador: '',
-  });
+  const [formData, setFormData] = useState<DatosConcurso>(concursoVacio());
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState('');
 
   const [inscripciones, setInscripciones] = useState<Inscripcion[]>([]);
   const [nuevaInscripcion, setNuevaInscripcion] = useState<NuevaInscripcionForm>(inscripcionVacia());
@@ -211,10 +209,14 @@ export default function EditarConcursoPage() {
         setConcurso(data);
         setFormData({
           nombre: data.nombre,
+          tipo: data.tipo || '',
+          disciplina: data.disciplina || '',
           fecha_inicio: data.fecha_inicio,
           fecha_fin: data.fecha_fin,
+          provincia: data.provincia || '',
           ubicacion: data.ubicacion || '',
           organizador: data.organizador || '',
+          federacion: data.federacion || '',
         });
       }
       await Promise.all([
@@ -274,12 +276,20 @@ export default function EditarConcursoPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setSaving(true);
-    const { error } = await concursoService.update(concursoId, formData);
-    setSaving(false);
-    if (!error) {
-      router.push('/admin/concursos');
+    setSaveError('');
+    const invalido = validarConcurso(formData);
+    if (invalido) {
+      setSaveError(invalido);
+      return;
     }
+    setSaving(true);
+    const { error } = await concursoService.update(concursoId, datosParaGuardar(formData) as Partial<Concurso>);
+    setSaving(false);
+    if (error) {
+      setSaveError(error.message);
+      return;
+    }
+    router.push('/admin/concursos');
   };
 
   const handleAddInscripcion = async (e: React.FormEvent) => {
@@ -363,58 +373,10 @@ export default function EditarConcursoPage() {
       <h1 className="text-3xl font-bold mb-6">Editar Concurso</h1>
 
       {/* DATOS DEL CONCURSO */}
-      <div className="card p-6 max-w-2xl mb-8">
+      <div className="card p-6 max-w-4xl mb-8">
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block font-bold mb-2">Nombre</label>
-            <input
-              type="text"
-              value={formData.nombre}
-              onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
-              className="input w-full"
-              required
-            />
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className="block font-bold mb-2">Fecha Inicio</label>
-              <input
-                type="date"
-                value={formData.fecha_inicio}
-                onChange={(e) => setFormData({ ...formData, fecha_inicio: e.target.value })}
-                className="input w-full"
-                required
-              />
-            </div>
-            <div>
-              <label className="block font-bold mb-2">Fecha Fin</label>
-              <input
-                type="date"
-                value={formData.fecha_fin}
-                onChange={(e) => setFormData({ ...formData, fecha_fin: e.target.value })}
-                className="input w-full"
-                required
-              />
-            </div>
-          </div>
-          <div>
-            <label className="block font-bold mb-2">Ubicacion</label>
-            <input
-              type="text"
-              value={formData.ubicacion}
-              onChange={(e) => setFormData({ ...formData, ubicacion: e.target.value })}
-              className="input w-full"
-            />
-          </div>
-          <div>
-            <label className="block font-bold mb-2">Organizador</label>
-            <input
-              type="text"
-              value={formData.organizador}
-              onChange={(e) => setFormData({ ...formData, organizador: e.target.value })}
-              className="input w-full"
-            />
-          </div>
+          {saveError && <div className="p-3 bg-danger text-white rounded text-sm">{saveError}</div>}
+          <ConcursoCampos datos={formData} onChange={setFormData} />
           <button type="submit" className="btn btn-primary" disabled={saving}>
             {saving ? 'Guardando...' : 'Guardar Cambios'}
           </button>
@@ -613,7 +575,7 @@ export default function EditarConcursoPage() {
       </div>
 
       {/* PRUEBAS */}
-      <PruebasSection concursoId={concursoId} />
+      <PruebasSection concursoId={concursoId} fechaInicio={concurso.fecha_inicio} fechaFin={concurso.fecha_fin} />
 
       {/* MODAL DE COHERENCIA */}
       {modalCoherencia.abierto && (

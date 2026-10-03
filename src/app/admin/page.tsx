@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { CalendarDays, Gavel, Users, ArrowRight, Plus, ListChecks, FileSearch } from 'lucide-react';
+import { CalendarDays, ClipboardList, Gavel, Users, ArrowRight, Plus, ListChecks, FileSearch } from 'lucide-react';
 import { HorseIcon } from '@/components/icons';
 
 const modulos = [
@@ -11,6 +11,13 @@ const modulos = [
     descripcion: 'Crear, editar y gestionar concursos, pruebas y binomios.',
     Icon: CalendarDays,
     color: 'bg-[#173b2f]/10 text-[#173b2f] group-hover:bg-[#173b2f] group-hover:text-[#e8c98d]',
+  },
+  {
+    href: '/admin/pruebas',
+    titulo: 'Pruebas',
+    descripcion: 'Buscar pruebas por concurso, reprise o fecha y asignar pista y jueces.',
+    Icon: ClipboardList,
+    color: 'bg-[#b88746]/15 text-[#b88746] group-hover:bg-[#b88746] group-hover:text-white',
   },
   {
     href: '/admin/jueces',

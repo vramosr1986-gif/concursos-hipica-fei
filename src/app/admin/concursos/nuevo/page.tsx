@@ -4,7 +4,9 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { concursoService } from '@/lib/services';
 import { supabase } from '@/lib/supabase';
-import { ESPECIALIDADES } from '@/lib/constants';
+import {
+  CAMPOS_CONCURSO, ConcursoCampos, DatosConcurso, concursoVacio, datosParaGuardar, validarConcurso,
+} from '@/components/ConcursoCampos';
 
 interface JuezRow {
   key: string;
@@ -29,20 +31,25 @@ function nuevaFilaJuez(): JuezRow {
 
 export default function NuevoConcursoPage() {
   const router = useRouter();
-  const [formData, setFormData] = useState({
-    nombre: '',
-    fecha_inicio: '',
-    fecha_fin: '',
-    ubicacion: '',
-    organizador: '',
-    disciplina: '',
-    provincia: '',
-  });
+  const [formData, setFormData] = useState<DatosConcurso>(concursoVacio());
+  const [desdeRfhe, setDesdeRfhe] = useState(false);
   const [jueces, setJueces] = useState<JuezRow[]>([nuevaFilaJuez()]);
   const [juecesDisponibles, setJuecesDisponibles] = useState<UserOption[]>([]);
   const [juecesError, setJuecesError] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+
+  // Precarga desde "Crear concurso" del calendario RFHE (?nombre=...&fecha_inicio=...).
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const precarga = Object.fromEntries(
+      CAMPOS_CONCURSO.filter((c) => params.get(c)).map((c) => [c, params.get(c) as string])
+    );
+    if (Object.keys(precarga).length > 0) {
+      setFormData((actual) => ({ ...actual, ...precarga }));
+      setDesdeRfhe(true);
+    }
+  }, []);
 
   useEffect(() => {
     const cargarJueces = async () => {
@@ -70,24 +77,6 @@ export default function NuevoConcursoPage() {
     };
     cargarJueces();
   }, []);
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value,
-    });
-  };
-
-  const aplicarDatosDelAvance = () => {
-    setFormData((actual) => ({
-      ...actual,
-      nombre: 'Copa de España Amateur de Doma Clásica y Paralímpica',
-      organizador: 'Club deportivo de Equitación El Pedregal',
-      ubicacion: 'Club de Campo El Pedregal, Náquera',
-      disciplina: 'Doma clásica (Dressage)',
-      provincia: 'Valencia',
-    }));
-  };
 
   const handleJuezChange = (
     key: string,
@@ -120,8 +109,13 @@ export default function NuevoConcursoPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
     setError('');
+    const invalido = validarConcurso(formData);
+    if (invalido) {
+      setError(invalido);
+      return;
+    }
+    setLoading(true);
 
     try {
       const {
@@ -136,9 +130,9 @@ export default function NuevoConcursoPage() {
 
       // 1. Crear el concurso
       const { data: concurso, error: concursoError } = await concursoService.create({
-        ...formData,
+        ...datosParaGuardar(formData),
         created_by: user.id,
-      });
+      } as Parameters<typeof concursoService.create>[0]);
 
       if (concursoError || !concurso) {
         setError(concursoError?.message || 'No se pudo crear el concurso');
@@ -172,54 +166,17 @@ export default function NuevoConcursoPage() {
   return (
     <div className="container">
       <div className="max-w-4xl mx-auto">
-        <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+        <div className="mb-6">
           <h1 className="text-3xl font-bold">Nuevo Concurso</h1>
-          <button type="button" onClick={aplicarDatosDelAvance} className="btn btn-outline">
-            Rellenar desde el avance
-          </button>
+          {desdeRfhe && (
+            <p className="mt-2 text-sm text-gray-600">Datos precargados desde el calendario RFHE. Revísalos antes de guardar.</p>
+          )}
         </div>
 
         {error && <div className="p-4 mb-6 bg-danger text-white rounded">{error}</div>}
 
         <form onSubmit={handleSubmit} className="card p-6 space-y-8">
-          <div className="grid md:grid-cols-2 gap-4">
-            <div className="flex flex-col">
-              <label className="block text-sm font-bold mb-2">Nombre del Concurso</label>
-              <input type="text" name="nombre" value={formData.nombre} onChange={handleChange} className="input" required />
-            </div>
-            <div className="flex flex-col">
-              <label className="block text-sm font-bold mb-2">Organizador</label>
-              <input type="text" name="organizador" value={formData.organizador} onChange={handleChange} className="input" required />
-            </div>
-            <div className="flex flex-col">
-              <label className="block text-sm font-bold mb-2">Disciplina</label>
-              <select name="disciplina" value={formData.disciplina} onChange={handleChange} className="input" required>
-                <option value="">-- Seleccionar disciplina --</option>
-                {ESPECIALIDADES.map((especialidad) => (
-                  <option key={especialidad} value={especialidad}>{especialidad}</option>
-                ))}
-              </select>
-            </div>
-            <div className="flex flex-col">
-              <label className="block text-sm font-bold mb-2">Provincia</label>
-              <input type="text" name="provincia" value={formData.provincia} onChange={handleChange} className="input" required />
-            </div>
-            <div className="flex flex-col">
-              <label className="block text-sm font-bold mb-2">Fecha de Inicio</label>
-              <input type="date" name="fecha_inicio" value={formData.fecha_inicio} onChange={handleChange} className="input" required />
-            </div>
-            <div className="flex flex-col">
-              <label className="block text-sm font-bold mb-2">Fecha de Fin</label>
-              <input type="date" name="fecha_fin" value={formData.fecha_fin} onChange={handleChange} className="input" required />
-            </div>
-            <p className="md:col-span-2 rounded border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">
-              El avance no coincide en las fechas: la portada indica 25–27 de septiembre de 2026, los datos generales 25–26 de septiembre y la tabla de pruebas 19–20 de diciembre. Confirma las fechas oficiales antes de guardar.
-            </p>
-            <div className="md:col-span-2 flex flex-col">
-              <label className="block text-sm font-bold mb-2">Ubicación</label>
-              <input type="text" name="ubicacion" value={formData.ubicacion} onChange={handleChange} className="input" required />
-            </div>
-          </div>
+          <ConcursoCampos datos={formData} onChange={setFormData} />
 
           <hr />
 

@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react';
 import {
   LayoutDashboard,
   CalendarDays,
+  ClipboardList,
   Gavel,
   ListChecks,
   Users,
@@ -90,6 +91,7 @@ export function Navbar() {
     ? [
         { href: '/admin', label: 'Panel', Icon: LayoutDashboard },
         { href: '/admin/concursos', label: 'Concursos', Icon: CalendarDays },
+        { href: '/admin/pruebas', label: 'Pruebas', Icon: ClipboardList },
         { href: '/admin/jueces', label: 'Jueces', Icon: Gavel },
         { href: '/admin/binomios', label: 'Binomios', Icon: HorseIcon },
         { href: '/admin/reprises', label: 'Reprises', Icon: ListChecks },

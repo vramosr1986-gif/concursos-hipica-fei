@@ -1,7 +1,8 @@
 'use client';
 
 import { FormEvent, useState } from 'react';
-import { ArrowDown, ArrowDownToLine, ArrowDownUp, ArrowUp, ExternalLink, FileSearch, LoaderCircle } from 'lucide-react';
+import Link from 'next/link';
+import { ArrowDown, ArrowDownToLine, ArrowDownUp, ArrowUp, CalendarPlus, ExternalLink, FileSearch, LoaderCircle } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { compararPorInicio, formatearFecha } from '@/lib/fechas';
 
@@ -568,6 +569,21 @@ export default function RfheExtractionPage() {
                           >
                             <ArrowDownToLine className="size-4" aria-hidden="true" />
                           </button>
+                          <Link
+                            href={`/admin/concursos/nuevo?${new URLSearchParams({
+                              nombre: contest.nombre,
+                              tipo: contest.categoria,
+                              disciplina: 'Doma clásica (Dressage)',
+                              fecha_inicio: contest.fecha_inicio,
+                              fecha_fin: contest.fecha_fin,
+                              provincia: contest.provincia,
+                              ubicacion: contest.sede,
+                            })}`}
+                            className="btn btn-sm btn-outline"
+                            title="Crear el concurso con estos datos"
+                          >
+                            <CalendarPlus className="size-4" aria-hidden="true" />
+                          </Link>
                           <a href={contest.urlDetalle} target="_blank" rel="noopener noreferrer" className="btn btn-sm btn-outline" title="Abrir detalle RFHE">
                             <ExternalLink className="size-4" aria-hidden="true" />
                           </a>
