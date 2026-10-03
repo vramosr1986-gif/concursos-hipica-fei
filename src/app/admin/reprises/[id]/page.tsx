@@ -98,7 +98,7 @@ export default function DetalleReprisePage() {
         href="/admin/reprises"
         className="text-primary mb-4 inline-block hover:underline"
       >
-        Ã¢â€ Â Volver al listado
+        ← Volver al listado
       </Link>
 
       {/* Cabecera */}
@@ -112,7 +112,7 @@ export default function DetalleReprisePage() {
 
             <div className="grid md:grid-cols-2 gap-x-8 gap-y-2 text-sm">
               <div>
-                <strong>CategorÃƒÂ­a:</strong>{' '}
+                <strong>Categoría:</strong>{' '}
                 <span className="text-gray-700">{reprise.categoria}</span>
               </div>
               {reprise.nivel && (
@@ -143,7 +143,7 @@ export default function DetalleReprisePage() {
               )}
               {reprise.edad_minima_caballo && (
                 <div>
-                  <strong>Edad mÃƒÂ­nima caballo:</strong>{' '}
+                  <strong>Edad mínima caballo:</strong>{' '}
                   <span className="text-gray-700">
                     {reprise.edad_minima_caballo} años
                   </span>
@@ -184,7 +184,7 @@ export default function DetalleReprisePage() {
             <table className="w-full">
               <thead>
                 <tr className="border-b bg-gray-50">
-                  <th className="text-center p-3 w-16">NÃ‚º</th>
+                  <th className="text-center p-3 w-16">Nº</th>
                   <th className="text-left p-3 w-32">Letra</th>
                   <th className="text-left p-3">Descripción</th>
                   <th className="text-center p-3 w-20">Coef.</th>
@@ -234,7 +234,7 @@ export default function DetalleReprisePage() {
             <table className="w-full">
               <thead>
                 <tr className="border-b bg-gray-50">
-                  <th className="text-center p-3 w-16">NÃ‚º</th>
+                  <th className="text-center p-3 w-16">Nº</th>
                   <th className="text-left p-3 w-32">Código</th>
                   <th className="text-left p-3">Descripción</th>
                   <th className="text-center p-3 w-20">Coef.</th>
@@ -267,12 +267,12 @@ export default function DetalleReprisePage() {
         </div>
       )}
 
-      {/* Notas artÃƒÂ­sticas */}
+      {/* Notas artísticas */}
       {notasArtisticas.length > 0 && (
         <div className="card overflow-hidden mb-6">
           <div className="p-4 border-b bg-purple-50">
             <h2 className="text-xl font-bold text-purple-900">
-              Notas artÃƒÂ­sticas (Kür) ({notasArtisticas.length})
+              Notas artísticas (Kür) ({notasArtisticas.length})
             </h2>
           </div>
 
@@ -280,7 +280,7 @@ export default function DetalleReprisePage() {
             <table className="w-full">
               <thead>
                 <tr className="border-b bg-purple-50">
-                  <th className="text-center p-3 w-16">NÃ‚º</th>
+                  <th className="text-center p-3 w-16">Nº</th>
                   <th className="text-left p-3 w-32">Código</th>
                   <th className="text-left p-3">Descripción</th>
                   <th className="text-center p-3 w-20">Coef.</th>

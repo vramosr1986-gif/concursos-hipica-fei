@@ -332,7 +332,7 @@ export default function PuntuarPruebaPage() {
 
       {participaciones.length === 0 && (
         <div className="card p-8 text-center text-gray-600">
-          No hay binomios asignados a esta prueba todavÃƒÂ­a.
+          No hay binomios asignados a esta prueba todavía.
         </div>
       )}
     </div>

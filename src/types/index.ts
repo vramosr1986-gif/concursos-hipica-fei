@@ -6,7 +6,6 @@ export interface LicenciaFederativa {
   // Ejemplo:
   // numero_licencia: string;
   // fecha_expedicion: string;
-  // Ã¢â‚¬Â¦
   // Muy importante que el nombre sea exactamente "licencia_federativa?: string"
   // para que el compilador lo acepte como propiedad opcional.
 }
