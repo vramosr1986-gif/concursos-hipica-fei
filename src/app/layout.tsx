@@ -40,6 +40,8 @@ export default function RootLayout({
               <Link href="/ayuda" className="inline-flex items-center gap-1.5 transition hover:text-[#e8c98d]">
                 <Medal className="size-3.5" aria-hidden="true" /> Ayuda
               </Link>
+              <Link href="/aviso-legal" className="transition hover:text-[#e8c98d]">Aviso legal</Link>
+              <Link href="/privacidad" className="transition hover:text-[#e8c98d]">Privacidad</Link>
             </nav>
           </div>
         </footer>

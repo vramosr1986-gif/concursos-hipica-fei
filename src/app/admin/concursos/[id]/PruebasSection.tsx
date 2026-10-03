@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
+import { compararRfhe } from '@/lib/orden-reprises';
 
 // ============================================================
 // TABLA DE COMPATIBILIDAD NIVEL -> CATEGORIAS Y TIPOS
@@ -199,7 +200,7 @@ export function PruebasSection({ concursoId }: Props) {
 
     const formateadas: Reprise[] = (data || [])
       .map((r: any) => ({ id: r.reprise.id, codigo: r.reprise.codigo, nombre: r.reprise.nombre, tipo: r.reprise.tipo }))
-      .sort((a, b) => a.nombre.localeCompare(b.nombre));
+      .sort(compararRfhe);
 
     setReprises(formateadas);
   };

@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
+import { agruparRfhe, ordenarRfhe } from '@/lib/orden-reprises';
 
 type Reprise = {
   id: string;
@@ -31,7 +32,7 @@ export default function AdminReprisesPage() {
   const [busqueda, setBusqueda] = useState('');
 
   const [vistaAgrupada, setVistaAgrupada] = useState(true);
-  const [categoriasAbiertas, setCategoriasAbiertas] = useState<string[]>([]);
+  const [gruposCerrados, setGruposCerrados] = useState<string[]>([]);
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -57,7 +58,6 @@ export default function AdminReprisesPage() {
       setCategorias(cats);
       setNiveles(nivs);
       setAnios(yrs);
-      setCategoriasAbiertas(cats); // por defecto todas abiertas
     }
   };
 
@@ -104,7 +104,7 @@ export default function AdminReprisesPage() {
         });
       }
 
-      setReprises(reprisesConContador);
+      setReprises(ordenarRfhe(reprisesConContador));
     } catch (err: any) {
       setError(err.message || 'Error al cargar las reprises');
     } finally {
@@ -134,22 +134,12 @@ export default function AdminReprisesPage() {
   };
 
   const toggleCategoria = (cat: string) => {
-    setCategoriasAbiertas((prev) =>
+    setGruposCerrados((prev) =>
       prev.includes(cat) ? prev.filter((c) => c !== cat) : [...prev, cat]
     );
   };
 
-  const agruparPorCategoria = () => {
-    const grupos: Record<string, Reprise[]> = {};
-    for (const r of reprises) {
-      if (!grupos[r.categoria]) grupos[r.categoria] = [];
-      grupos[r.categoria].push(r);
-    }
-    return grupos;
-  };
-
-  const grupos = agruparPorCategoria();
-  const categoriasOrdenadas = Object.keys(grupos).sort();
+  const grupos = agruparRfhe(reprises);
 
   // Colores por categoría
   const colorCategoria = (cat: string) => {
@@ -321,15 +311,14 @@ export default function AdminReprisesPage() {
       ) : vistaAgrupada ? (
         // VISTA AGRUPADA
         <div className="space-y-4">
-          {categoriasOrdenadas.map((cat) => {
-            const items = grupos[cat];
-            const abierta = categoriasAbiertas.includes(cat);
+          {grupos.map(({ titulo: cat, caballosJovenes, items }) => {
+            const abierta = !gruposCerrados.includes(cat);
 
             return (
               <div key={cat} className="card overflow-hidden">
                 <button
                   onClick={() => toggleCategoria(cat)}
-                  className={`w-full p-4 flex items-center justify-between border-l-4 ${colorCategoria(cat)} hover:opacity-90 transition`}
+                  className={`w-full p-4 flex items-center justify-between border-l-4 ${caballosJovenes ? 'bg-amber-100 text-amber-800 border-amber-200' : 'bg-gray-100 text-gray-800 border-gray-300'} hover:opacity-90 transition`}
                 >
                   <div className="flex items-center gap-3">
                     <span className="text-lg">{abierta ? '▼' : 'â–¶'}</span>
