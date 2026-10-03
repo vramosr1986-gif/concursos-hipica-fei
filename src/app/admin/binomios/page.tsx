@@ -125,6 +125,29 @@ export default function AdminBinomiosPage() {
     }
   };
 
+  const deleteBinomio = async (id: string, nombre: string) => {
+    const confirmar = window.confirm(
+      `¿Eliminar binomio: ${nombre}?\n\nEsto también eliminará sus inscripciones en todos los concursos.`
+    );
+    if (!confirmar) return;
+
+    try {
+      const { error: dbError } = await supabase
+        .from('binomios')
+        .delete()
+        .eq('id', id);
+
+      if (dbError) throw dbError;
+
+      // Actualizar en el estado local
+      setBinomios((actuales) =>
+        actuales.filter((b) => b.binomio_id !== id)
+      );
+    } catch (err: any) {
+      alert(err.message || 'Error al eliminar el binomio');
+    }
+  };
+
   const abrirBuscadorRfhe = (tipo: 'jinete' | 'caballo') => {
     setTipoModal(tipo);
     setModalAbierto(true);
@@ -287,6 +310,13 @@ export default function AdminBinomiosPage() {
                               </li>
                             </ul>
                           </div>
+                          <button
+                            onClick={() => deleteBinomio(b.binomio_id, `${b.nombre_jinete} / ${b.nombre_caballo}`)}
+                            className="btn btn-sm btn-outline btn-error text-sm px-1.5 py-0.5"
+                            title="Eliminar binomio"
+                          >
+                            🗑️
+                          </button>
                         </div>
                       </div>
                     </td>

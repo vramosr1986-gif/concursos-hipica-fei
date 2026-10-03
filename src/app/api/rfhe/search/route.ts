@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { JSDOM } from 'jsdom';
 
 interface RFHEResult {
   ldn: string;
@@ -29,7 +28,7 @@ export async function POST(request: NextRequest) {
     formData.append('FIN', 'FIN');
     formData.append(tipo === 'jinete' ? 'APE' : 'NOMBRE', apellidos);
 
-    const response = await fetch('https://www.cbservicios.net/Magic94Scripts/mgrqispi94.dll?', {
+    const response = await fetch('https://www.cbservicios.net/Magic94Scripts/mgrqispi94.dll', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded',
@@ -38,58 +37,64 @@ export async function POST(request: NextRequest) {
       body: formData.toString(),
     });
 
+    if (!response.ok) {
+      return NextResponse.json(
+        { error: `RFHE retornó error ${response.status}` },
+        { status: 500 }
+      );
+    }
+
     const html = await response.text();
 
-    // Parse HTML con JSDOM
-    const dom = new JSDOM(html);
-    const { document } = dom.window;
-
+    // Parse HTML manualmente buscando tablas y filas
     const rows: RFHEResult[] = [];
-    const tables = document.querySelectorAll('table');
-
-    // Buscar tabla con resultados (generalmente la segunda tabla)
-    for (const table of tables) {
-      const tbody = table.querySelector('tbody');
-      if (!tbody) continue;
-
-      const trs = tbody.querySelectorAll('tr');
-      let isHeaderRow = true;
-
-      for (const tr of trs) {
-        if (isHeaderRow) {
-          // Verificar si es header (contiene th o no tiene datos)
-          const hasHeader = tr.querySelector('th');
-          if (hasHeader) {
-            isHeaderRow = true;
-            continue;
-          }
-          isHeaderRow = false;
+    
+    // Buscar todas las filas de tabla <tr>
+    const trMatches = html.match(/<tr[^>]*>[\s\S]*?<\/tr>/gi) || [];
+    
+    let skipHeader = true;
+    for (const trHtml of trMatches) {
+      // Extraer celdas
+      const tdMatches = trHtml.match(/<td[^>]*>([\s\S]*?)<\/td>/gi) || [];
+      
+      if (skipHeader && tdMatches.length > 0) {
+        // Detectar si es header por contenido
+        const firstCellContent = (tdMatches[0] || '').replace(/<[^>]+>/g, '').trim();
+        if (firstCellContent === 'LDN' || firstCellContent === 'LAC' || firstCellContent === 'DIN') {
+          continue;
         }
-
-        const tds = tr.querySelectorAll('td');
-        if (tds.length < 5) continue;
-
-        // Estructura: LDN | AÑO | NOMBRE | CATEGORÍA | IDENTIFICACIÓN | NACIMIENTO
-        const ldn = tds[0]?.textContent?.trim() || '';
-        const ano = tds[1]?.textContent?.trim() || '';
-        const nombre = tds[2]?.textContent?.trim() || '';
-        const categoria = tds[3]?.textContent?.trim() || '';
-        const identificacion = tds[4]?.textContent?.trim() || '';
-        const nacimiento = tds[5]?.textContent?.trim() || '';
-
-        if (ldn && nombre) {
-          rows.push({
-            ldn,
-            ano,
-            nombre,
-            categoria,
-            identificacion,
-            nacimiento,
-          });
-        }
+        skipHeader = false;
       }
 
-      if (rows.length > 0) break;
+      if (tdMatches.length < 5) continue;
+
+      // Limpiar HTML y extraer texto
+      const cleanText = (html: string) => {
+        return html
+          .replace(/<[^>]+>/g, '')
+          .replace(/&nbsp;/g, ' ')
+          .replace(/&amp;/g, '&')
+          .trim();
+      };
+
+      const ldn = cleanText(tdMatches[0] || '');
+      const ano = cleanText(tdMatches[1] || '');
+      const nombre = cleanText(tdMatches[2] || '');
+      const categoria = cleanText(tdMatches[3] || '');
+      const identificacion = cleanText(tdMatches[4] || '');
+      const nacimiento = cleanText(tdMatches[5] || '');
+
+      // Validar que tenga LDN/LAC válido
+      if (ldn && nombre && !ldn.includes('LDN') && !ldn.includes('LAC')) {
+        rows.push({
+          ldn,
+          ano,
+          nombre,
+          categoria,
+          identificacion,
+          nacimiento,
+        });
+      }
     }
 
     return NextResponse.json({
