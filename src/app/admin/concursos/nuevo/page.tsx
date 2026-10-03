@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
+import { FileSearch } from 'lucide-react';
 import { concursoService } from '@/lib/services';
 import { supabase } from '@/lib/supabase';
 import {
@@ -172,6 +174,21 @@ export default function NuevoConcursoPage() {
             <p className="mt-2 text-sm text-gray-600">Datos precargados desde el calendario RFHE. Revísalos antes de guardar.</p>
           )}
         </div>
+
+        {!desdeRfhe && (
+          <div className="mb-6 flex flex-wrap items-center justify-between gap-4 rounded-lg border border-[#b88746]/40 bg-[#b88746]/10 p-4">
+            <div className="max-w-xl">
+              <p className="font-semibold text-[#173b2f]">¿Es un concurso nacional que aparece en la web de la Federación (RFHE)?</p>
+              <p className="mt-1 text-sm text-gray-700">
+                Búscalo en el calendario de la RFHE y pulsa «Crear concurso»: volverás aquí con el nombre, las fechas, la provincia y la sede ya rellenos.
+              </p>
+            </div>
+            <Link href="/admin/rfhe" className="btn btn-primary shrink-0">
+              <FileSearch className="size-4" aria-hidden="true" />
+              Buscar en el calendario de la RFHE
+            </Link>
+          </div>
+        )}
 
         {error && <div className="p-4 mb-6 bg-danger text-white rounded">{error}</div>}
 
