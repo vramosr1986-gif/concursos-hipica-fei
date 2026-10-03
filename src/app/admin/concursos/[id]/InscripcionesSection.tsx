@@ -17,11 +17,9 @@ type BinomioRegistrado = {
   id: string;
   nombre_jinete: string;
   nombre_caballo: string;
-  categoria_principal: string | null;
 };
 
-type CategoriaEdad = { id: string; codigo: string; nombre: string };
-type PruebaConcurso = { id: string; nombre: string; fecha: string };
+type PruebaConcurso = { id: string; nombre: string; fecha: string; categoria: string | null; categoria_edad_id: string | null };
 type PruebaDeInscripcion = { nombre: string; pendiente: boolean };
 
 const normalizar = (texto: string) => texto.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
@@ -44,7 +42,6 @@ export function InscripcionesSection({ concursoId, esRfhe }: { concursoId: strin
   const [pruebasConcurso, setPruebasConcurso] = useState<PruebaConcurso[]>([]);
   const [pruebasElegidas, setPruebasElegidas] = useState<Set<string>>(new Set());
   const [registrados, setRegistrados] = useState<BinomioRegistrado[]>([]);
-  const [categorias, setCategorias] = useState<CategoriaEdad[]>([]);
   const [busqueda, setBusqueda] = useState('');
   const [marcados, setMarcados] = useState<Set<string>>(new Set());
   const [ocupado, setOcupado] = useState(false);
@@ -81,15 +78,13 @@ export function InscripcionesSection({ concursoId, esRfhe }: { concursoId: strin
   useEffect(() => {
     cargarInscripciones();
     Promise.all([
-      supabase.from('v_binomios_categorias').select('binomio_id, nombre_jinete, nombre_caballo, categoria_principal').order('nombre_jinete'),
-      supabase.from('categorias_edad').select('id, codigo, nombre').order('orden'),
-      supabase.from('pruebas').select('id, nombre, fecha').eq('concurso_id', concursoId).order('fecha').order('hora_inicio'),
-    ]).then(([binomiosRes, categoriasRes, pruebasRes]) => {
+      supabase.from('binomios').select('id, nombre_jinete, nombre_caballo').order('nombre_jinete'),
+      supabase.from('pruebas').select('id, nombre, fecha, categoria, categoria_edad_id').eq('concurso_id', concursoId).order('fecha').order('hora_inicio'),
+    ]).then(([binomiosRes, pruebasRes]) => {
       setPruebasConcurso(pruebasRes.data || []);
       setRegistrados((binomiosRes.data || []).map((b) => ({
-        id: b.binomio_id, nombre_jinete: b.nombre_jinete, nombre_caballo: b.nombre_caballo, categoria_principal: b.categoria_principal,
+        id: b.id, nombre_jinete: b.nombre_jinete, nombre_caballo: b.nombre_caballo,
       })));
-      setCategorias(categoriasRes.data || []);
     });
   }, [cargarInscripciones, concursoId]);
 
@@ -108,9 +103,10 @@ export function InscripcionesSection({ concursoId, esRfhe }: { concursoId: strin
     try {
       const headers = await cabecerasAdmin();
       let dorsal = Math.max(0, ...inscripciones.map((i) => i.dorsal || 0));
+      // La categoría la marca la prueba (su reprise) en la que se inscribe.
+      const primeraPrueba = pruebasConcurso.find((p) => pruebasElegidas.has(p.id));
       for (const b of binomios) {
         dorsal += 1;
-        const categoria = categorias.find((c) => c.codigo === b.categoria_principal);
         const res = await fetch('/api/inscripciones', {
           method: 'POST',
           headers,
@@ -119,8 +115,8 @@ export function InscripcionesSection({ concursoId, esRfhe }: { concursoId: strin
             concurso_id: concursoId,
             dorsal,
             orden_salida: dorsal,
-            categoria: categoria?.nombre || null,
-            categoria_edad_id: categoria?.id || null,
+            categoria: primeraPrueba?.categoria || null,
+            categoria_edad_id: primeraPrueba?.categoria_edad_id || null,
           }),
         });
         const creada = await res.json().catch(() => ({}));
@@ -251,7 +247,6 @@ export function InscripcionesSection({ concursoId, esRfhe }: { concursoId: strin
                 <th className="px-3 py-2"><span className="sr-only">Marcar</span></th>
                 <th className="px-3 py-2">Jinete</th>
                 <th className="px-3 py-2">Caballo</th>
-                <th className="px-3 py-2">Categoría</th>
                 <th className="px-3 py-2"></th>
               </tr>
             </thead>
@@ -272,7 +267,6 @@ export function InscripcionesSection({ concursoId, esRfhe }: { concursoId: strin
                   </td>
                   <td className="px-3 py-2">{b.nombre_jinete}</td>
                   <td className="px-3 py-2">{b.nombre_caballo}</td>
-                  <td className="px-3 py-2">{categorias.find((c) => c.codigo === b.categoria_principal)?.nombre || '—'}</td>
                   <td className="px-3 py-2 text-right">
                     <button type="button" disabled={ocupado} onClick={() => inscribir([b])} className="btn btn-outline btn-sm">
                       Inscribir

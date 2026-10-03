@@ -12,8 +12,6 @@ type Binomio = {
   id: string;
   nombre_jinete: string;
   nombre_caballo: string;
-  anio_nacimiento_caballo: number | null;
-  fecha_nacimiento_jinete: string | null;
   licencia_federativa: string | null;
   ldn_jinete: string | null;
   lac_caballo: string | null;
@@ -28,8 +26,6 @@ export default function EditarBinomioPage() {
   const [formData, setFormData] = useState({
     nombre_jinete: '',
     nombre_caballo: '',
-    anio_nacimiento_caballo: '',
-    fecha_nacimiento_jinete: '',
     licencia_federativa: '',
     ldn_jinete: '',
     lac_caballo: '',
@@ -45,7 +41,7 @@ export default function EditarBinomioPage() {
       try {
         const { data, error: dbErr } = await supabase
           .from('binomios')
-          .select('id, nombre_jinete, nombre_caballo, anio_nacimiento_caballo, fecha_nacimiento_jinete, licencia_federativa, ldn_jinete, lac_caballo, fh_jinete, fh_caballo')
+          .select('id, nombre_jinete, nombre_caballo, licencia_federativa, ldn_jinete, lac_caballo, fh_jinete, fh_caballo')
           .eq('id', binomioId)
           .single();
 
@@ -55,8 +51,6 @@ export default function EditarBinomioPage() {
         setFormData({
           nombre_jinete: data.nombre_jinete || '',
           nombre_caballo: data.nombre_caballo || '',
-          anio_nacimiento_caballo: data.anio_nacimiento_caballo ? String(data.anio_nacimiento_caballo) : '',
-          fecha_nacimiento_jinete: data.fecha_nacimiento_jinete || '',
           licencia_federativa: data.licencia_federativa || '',
           ldn_jinete: data.ldn_jinete || '',
           lac_caballo: data.lac_caballo || '',
@@ -91,10 +85,6 @@ export default function EditarBinomioPage() {
           id: binomioId,
           nombre_jinete: formData.nombre_jinete.trim(),
           nombre_caballo: formData.nombre_caballo.trim(),
-          anio_nacimiento_caballo: formData.anio_nacimiento_caballo.trim()
-            ? parseInt(formData.anio_nacimiento_caballo, 10)
-            : null,
-          fecha_nacimiento_jinete: formData.fecha_nacimiento_jinete || null,
           licencia_federativa: formData.licencia_federativa.trim() || null,
           ldn_jinete: formData.ldn_jinete.trim() || null,
           lac_caballo: formData.lac_caballo.trim() || null,
@@ -150,26 +140,6 @@ export default function EditarBinomioPage() {
 
           <div>
             <label className="block text-sm font-bold mb-2">
-              Fecha de nacimiento del jinete
-            </label>
-            <input
-              type="date"
-              value={formData.fecha_nacimiento_jinete}
-              onChange={(e) =>
-                setFormData({
-                  ...formData,
-                  fecha_nacimiento_jinete: e.target.value,
-                })
-              }
-              className="input w-full"
-            />
-            <p className="text-xs text-gray-500 mt-1">
-              Necesario para calcular la categoria del jinete
-            </p>
-          </div>
-
-          <div>
-            <label className="block text-sm font-bold mb-2">
               Nombre del caballo *
             </label>
             <input
@@ -181,29 +151,6 @@ export default function EditarBinomioPage() {
               }
               className="input w-full"
             />
-          </div>
-
-          <div>
-            <label className="block text-sm font-bold mb-2">
-              Año de nacimiento del caballo
-            </label>
-            <input
-              type="number"
-              placeholder="Ej. 2018"
-              min="1990"
-              max="2030"
-              value={formData.anio_nacimiento_caballo}
-              onChange={(e) =>
-                setFormData({
-                  ...formData,
-                  anio_nacimiento_caballo: e.target.value,
-                })
-              }
-              className="input w-full"
-            />
-            <p className="text-xs text-gray-500 mt-1">
-              Necesario para calcular la categoria del caballo (CJ4-CJ8_10)
-            </p>
           </div>
 
           <div>

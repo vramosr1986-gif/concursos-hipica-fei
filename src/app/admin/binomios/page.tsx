@@ -16,30 +16,8 @@ type Binomio = {
   lac_caballo: string | null;
   fh_jinete: string | null;
   fh_caballo: string | null;
-  fecha_nacimiento_jinete: string | null;
-  anio_nacimiento_caballo: number | null;
   estado_validacion: EstadoValidacion;
-  categoria_principal: string | null;
   concursos: { id: string; nombre: string; rfhe: boolean }[];
-};
-
-const NOMBRE_CATEGORIA: Record<string, string> = {
-  BENJAMIN: 'Benjamines',
-  ALEVIN: 'Alevines',
-  INFANTIL: 'Infantiles',
-  JUVENIL_0: 'Juveniles 0*',
-  JUVENIL: 'Juveniles',
-  JUNIOR: 'Juniors',
-  JOVEN_JINETE: 'Jóvenes Jinetes',
-  ADULTO: 'Adultos',
-  VETERANO: 'Veteranos',
-  PONI: 'Ponis',
-  CJ4: 'Caballos jóvenes 4 años',
-  CJ5: 'Caballos jóvenes 5 años',
-  CJ6: 'Caballos jóvenes 6 años',
-  CJ7: 'Caballos jóvenes 7 años',
-  CJ8_10: 'Caballos jóvenes 8-10 años',
-  CABALLO_ADULTO: 'Caballo adulto',
 };
 
 const normalizar = (texto: string | null | undefined) =>
@@ -47,12 +25,7 @@ const normalizar = (texto: string | null | undefined) =>
 
 const vieneDeRfhe = (b: Binomio) => b.concursos.some((c) => c.rfhe);
 
-function faltan(b: Binomio): string[] {
-  const lista: string[] = [];
-  if (!b.fecha_nacimiento_jinete) lista.push('Sin fecha del jinete');
-  if (!b.anio_nacimiento_caballo) lista.push('Sin año del caballo');
-  return lista;
-}
+
 
 export default function JinetesYCaballosPage() {
   const [binomios, setBinomios] = useState<Binomio[]>([]);
@@ -60,17 +33,15 @@ export default function JinetesYCaballosPage() {
   const [error, setError] = useState('');
   const [busqueda, setBusqueda] = useState('');
   const [origen, setOrigen] = useState<'' | 'rfhe' | 'manual'>('');
-  const [soloIncompletos, setSoloIncompletos] = useState(false);
 
   useEffect(() => {
     const cargar = async () => {
       setError('');
-      const [binomiosRes, categoriasRes, inscripcionesRes, concursosRes] = await Promise.all([
+      const [binomiosRes, inscripcionesRes, concursosRes] = await Promise.all([
         supabase
           .from('binomios')
-          .select('id, nombre_jinete, nombre_caballo, ldn_jinete, lac_caballo, fh_jinete, fh_caballo, fecha_nacimiento_jinete, anio_nacimiento_caballo, estado_validacion')
+          .select('id, nombre_jinete, nombre_caballo, ldn_jinete, lac_caballo, fh_jinete, fh_caballo, estado_validacion')
           .order('nombre_jinete'),
-        supabase.from('v_binomios_categorias').select('binomio_id, categoria_principal'),
         supabase.from('inscripciones').select('binomio_id, concurso_id'),
         supabase.from('concursos').select('id, nombre, rfhe_url'),
       ]);
@@ -79,7 +50,6 @@ export default function JinetesYCaballosPage() {
         setLoading(false);
         return;
       }
-      const categoria = new Map((categoriasRes.data || []).map((c) => [c.binomio_id, c.categoria_principal]));
       // Si la columna rfhe_url aún no existe, se cargan los concursos sin ella.
       const concursosData = concursosRes.error
         ? (await supabase.from('concursos').select('id, nombre')).data || []
@@ -94,7 +64,6 @@ export default function JinetesYCaballosPage() {
       setBinomios((binomiosRes.data || []).map((b) => ({
         ...b,
         estado_validacion: (b.estado_validacion || 'pendiente') as EstadoValidacion,
-        categoria_principal: categoria.get(b.id) || null,
         concursos: porBinomio.get(b.id) || [],
       })));
       setLoading(false);
@@ -106,12 +75,9 @@ export default function JinetesYCaballosPage() {
     const termino = normalizar(busqueda.trim());
     return binomios.filter((b) =>
       (!termino || normalizar(`${b.nombre_jinete} ${b.nombre_caballo} ${b.ldn_jinete || ''} ${b.lac_caballo || ''}`).includes(termino)) &&
-      (!origen || (origen === 'rfhe') === vieneDeRfhe(b)) &&
-      (!soloIncompletos || faltan(b).length > 0)
+      (!origen || (origen === 'rfhe') === vieneDeRfhe(b))
     );
-  }, [binomios, busqueda, origen, soloIncompletos]);
-
-  const incompletos = binomios.filter((b) => faltan(b).length > 0).length;
+  }, [binomios, busqueda, origen]);
 
   const cambiarValidacion = async (b: Binomio, estado: EstadoValidacion) => {
     setError('');
@@ -149,18 +115,6 @@ export default function JinetesYCaballosPage() {
         <Link href="/admin/binomios/nuevo" className="btn btn-primary">+ Añadir jinete y caballo</Link>
       </div>
 
-      {incompletos > 0 && (
-        <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">
-          <span>
-            <strong>{incompletos}</strong> {incompletos === 1 ? 'binomio no tiene' : 'binomios no tienen'} fecha de nacimiento del jinete o del caballo.
-            Sin ella no se puede calcular su categoría (Alevines, Infantiles, caballos jóvenes…).
-          </span>
-          {!soloIncompletos && (
-            <button type="button" onClick={() => setSoloIncompletos(true)} className="btn btn-outline btn-sm">Ver solo esos</button>
-          )}
-        </div>
-      )}
-
       {error && <p role="alert" className="mb-4 rounded border border-red-200 bg-red-50 p-3 text-sm text-red-700">{error}</p>}
 
       <div className="mb-4 flex flex-wrap items-end gap-3">
@@ -183,10 +137,6 @@ export default function JinetesYCaballosPage() {
             <option value="manual">Añadidos a mano</option>
           </select>
         </div>
-        <label className="flex items-center gap-2 pb-2 text-sm">
-          <input type="checkbox" checked={soloIncompletos} onChange={(e) => setSoloIncompletos(e.target.checked)} />
-          Solo los que les falta la fecha de nacimiento
-        </label>
       </div>
 
       {loading ? (
@@ -205,7 +155,6 @@ export default function JinetesYCaballosPage() {
                   <tr>
                     <th className="px-2 py-2">Jinete</th>
                     <th className="px-2 py-2">Caballo</th>
-                    <th className="px-2 py-2">Categoría</th>
                     <th className="px-2 py-2">Concursos</th>
                     <th className="whitespace-nowrap px-2 py-2">Comprobado</th>
                     <th className="px-3 py-2" />
@@ -213,7 +162,6 @@ export default function JinetesYCaballosPage() {
                 </thead>
                 <tbody>
                   {visibles.map((b) => {
-                    const pendientes = faltan(b);
                     return (
                       <tr key={b.id} className="border-t border-[#eee9df] align-top even:bg-[#fffdfa]">
                         <td className="px-2 py-2">
@@ -223,16 +171,6 @@ export default function JinetesYCaballosPage() {
                         <td className="px-2 py-2">
                           <span className="inline-flex items-center gap-1.5"><BanderaFH codigo={b.fh_caballo} />{b.nombre_caballo}</span>
                           <span className="block text-xs text-gray-500">LAC {b.lac_caballo || '—'}</span>
-                        </td>
-                        <td className="px-2 py-2">
-                          {b.categoria_principal ? NOMBRE_CATEGORIA[b.categoria_principal] || b.categoria_principal : <span className="text-gray-400">—</span>}
-                          {pendientes.length > 0 && (
-                            <span className="mt-1 flex flex-col gap-0.5" title="Sin estos datos no se puede calcular la categoría">
-                              {pendientes.map((p) => (
-                                <span key={p} className="w-fit whitespace-nowrap rounded bg-amber-50 px-1.5 py-0.5 text-xs text-amber-800">{p}</span>
-                              ))}
-                            </span>
-                          )}
                         </td>
                         <td className="px-2 py-2">
                           {b.concursos.length > 0 ? (

@@ -55,12 +55,6 @@ type UserJuezOption = {
 type InscripcionOption = {
   id: string;
   dorsal: number;
-  categoria: string | null;
-  categoria_edad_id: string | null;
-  categoria_caballo: string | null;
-  categoria_jinete: string | null;
-  edad_jinete: number | null;
-  edad_caballo: number | null;
   nombre_jinete: string;
   nombre_caballo: string;
 };
@@ -158,61 +152,23 @@ export default function DetallePruebaPage() {
     if (data) setUsuariosJuez(data);
   };
 
-  const cargarInscripcionesDisponibles = async (
-    esCaballosJovenes: boolean,
-    categoriaEdadId: string | null
-  ) => {
+  // Binomios inscritos en el concurso que todavía no están en esta prueba.
+  const cargarInscripcionesDisponibles = async (yaEnLaPrueba: string[]) => {
     const { data: inscripciones } = await supabase
       .from('inscripciones')
-      .select('id, dorsal, categoria, categoria_edad_id, binomio_id, binomio:binomio_id(nombre_jinete, nombre_caballo)')
+      .select('id, dorsal, binomio:binomio_id(nombre_jinete, nombre_caballo)')
       .eq('concurso_id', concursoId)
       .order('dorsal');
 
-    if (!inscripciones) {
-      setInscripcionesDisponibles([]);
-      return;
-    }
-
-    const binomioIds = inscripciones.map((i: any) => i.binomio_id);
-    let categoriasPorBinomio: Record<string, any> = {};
-
-    if (binomioIds.length > 0) {
-      const { data: cats } = await supabase
-        .from('v_binomios_categorias')
-        .select('binomio_id, categoria_jinete, categoria_caballo, edad_jinete, edad_caballo')
-        .in('binomio_id', binomioIds);
-
-      (cats || []).forEach((c: any) => {
-        categoriasPorBinomio[c.binomio_id] = c;
-      });
-    }
-
-    const filtradas: InscripcionOption[] = [];
-
-    for (const i of inscripciones as any[]) {
-      const cat = categoriasPorBinomio[i.binomio_id] || {};
-
-      if (esCaballosJovenes) {
-        if (!cat.categoria_caballo) continue;
-      } else {
-        if (categoriaEdadId && i.categoria_edad_id !== categoriaEdadId) continue;
-      }
-
-      filtradas.push({
+    const fuera = new Set(yaEnLaPrueba);
+    setInscripcionesDisponibles((inscripciones || [])
+      .filter((i: any) => !fuera.has(i.id))
+      .map((i: any) => ({
         id: i.id,
         dorsal: i.dorsal,
-        categoria: i.categoria,
-        categoria_edad_id: i.categoria_edad_id,
-        categoria_caballo: cat.categoria_caballo || null,
-        categoria_jinete: cat.categoria_jinete || null,
-        edad_jinete: cat.edad_jinete ?? null,
-        edad_caballo: cat.edad_caballo ?? null,
         nombre_jinete: i.binomio?.nombre_jinete || '-',
         nombre_caballo: i.binomio?.nombre_caballo || '-',
-      });
-    }
-
-    setInscripcionesDisponibles(filtradas);
+      })));
   };
 
   useEffect(() => {
@@ -236,14 +192,9 @@ export default function DetallePruebaPage() {
   }, [pruebaId]);
 
   useEffect(() => {
-    if (prueba) {
-      cargarInscripcionesDisponibles(
-        !!prueba.es_caballos_jovenes,
-        prueba.categoria_edad_id
-      );
-    }
+    if (prueba) cargarInscripcionesDisponibles(binomios.map((b) => b.inscripcion_id));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [prueba?.id, prueba?.es_caballos_jovenes, prueba?.categoria_edad_id]);
+  }, [prueba?.id, binomios]);
 
   const handleAddJuez = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -362,11 +313,6 @@ export default function DetallePruebaPage() {
     return d + '/' + m + '/' + y;
   };
 
-  const formatearEdad = (edad: number | null) => {
-    if (edad === null || edad === undefined) return '-';
-    return edad + ' anos';
-  };
-
   if (loading) return <div className="container py-8">Cargando...</div>;
   if (!prueba) return <div className="container py-8">Prueba no encontrada</div>;
 
@@ -417,11 +363,6 @@ export default function DetallePruebaPage() {
           </div>
         )}
 
-        {prueba.es_caballos_jovenes && (
-          <div className="mt-3 p-2 bg-amber-50 border border-amber-300 rounded text-sm">
-            <strong>Prueba de Caballos Jovenes</strong> · Se muestran solo los binomios con categoria de caballo joven (CJ4, CJ5, CJ6, CJ7, CJ8_10).
-          </div>
-        )}
       </div>
 
       {error && (
@@ -542,25 +483,13 @@ export default function DetallePruebaPage() {
           </button>
         </div>
 
-        {!prueba.es_caballos_jovenes && prueba.categoria && (
-          <p className="text-sm text-gray-600 mb-3">
-            Mostrando inscripciones de la categoria: <strong>{prueba.categoria}</strong>
-          </p>
-        )}
-        {prueba.es_caballos_jovenes && (
-          <p className="text-sm text-amber-700 mb-3">
-            Mostrando binomios con caballo joven (por edad del caballo)
-          </p>
-        )}
 
         {modalBinomioAbierto && (
           <div className="mb-4 p-4 border border-primary rounded bg-blue-50">
             {inscripcionesDisponibles.length === 0 ? (
               <p className="text-sm text-gray-600">
                 No hay inscripciones disponibles para esta prueba.
-                {prueba.es_caballos_jovenes
-                  ? ' Anade binomios con caballos jovenes al concurso.'
-                  : ' Anade inscripciones con esta categoria al concurso primero.'}
+                {' Todos los inscritos del concurso ya están en esta prueba, o el concurso aún no tiene inscritos.'}
               </p>
             ) : (
               <form onSubmit={handleAddBinomio} className="space-y-3">
@@ -577,7 +506,7 @@ export default function DetallePruebaPage() {
                     <option value="">-- Elegir binomio --</option>
                     {inscripcionesDisponibles.map((i) => (
                       <option key={i.id} value={i.id}>
-                        #{i.dorsal} · {i.nombre_jinete} / {i.nombre_caballo} · Jinete: {formatearEdad(i.edad_jinete)} ({i.categoria_jinete || '-'}) · Caballo: {formatearEdad(i.edad_caballo)} ({i.categoria_caballo || 'adulto'})
+                        Dorsal {i.dorsal} · {i.nombre_jinete} / {i.nombre_caballo}
                       </option>
                     ))}
                   </select>

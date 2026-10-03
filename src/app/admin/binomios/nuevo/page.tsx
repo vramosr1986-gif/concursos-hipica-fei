@@ -13,8 +13,6 @@ export default function NuevoBinomioPage() {
   const [formData, setFormData] = useState({
     nombre_jinete: '',
     nombre_caballo: '',
-    anio_nacimiento_caballo: '',
-    fecha_nacimiento_jinete: '',
     licencia_federativa: '',
     ldn_jinete: '',
     lac_caballo: '',
@@ -90,10 +88,6 @@ export default function NuevoBinomioPage() {
         body: JSON.stringify({
           nombre_jinete: formData.nombre_jinete.trim(),
           nombre_caballo: formData.nombre_caballo.trim(),
-          anio_nacimiento_caballo: formData.anio_nacimiento_caballo.trim()
-            ? parseInt(formData.anio_nacimiento_caballo, 10)
-            : null,
-          fecha_nacimiento_jinete: formData.fecha_nacimiento_jinete || null,
           licencia_federativa: formData.licencia_federativa.trim() || null,
           ldn_jinete: formData.ldn_jinete.trim() || null,
           lac_caballo: formData.lac_caballo.trim() || null,
@@ -149,26 +143,6 @@ export default function NuevoBinomioPage() {
 
           <div>
             <label className="block text-sm font-bold mb-2">
-              Fecha de nacimiento del jinete
-            </label>
-            <input
-              type="date"
-              value={formData.fecha_nacimiento_jinete}
-              onChange={(e) =>
-                setFormData({
-                  ...formData,
-                  fecha_nacimiento_jinete: e.target.value,
-                })
-              }
-              className="input w-full"
-            />
-            <p className="text-xs text-gray-500 mt-1">
-              Necesario para calcular la categoria del jinete (Alevin, Infantil, Juvenil, Joven Jinete, Adulto)
-            </p>
-          </div>
-
-          <div>
-            <label className="block text-sm font-bold mb-2">
               Nombre del caballo *
             </label>
             <input
@@ -181,29 +155,6 @@ export default function NuevoBinomioPage() {
               }
               className="input w-full"
             />
-          </div>
-
-          <div>
-            <label className="block text-sm font-bold mb-2">
-              Año de nacimiento del caballo
-            </label>
-            <input
-              type="number"
-              placeholder="Ej. 2018"
-              min="1990"
-              max="2030"
-              value={formData.anio_nacimiento_caballo}
-              onChange={(e) =>
-                setFormData({
-                  ...formData,
-                  anio_nacimiento_caballo: e.target.value,
-                })
-              }
-              className="input w-full"
-            />
-            <p className="text-xs text-gray-500 mt-1">
-              Necesario para calcular la categoria del caballo (CJ4, CJ5, CJ6, CJ7, CJ8_10)
-            </p>
           </div>
 
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -256,7 +207,7 @@ export default function NuevoBinomioPage() {
           </div>
 
           <div className="rounded border border-gray-200 bg-gray-50 p-3 text-sm text-gray-700">
-            Los datos se utilizarán para gestionar el binomio, sus categorías e inscripciones.
+            Los datos se utilizarán para gestionar el binomio y sus inscripciones.
             Consulta la{' '}
             <Link href="/privacidad" className="text-primary underline">
               política de privacidad
