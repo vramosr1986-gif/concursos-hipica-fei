@@ -146,15 +146,24 @@ function normalizarEncabezado(valor: string): string {
   return valor.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
 }
 
+// Devuelve las celdas de una fila por columna lógica: una celda con colspan=N ocupa N
+// posiciones (texto en la primera, vacías el resto). RFHE usa colspan para dejar en
+// blanco Nº/jinete/LDN/FH en las filas de segundo caballo o reprise.
+function celdasPorColumna($: ReturnType<typeof load>, row: Parameters<ReturnType<typeof load>>[0]): string[] {
+  return $(row).children('th, td').toArray().flatMap((cell) => {
+    const texto = $(cell).text().replace(/\s+/g, ' ').trim();
+    const span = Math.min(Math.max(Number($(cell).attr('colspan')) || 1, 1), 20);
+    return [texto, ...Array<string>(span - 1).fill('')];
+  });
+}
+
 function extraerInscritos($: ReturnType<typeof load>): ListaInscritosExtraida {
   const tablas = $('table').toArray().filter((table) => $(table).find('table').length === 0);
 
   for (const table of tablas) {
     const filas = $(table).find('tr').toArray();
     const indiceEncabezado = filas.findIndex((row) => {
-      const celdas = $(row).children('th, td')
-        .map((_index, cell) => normalizarEncabezado($(cell).text()))
-        .toArray();
+      const celdas = celdasPorColumna($, row).map(normalizarEncabezado);
       return celdas.some((cell) => cell.includes('jinete')) &&
         celdas.some((cell) => cell === 'ldn') &&
         celdas.some((cell) => cell === 'lac') &&
@@ -163,9 +172,7 @@ function extraerInscritos($: ReturnType<typeof load>): ListaInscritosExtraida {
 
     if (indiceEncabezado < 0) continue;
 
-    const encabezados = $(filas[indiceEncabezado]).children('th, td')
-      .map((_index, cell) => normalizarEncabezado($(cell).text()))
-      .toArray();
+    const encabezados = celdasPorColumna($, filas[indiceEncabezado]).map(normalizarEncabezado);
     const indiceNumero = encabezados.findIndex((cell) => ['nº', 'n°', 'no'].includes(cell));
     const tieneNumero = indiceNumero >= 0;
     const indiceJinete = encabezados.findIndex((cell) => cell.includes('jinete'));
@@ -191,60 +198,39 @@ function extraerInscritos($: ReturnType<typeof load>): ListaInscritosExtraida {
     const inscritos: InscritoRfhe[] = [];
     let actual: InscritoRfhe | null = null;
 
+    const columna = (celdas: string[], indice: number) => (indice >= 0 ? celdas[indice] || '' : '');
+
     for (const row of [...filas.slice(indiceEncabezado + 1), ...filasContinuacion]) {
-      const celdas = $(row).children('th, td')
-        .map((_index, cell) => $(cell).text().replace(/\s+/g, ' ').trim())
-        .toArray();
-      if (celdas.length === 0) continue;
+      const celdas = celdasPorColumna($, row);
+      if (!celdas.some(Boolean)) continue;
 
-      if (tieneNumero && /^\d+$/.test(celdas[0] || '') && celdas.length >= 8) {
+      const numero = columna(celdas, indiceNumero);
+      const jinete = columna(celdas, indiceJinete);
+      const ldn = columna(celdas, indiceLdn);
+      const reprise = {
+        reprise: columna(celdas, indiceReprise),
+        caballo: columna(celdas, indiceCaballo),
+        lac: columna(celdas, indiceLac),
+        federacionCaballo: columna(celdas, indicesFh[1] ?? -1),
+        observaciones: columna(celdas, indiceObservaciones),
+      };
+      const tieneReprise = Boolean(reprise.caballo || reprise.lac || reprise.reprise);
+
+      // Fila de jinete nuevo: trae nombre y (Nº si la lista lo usa); se descartan
+      // filas de aviso tipo "No hay Inscritos." que ocupan toda la anchura.
+      const esJineteNuevo = jinete && (tieneNumero ? /^\d+$/.test(numero) : Boolean(ldn || tieneReprise));
+      if (esJineteNuevo) {
         actual = {
-          numero: celdas[0],
-          jinete: celdas[1] || '',
-          ldn: celdas[2] || '',
-          federacionJinete: celdas[3] || '',
+          numero: tieneNumero ? numero : '',
+          jinete,
+          ldn,
+          federacionJinete: columna(celdas, indicesFh[0] ?? -1),
           reprises: [],
         };
         inscritos.push(actual);
-        actual.reprises.push({
-          reprise: celdas[4] || '',
-          caballo: celdas[5] || '',
-          lac: celdas[6] || '',
-          federacionCaballo: celdas[7] || '',
-          observaciones: celdas[8] || '',
-        });
-        continue;
       }
 
-      if (!tieneNumero && indiceJinete >= 0 && indiceLdn >= 0 && celdas[indiceJinete] && celdas[indiceLdn]) {
-        actual = {
-          numero: '',
-          jinete: celdas[indiceJinete],
-          ldn: celdas[indiceLdn],
-          federacionJinete: celdas[indicesFh[0]] || '',
-          reprises: [],
-        };
-        inscritos.push(actual);
-      } else if (tieneNumero && actual && !(celdas[0] || '') && celdas.length >= 5 && (celdas[1] || '')) {
-        actual.reprises.push({
-          reprise: celdas[1],
-          caballo: celdas[2] || '',
-          lac: celdas[3] || '',
-          federacionCaballo: celdas[4] || '',
-          observaciones: '',
-        });
-        continue;
-      }
-
-      if (actual && !tieneNumero && (celdas[indiceCaballo] || celdas[indiceLac] || celdas[indiceReprise])) {
-        actual.reprises.push({
-          reprise: celdas[indiceReprise] || '',
-          caballo: celdas[indiceCaballo] || '',
-          lac: celdas[indiceLac] || '',
-          federacionCaballo: celdas[indicesFh[1]] || '',
-          observaciones: celdas[indiceObservaciones] || '',
-        });
-      }
+      if (actual && tieneReprise) actual.reprises.push(reprise);
     }
 
     if (inscritos.length > 0) return { filas: inscritos, tieneNumero };
@@ -262,11 +248,7 @@ function extraerHtml(url: string, html: string): PaginaExtraida {
     if ($(table).find('table').length > 0) return;
     const elementosFila = $(table).find('tr').toArray();
     const indiceEncabezado = elementosFila.findIndex((row) => $(row).children('th').length > 0);
-    const filas = elementosFila.map((row) =>
-      $(row).children('th, td')
-        .map((_cellIndex, cell) => $(cell).text().replace(/\s+/g, ' ').trim())
-        .toArray()
-    ).filter((row) => row.some(Boolean));
+    const filas = elementosFila.map((row) => celdasPorColumna($, row)).filter((row) => row.some(Boolean));
 
     if (filas.length === 0) return;
 
