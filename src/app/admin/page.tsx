@@ -40,6 +40,20 @@ const modulos = [
     Icon: Users,
     color: 'bg-[#b88746]/15 text-[#b88746] group-hover:bg-[#b88746] group-hover:text-white',
   },
+    {
+    href: '/admin/Resultados',
+    titulo: 'Resultados',
+    descripcion: 'Resultados y Clasificaciones',
+    Icon: Users,
+    color: 'bg-[#b88746]/15 text-[#b88746] group-hover:bg-[#b88746] group-hover:text-white',
+  },
+    {
+    href: '/admin/Etadisticas',
+    titulo: 'Etadisticas',
+    descripcion: 'Estadísticas y Curiosidades.',
+    Icon: Users,
+    color: 'bg-[#b88746]/15 text-[#b88746] group-hover:bg-[#b88746] group-hover:text-white',
+  },
 ];
 
 export default function AdminIndexPage() {
