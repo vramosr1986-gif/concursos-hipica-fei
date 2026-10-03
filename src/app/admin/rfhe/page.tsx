@@ -54,6 +54,9 @@ function sugerirJornada(reprise: string): string {
   const domingo = /\b(final(?:es)?|individual(?:es)?|kur|san\s*jorge|intermedia|gran\s*premio|grand\s*prix|sj|int[\s._-]*(?:i{1,2}|[12])|gp)\b/;
   const sabado = /\b(preliminar(?:es)?|equipos|promocion|infantil(?:es)?|alevin(?:es)?|benjamin(?:es)?|n[0-4]|rider\s*[1-3]|ponis?\s*[abc])\b/;
 
+  // Clásica 1 se monta el sábado y Clásica 2 el domingo.
+  if (/\bclasica\s*1\b/.test(nombre)) return 'Sábado · jornada 1';
+  if (/\bclasica\s*2\b/.test(nombre)) return 'Domingo · jornada 2';
   if (domingo.test(nombre)) return 'Domingo · jornada 2';
   if (sabado.test(nombre)) return 'Sábado · jornada 1';
   return 'Asignación manual';
