@@ -48,6 +48,8 @@ export function PruebasSection({ concursoId, esRfhe, fechaInicio, fechaFin }: Pr
   const [aviso, setAviso] = useState('');
   const [guardando, setGuardando] = useState(false);
   const [nueva, setNueva] = useState({ reprise_id: '', nombre: '', fecha: fechaInicio, hora: '09:00', pista: '' });
+  const [marcadas, setMarcadas] = useState<Set<string>>(new Set());
+  const [pistaMasiva, setPistaMasiva] = useState('');
 
   const cargarPruebas = useCallback(async () => {
     setError('');
@@ -106,6 +108,31 @@ export function PruebasSection({ concursoId, esRfhe, fechaInicio, fechaFin }: Pr
     setPruebas((ps) => ps.map((p) => (p.id === prueba.id ? { ...p, [campo]: nuevoValor } : p)));
     setAviso(campo === 'hora_inicio' ? `Hora de «${prueba.nombre}» guardada` : `Pista de «${prueba.nombre}» guardada`);
   };
+
+  const alternar = (id: string) => setMarcadas((m) => {
+    const n = new Set(m);
+    if (n.has(id)) n.delete(id); else n.add(id);
+    return n;
+  });
+
+  const ponerPistaMarcadas = async (e: FormEvent) => {
+    e.preventDefault();
+    const ids = Array.from(marcadas);
+    if (ids.length === 0) return;
+    setError('');
+    setAviso('');
+    const pista = pistaMasiva.trim() || null;
+    const { error: dbError } = await supabase.from('pruebas').update({ pista }).in('id', ids);
+    if (dbError) {
+      setError(`No se pudo guardar la pista: ${dbError.message}`);
+      return;
+    }
+    setPruebas((ps) => ps.map((p) => (marcadas.has(p.id) ? { ...p, pista } : p)));
+    setAviso(`Pista «${pista || 'sin pista'}» puesta en ${ids.length} pruebas`);
+    setMarcadas(new Set());
+  };
+
+  const dias = Array.from(new Set(pruebas.map((p) => p.fecha))).sort();
 
   const anadirPrueba = async (e: FormEvent) => {
     e.preventDefault();
@@ -208,10 +235,36 @@ export function PruebasSection({ concursoId, esRfhe, fechaInicio, fechaFin }: Pr
       ) : pruebas.length === 0 ? (
         <p className="mt-4 text-gray-600">Todavía no hay pruebas.</p>
       ) : (
-        <div className="mt-4 overflow-x-auto rounded border border-[#e4dfd4]">
+        <>
+        <div className="mt-4 flex flex-wrap items-end gap-3 rounded border border-[#e4dfd4] bg-[#f8f7f3] p-3">
+          <div className="flex flex-wrap items-center gap-2 text-sm">
+            <span className="font-semibold">Marcar:</span>
+            <button type="button" onClick={() => setMarcadas(new Set(pruebas.map((p) => p.id)))} className="btn btn-outline btn-sm">Todas</button>
+            {dias.length > 1 && dias.map((d) => (
+              <button
+                key={d}
+                type="button"
+                onClick={() => setMarcadas(new Set(pruebas.filter((p) => p.fecha === d).map((p) => p.id)))}
+                className="btn btn-outline btn-sm"
+              >
+                Las del {diaSemana(d).toLowerCase()}
+              </button>
+            ))}
+            {marcadas.size > 0 && <button type="button" onClick={() => setMarcadas(new Set())} className="btn btn-outline btn-sm">Ninguna</button>}
+          </div>
+          <form onSubmit={ponerPistaMarcadas} className="ml-auto flex flex-wrap items-end gap-2">
+            <div>
+              <label htmlFor="pista-masiva" className="mb-1 block text-xs font-bold">Pista para las {marcadas.size} marcadas</label>
+              <input id="pista-masiva" type="text" value={pistaMasiva} onChange={(e) => setPistaMasiva(e.target.value)} placeholder="Ej. Pista A" className="input w-36" />
+            </div>
+            <button type="submit" disabled={marcadas.size === 0} className="btn btn-primary text-sm">Poner esta pista a las marcadas</button>
+          </form>
+        </div>
+        <div className="mt-3 overflow-x-auto rounded border border-[#e4dfd4]">
           <table className="min-w-full text-left text-sm">
             <thead className="bg-[#f4f0e6] text-xs uppercase text-[#466257]">
               <tr>
+                <th className="px-3 py-2"><span className="sr-only">Marcar</span></th>
                 <th className="px-3 py-2">Día</th>
                 <th className="px-3 py-2">Prueba</th>
                 <th className="px-3 py-2">Hora</th>
@@ -224,6 +277,9 @@ export function PruebasSection({ concursoId, esRfhe, fechaInicio, fechaFin }: Pr
             <tbody>
               {pruebas.map((p) => (
                 <tr key={p.id} className="border-t border-[#eee9df] align-middle even:bg-[#fffdfa]">
+                  <td className="px-3 py-2">
+                    <input type="checkbox" aria-label={`Marcar ${p.nombre}`} checked={marcadas.has(p.id)} onChange={() => alternar(p.id)} />
+                  </td>
                   <td className="whitespace-nowrap px-3 py-2">
                     {diaSemana(p.fecha)}
                     <span className="block text-xs text-gray-500">{formatearFecha(p.fecha)}</span>
@@ -263,6 +319,9 @@ export function PruebasSection({ concursoId, esRfhe, fechaInicio, fechaFin }: Pr
                     <Link href={`/admin/concursos/${concursoId}/pruebas/${p.id}`} className="btn btn-outline btn-sm" title="Ver y cambiar los jueces y los binomios de esta prueba">
                       Abrir prueba
                     </Link>
+                    <Link href={`/juez/prueba/${p.id}`} className="btn btn-primary btn-sm ml-2" title="Poner notas en esta prueba eligiendo con qué juez">
+                      Puntuar
+                    </Link>
                     <button type="button" onClick={() => borrarPrueba(p)} className="ml-2 text-sm text-danger hover:underline">
                       Borrar
                     </button>
@@ -272,6 +331,7 @@ export function PruebasSection({ concursoId, esRfhe, fechaInicio, fechaFin }: Pr
             </tbody>
           </table>
         </div>
+        </>
       )}
 
       {esRfhe ? (
