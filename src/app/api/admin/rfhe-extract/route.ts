@@ -214,7 +214,7 @@ function extraerInscritos($: ReturnType<typeof load>): ListaInscritosExtraida {
         federacionCaballo: columna(celdas, indicesFh[1] ?? -1),
         observaciones: columna(celdas, indiceObservaciones),
       };
-      const tieneReprise = Boolean(reprise.caballo || reprise.lac || reprise.reprise);
+      const tieneReprise = Boolean(reprise.reprise || reprise.lac);
 
       // Fila de jinete nuevo: trae nombre y (Nº si la lista lo usa); se descartan
       // filas de aviso tipo "No hay Inscritos." que ocupan toda la anchura.
@@ -230,7 +230,41 @@ function extraerInscritos($: ReturnType<typeof load>): ListaInscritosExtraida {
         inscritos.push(actual);
       }
 
-      if (actual && tieneReprise) actual.reprises.push(reprise);
+      if (actual && tieneReprise) {
+        // RFHE no repite el caballo en las reprises siguientes del mismo binomio.
+        const anterior = actual.reprises.at(-1);
+        if (anterior && (!reprise.caballo || reprise.caballo === anterior.caballo)) {
+          reprise.caballo ||= anterior.caballo;
+          reprise.lac ||= anterior.lac;
+          reprise.federacionCaballo ||= anterior.federacionCaballo;
+        }
+        actual.reprises.push(reprise);
+      }
+    }
+
+    // Un jinete o caballo que aparece varias veces puede venir sin LDN/LAC/FH en
+    // alguna de sus filas: se completan con lo que trae en las demás.
+    const clave = (texto: string) => normalizarEncabezado(texto).replace(/\s+/g, ' ');
+    const jinetes = new Map<string, { ldn: string; fh: string }>();
+    const caballos = new Map<string, { lac: string; fh: string }>();
+    for (const inscrito of inscritos) {
+      const j = jinetes.get(clave(inscrito.jinete)) || { ldn: '', fh: '' };
+      jinetes.set(clave(inscrito.jinete), { ldn: j.ldn || inscrito.ldn, fh: j.fh || inscrito.federacionJinete });
+      for (const r of inscrito.reprises) {
+        if (!r.caballo) continue;
+        const c = caballos.get(clave(r.caballo)) || { lac: '', fh: '' };
+        caballos.set(clave(r.caballo), { lac: c.lac || r.lac, fh: c.fh || r.federacionCaballo });
+      }
+    }
+    for (const inscrito of inscritos) {
+      const j = jinetes.get(clave(inscrito.jinete));
+      inscrito.ldn ||= j?.ldn || '';
+      inscrito.federacionJinete ||= j?.fh || '';
+      for (const r of inscrito.reprises) {
+        const c = caballos.get(clave(r.caballo));
+        r.lac ||= c?.lac || '';
+        r.federacionCaballo ||= c?.fh || '';
+      }
     }
 
     if (inscritos.length > 0) return { filas: inscritos, tieneNumero };
