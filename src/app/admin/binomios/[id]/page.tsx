@@ -5,6 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { SelectorFederacion } from '@/components/BanderaFH';
 import { fetchConSesion } from '@/lib/juez-actual';
+import { FechasConPermiso, FechasNacimiento, fechasParaGuardar } from '@/components/FechasConPermiso';
 import { supabase } from '@/lib/supabase';
 import { ConsultaRfhe } from '@/components/ConsultaRfhe';
 
@@ -23,6 +24,8 @@ export default function EditarBinomioPage() {
   const binomioId = params.id as string;
 
   const [binomio, setBinomio] = useState<Binomio | null>(null);
+  const [fechas, setFechas] = useState<FechasNacimiento>({ consentimiento: false, fecha_nacimiento_jinete: '', anio_nacimiento_caballo: '' });
+  const [consentimientoPrevio, setConsentimientoPrevio] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     nombre_jinete: '',
     nombre_caballo: '',
@@ -41,7 +44,7 @@ export default function EditarBinomioPage() {
       try {
         const { data, error: dbErr } = await supabase
           .from('binomios')
-          .select('id, nombre_jinete, nombre_caballo, licencia_federativa, ldn_jinete, lac_caballo, fh_jinete, fh_caballo')
+          .select('id, nombre_jinete, nombre_caballo, licencia_federativa, ldn_jinete, lac_caballo, fh_jinete, fh_caballo, fecha_nacimiento_jinete, anio_nacimiento_caballo, consentimiento_datos_at')
           .eq('id', binomioId)
           .single();
 
@@ -56,6 +59,13 @@ export default function EditarBinomioPage() {
           lac_caballo: data.lac_caballo || '',
           fh_jinete: data.fh_jinete || '',
           fh_caballo: data.fh_caballo || '',
+        });
+        // Las fechas solo se muestran si hay permiso guardado.
+        setConsentimientoPrevio(data.consentimiento_datos_at || null);
+        setFechas({
+          consentimiento: Boolean(data.consentimiento_datos_at),
+          fecha_nacimiento_jinete: data.consentimiento_datos_at ? data.fecha_nacimiento_jinete || '' : '',
+          anio_nacimiento_caballo: data.consentimiento_datos_at && data.anio_nacimiento_caballo ? String(data.anio_nacimiento_caballo) : '',
         });
       } catch (err: any) {
         setError(err.message || 'Error al cargar el binomio');
@@ -90,6 +100,7 @@ export default function EditarBinomioPage() {
           lac_caballo: formData.lac_caballo.trim() || null,
           fh_jinete: formData.fh_jinete || null,
           fh_caballo: formData.fh_caballo || null,
+          ...fechasParaGuardar(fechas, consentimientoPrevio),
         }),
       });
 
@@ -211,6 +222,8 @@ export default function EditarBinomioPage() {
             <SelectorFederacion id="fh_caballo" etiqueta="Federación (comunidad) del caballo" valor={formData.fh_caballo}
               onChange={(fh_caballo) => setFormData({ ...formData, fh_caballo })} />
           </div>
+
+          <FechasConPermiso valor={fechas} onChange={setFechas} />
 
           <div>
             <div className="flex items-center justify-between mb-2">

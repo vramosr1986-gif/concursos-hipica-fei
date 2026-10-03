@@ -6,10 +6,12 @@ import Link from 'next/link';
 import { SelectorFederacion } from '@/components/BanderaFH';
 import { fetchConSesion } from '@/lib/juez-actual';
 import { buscarCaballoEnRfhe } from '@/lib/rfhe-busqueda';
+import { FechasConPermiso, FechasNacimiento, fechasParaGuardar } from '@/components/FechasConPermiso';
 
 export default function NuevoBinomioPage() {
   const router = useRouter();
 
+  const [fechas, setFechas] = useState<FechasNacimiento>({ consentimiento: false, fecha_nacimiento_jinete: '', anio_nacimiento_caballo: '' });
   const [formData, setFormData] = useState({
     nombre_jinete: '',
     nombre_caballo: '',
@@ -93,6 +95,7 @@ export default function NuevoBinomioPage() {
           lac_caballo: formData.lac_caballo.trim() || null,
           fh_jinete: formData.fh_jinete || null,
           fh_caballo: formData.fh_caballo || null,
+          ...fechasParaGuardar(fechas, null),
         }),
       });
 
@@ -195,6 +198,8 @@ export default function NuevoBinomioPage() {
             <SelectorFederacion id="fh_caballo" etiqueta="Federación (comunidad) del caballo" valor={formData.fh_caballo}
               onChange={(fh_caballo) => setFormData({ ...formData, fh_caballo })} />
           </div>
+
+          <FechasConPermiso valor={fechas} onChange={setFechas} />
 
           <div>
             <label className="block text-sm font-bold mb-2" htmlFor="licencia_federativa">

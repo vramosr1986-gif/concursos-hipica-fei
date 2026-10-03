@@ -21,6 +21,7 @@ export async function POST(request: NextRequest) {
       lac_caballo,
       fh_jinete,
       fh_caballo,
+      consentimiento_datos_at,
     } = body;
 
     if (!nombre_jinete || !nombre_caballo) {
@@ -36,13 +37,15 @@ export async function POST(request: NextRequest) {
         {
           nombre_jinete,
           nombre_caballo,
-          anio_nacimiento_caballo: anio_nacimiento_caballo || null,
-          fecha_nacimiento_jinete: fecha_nacimiento_jinete || null,
+          anio_nacimiento_caballo: consentimiento_datos_at ? anio_nacimiento_caballo || null : null,
+          fecha_nacimiento_jinete: consentimiento_datos_at ? fecha_nacimiento_jinete || null : null,
           licencia_federativa: licencia_federativa || null,
           ldn_jinete: ldn_jinete || null,
           lac_caballo: lac_caballo || null,
           fh_jinete: fh_jinete || null,
           fh_caballo: fh_caballo || null,
+          // Sin permiso expreso no se guardan fechas de nacimiento.
+          consentimiento_datos_at: consentimiento_datos_at || null,
         },
       ])
       .select()
