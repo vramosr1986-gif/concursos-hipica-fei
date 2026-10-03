@@ -4,6 +4,9 @@
   "devCommand": "npm run dev",
   "installCommand": "npm install",
   "framework": "nextjs",
+  "env": {
+    "NODE_USE_SYSTEM_CA": "1"
+  },
   "functions": {
     "src/app/api/**": {
       "maxDuration": 60

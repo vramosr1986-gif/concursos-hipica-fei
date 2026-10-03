@@ -72,6 +72,16 @@ const CAMPOS = [
   { id: 'avanceUrl', label: 'URL del avance (PDF o página)' },
 ] as const;
 
+async function leerJsonApi<T>(response: Response): Promise<T> {
+  const body = await response.text();
+  try {
+    return JSON.parse(body) as T;
+  } catch {
+    const resumen = body.replace(/\s+/g, ' ').slice(0, 180);
+    throw new Error(`La API respondió HTTP ${response.status} sin JSON: ${resumen || response.statusText}`);
+  }
+}
+
 function TablasHtml({ datos }: { datos: HtmlData }) {
   return (
     <div className="space-y-4">
@@ -217,7 +227,7 @@ export default function RfheExtractionPage() {
       const response = await fetch(`/api/admin/rfhe-extract?year=${encodeURIComponent(year)}`, {
         headers: { Authorization: `Bearer ${session.access_token}` },
       });
-      const data = await response.json();
+      const data = await leerJsonApi<CalendarResult & { error?: string }>(response);
       if (!response.ok) throw new Error(data.error || 'No se pudo cargar el calendario RFHE.');
       setCalendar(data as CalendarResult);
     } catch (err) {
@@ -245,7 +255,7 @@ export default function RfheExtractionPage() {
         },
         body: JSON.stringify(urls),
       });
-      const data = await response.json();
+      const data = await leerJsonApi<ExtractionResult & { error?: string }>(response);
       if (!response.ok) throw new Error(data.error || 'No se pudieron extraer las páginas.');
       setResultado(data as ExtractionResult);
     } catch (err) {
