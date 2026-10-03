@@ -56,6 +56,8 @@ type PaginaExtraida = {
   url: string;
   titulo: string;
   texto: string;
+  fecha_inicio?: string;
+  fecha_fin?: string;
   tablas: TablaExtraida[];
   inscritos?: InscritoRfhe[];
   inscritosConNumero?: boolean;
@@ -274,10 +276,16 @@ function extraerHtml(url: string, html: string): PaginaExtraida {
     if (encabezados.some(Boolean)) tablas.push({ encabezados, filas: filasDatos });
   });
 
+  const texto = $('body').text().replace(/\s+/g, ' ').trim();
+  // Ficha RFHECALCON: "Fechas: 17 al 18 de Febrero de 2024" (no confundir con "Fechas incripción").
+  const textoFechas = texto.match(/Fechas\s*:\s*(.+?\b(\d{4}))(?=\s|$)/i);
+  const rango = textoFechas ? parsearRangoRFHE(textoFechas[1], Number(textoFechas[2])) : null;
+
   return {
     url,
     titulo: $('title').first().text().trim() || $('h1, h2, b').first().text().trim(),
-    texto: $('body').text().replace(/\s+/g, ' ').trim(),
+    texto,
+    ...(rango || {}),
     tablas,
     inscritos: resultadoInscritos.filas,
     inscritosConNumero: resultadoInscritos.tieneNumero,

@@ -14,6 +14,11 @@ function aIso(anio: number, mes: number, dia: number): string | null {
   return `${anio}-${String(mes).padStart(2, '0')}-${String(dia).padStart(2, '0')}`;
 }
 
+function mesDesdeTexto(texto?: string): number | undefined {
+  if (!texto) return undefined;
+  return MESES[texto.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().slice(0, 3)];
+}
+
 function partesIso(iso: string): [number, number, number] {
   const [anio, mes, dia] = iso.split('-').map(Number);
   return [anio, mes, dia];
@@ -25,10 +30,25 @@ function partesIso(iso: string): [number, number, number] {
  *  - "14/02/2026"            → un solo día
  *  - "14-15"                 → mes tomado de `fechaInicio` (dd/mm/aaaa de la otra tabla RFHE)
  *  - "28-01 Mar."            → el mes indicado es el del día final; si fin < inicio, el inicio es del mes anterior
+ *  - "17 al 18 de Febrero de 2024", "30 de Marzo al 01 de Abril de 2024" (ficha del concurso)
  * `fechaInicio` (dd/mm/aaaa), cuando existe, manda sobre el inicio deducido.
  */
 export function parsearRangoRFHE(textoFecha: string, anio: number, fechaInicio?: string): RangoFechas | null {
   const texto = textoFecha.replace(/\s+/g, ' ').trim();
+
+  const enTexto = texto.match(
+    /^(?:del?\s+)?(\d{1,2})(?:\s+de\s+([a-záéíóú]+)\.?(?:\s+(?:de\s+)?(\d{4}))?)?\s+(?:al?|-|–)\s+(?:el\s+)?(\d{1,2})\s+de\s+([a-záéíóú]+)\.?(?:\s+(?:de\s+)?(\d{4}))?$/i
+  );
+  if (enTexto) {
+    const mesFin = mesDesdeTexto(enTexto[5]);
+    const mesIni = mesDesdeTexto(enTexto[2]) ?? mesFin;
+    if (!mesFin || !mesIni) return null;
+    const anioFin = enTexto[6] ? Number(enTexto[6]) : anio;
+    const anioIni = enTexto[3] ? Number(enTexto[3]) : mesIni > mesFin ? anioFin - 1 : anioFin;
+    const inicio = aIso(anioIni, mesIni, Number(enTexto[1]));
+    const fin = aIso(anioFin, mesFin, Number(enTexto[4]));
+    return inicio && fin && fin >= inicio ? { fecha_inicio: inicio, fecha_fin: fin } : null;
+  }
 
   const completa = (valor?: string) => {
     const m = valor?.trim().match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})$/);
@@ -46,7 +66,7 @@ export function parsearRangoRFHE(textoFecha: string, anio: number, fechaInicio?:
 
   const diaInicio = Number(rango[1]);
   const diaFin = Number(rango[2]);
-  const mesTexto = rango[3] ? MESES[rango[3].normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase()] : undefined;
+  const mesTexto = mesDesdeTexto(rango[3]);
 
   let inicio: string | null;
   if (inicioConocido) {
@@ -69,6 +89,12 @@ export function parsearRangoRFHE(textoFecha: string, anio: number, fechaInicio?:
   const fin = aIso(anioFin, mesFin, diaFin);
   if (!fin || fin < inicio) return null;
   return { fecha_inicio: inicio, fecha_fin: fin };
+}
+
+/** ISO aaaa-mm-dd → "dd/mm/aaaa". */
+export function formatearFecha(iso?: string | null): string {
+  const m = iso?.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  return m ? `${m[3]}/${m[2]}/${m[1]}` : '—';
 }
 
 /** "14–15/02/2026", "28/02–01/03/2026", "30/12/2026–02/01/2027" o "17/03/2026". */

@@ -3,7 +3,7 @@
 import { FormEvent, useState } from 'react';
 import { ArrowDown, ArrowDownToLine, ArrowDownUp, ArrowUp, ExternalLink, FileSearch, LoaderCircle } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
-import { compararPorInicio, formatearRango } from '@/lib/fechas';
+import { compararPorInicio, formatearFecha } from '@/lib/fechas';
 
 type RepriseInscrito = {
   reprise: string;
@@ -30,6 +30,8 @@ type HtmlData = {
   url: string;
   titulo: string;
   texto: string;
+  fecha_inicio?: string;
+  fecha_fin?: string;
   tablas: ExtractedTable[];
   inscritos?: InscritoRfhe[];
   inscritosConNumero?: boolean;
@@ -74,7 +76,7 @@ type CalendarResult = {
   concursos: CalendarContest[];
 };
 
-type CalendarSortKey = 'fecha' | 'categoria' | 'nombre' | 'provincia' | 'sede';
+type CalendarSortKey = 'fecha_inicio' | 'fecha_fin' | 'categoria' | 'nombre' | 'provincia' | 'sede';
 
 function normalizarTexto(texto: string): string {
   return texto.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLocaleLowerCase('es');
@@ -113,6 +115,12 @@ function TablasHtml({ datos }: { datos: HtmlData }) {
       <div>
         <h3 className="font-semibold text-[#173b2f]">{datos.titulo || 'Página RFHE'}</h3>
         <p className="mt-1 break-all text-xs text-gray-500">{datos.url}</p>
+        {datos.fecha_inicio && (
+          <dl className="mt-2 flex flex-wrap gap-x-6 gap-y-1 text-sm">
+            <div className="flex gap-1.5"><dt className="font-semibold text-[#33483f]">Fecha inicio:</dt><dd>{formatearFecha(datos.fecha_inicio)}</dd></div>
+            <div className="flex gap-1.5"><dt className="font-semibold text-[#33483f]">Fecha fin:</dt><dd>{formatearFecha(datos.fecha_fin)}</dd></div>
+          </dl>
+        )}
       </div>
       {datos.tablas.map((tabla, tablaIndex) => (
         <div key={tablaIndex} className="overflow-auto rounded border border-[#e4dfd4]">
@@ -310,11 +318,12 @@ export default function RfheExtractionPage() {
   const [calendarError, setCalendarError] = useState('');
   const [loadingCalendar, setLoadingCalendar] = useState(false);
   const [calendarSort, setCalendarSort] = useState<{ campo: CalendarSortKey; direccion: 'asc' | 'desc' }>({
-    campo: 'fecha',
+    campo: 'fecha_inicio',
     direccion: 'asc',
   });
   const [calendarFilters, setCalendarFilters] = useState({
-    fecha: '',
+    fecha_inicio: '',
+    fecha_fin: '',
     categoria: '',
     nombre: '',
     provincia: '',
@@ -350,7 +359,7 @@ export default function RfheExtractionPage() {
       const data = await leerJsonApi<CalendarResult & { error?: string }>(response);
       if (!response.ok) throw new Error(data.error || 'No se pudo cargar el calendario RFHE.');
       setCalendar(data as CalendarResult);
-      setCalendarFilters({ fecha: '', categoria: '', nombre: '', provincia: '', sede: '' });
+      setCalendarFilters({ fecha_inicio: '', fecha_fin: '', categoria: '', nombre: '', provincia: '', sede: '' });
     } catch (err) {
       setCalendarError(err instanceof Error ? err.message : 'Error al cargar el calendario.');
     } finally {
@@ -395,16 +404,19 @@ export default function RfheExtractionPage() {
 
   const concursosFiltrados = (calendar?.concursos || [])
     .filter((concurso) =>
-      normalizarTexto(formatearRango(concurso.fecha_inicio, concurso.fecha_fin)).includes(normalizarTexto(calendarFilters.fecha)) &&
+      formatearFecha(concurso.fecha_inicio).includes(calendarFilters.fecha_inicio.trim()) &&
+      formatearFecha(concurso.fecha_fin).includes(calendarFilters.fecha_fin.trim()) &&
       (!calendarFilters.categoria || concurso.categoria === calendarFilters.categoria) &&
       normalizarTexto(concurso.nombre).includes(normalizarTexto(calendarFilters.nombre)) &&
       (!calendarFilters.provincia || concurso.provincia === calendarFilters.provincia) &&
       normalizarTexto(concurso.sede).includes(normalizarTexto(calendarFilters.sede))
     )
     .sort((a, b) => {
-      const comparacion = calendarSort.campo === 'fecha'
+      const comparacion = calendarSort.campo === 'fecha_inicio'
         ? compararPorInicio(a, b)
-        : a[calendarSort.campo].localeCompare(b[calendarSort.campo], 'es', { numeric: true, sensitivity: 'base' });
+        : calendarSort.campo === 'fecha_fin'
+          ? a.fecha_fin.localeCompare(b.fecha_fin) || compararPorInicio(a, b)
+          : a[calendarSort.campo].localeCompare(b[calendarSort.campo], 'es', { numeric: true, sensitivity: 'base' });
       return calendarSort.direccion === 'asc' ? comparacion : -comparacion;
     });
 
@@ -463,7 +475,8 @@ export default function RfheExtractionPage() {
               <table className="min-w-full text-left text-sm">
                 <thead className="sticky top-0 bg-[#f4f0e6] text-xs uppercase text-[#466257]">
                   <tr>
-                    {cabeceraCalendario('fecha', 'Fecha')}
+                    {cabeceraCalendario('fecha_inicio', 'Fecha inicio')}
+                    {cabeceraCalendario('fecha_fin', 'Fecha fin')}
                     {cabeceraCalendario('categoria', 'Tipo')}
                     {cabeceraCalendario('nombre', 'Concurso', 'min-w-64')}
                     {cabeceraCalendario('provincia', 'Provincia')}
@@ -473,11 +486,21 @@ export default function RfheExtractionPage() {
                   <tr className="border-t border-[#e4dfd4] bg-white">
                     <th className="px-2 py-1.5">
                       <input
-                        aria-label="Filtrar por fecha"
+                        aria-label="Filtrar por fecha de inicio"
                         type="search"
                         placeholder="dd/mm/aaaa"
-                        value={calendarFilters.fecha}
-                        onChange={(event) => setCalendarFilters({ ...calendarFilters, fecha: event.target.value })}
+                        value={calendarFilters.fecha_inicio}
+                        onChange={(event) => setCalendarFilters({ ...calendarFilters, fecha_inicio: event.target.value })}
+                        className="input w-32 text-xs font-normal normal-case"
+                      />
+                    </th>
+                    <th className="px-2 py-1.5">
+                      <input
+                        aria-label="Filtrar por fecha de fin"
+                        type="search"
+                        placeholder="dd/mm/aaaa"
+                        value={calendarFilters.fecha_fin}
+                        onChange={(event) => setCalendarFilters({ ...calendarFilters, fecha_fin: event.target.value })}
                         className="input w-32 text-xs font-normal normal-case"
                       />
                     </th>
@@ -529,7 +552,8 @@ export default function RfheExtractionPage() {
                 <tbody>
                   {concursosFiltrados.map((contest, index) => (
                     <tr key={`${contest.urlDetalle}-${index}`} className="border-t border-[#eee9df] even:bg-[#fffdfa]">
-                      <td className="whitespace-nowrap px-3 py-2">{formatearRango(contest.fecha_inicio, contest.fecha_fin)}</td>
+                      <td className="whitespace-nowrap px-3 py-2">{formatearFecha(contest.fecha_inicio)}</td>
+                      <td className="whitespace-nowrap px-3 py-2">{formatearFecha(contest.fecha_fin)}</td>
                       <td className="whitespace-nowrap px-3 py-2">{contest.categoria}</td>
                       <td className="px-3 py-2 font-medium text-[#173b2f]">{contest.nombre}</td>
                       <td className="whitespace-nowrap px-3 py-2">{contest.provincia}</td>
