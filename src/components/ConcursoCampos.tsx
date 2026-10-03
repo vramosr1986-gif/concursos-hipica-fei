@@ -1,12 +1,9 @@
 'use client';
 
-import { ESPECIALIDADES } from '@/lib/constants';
-
 /** Datos de un concurso, los mismos que publica RFHE en su calendario y ficha. */
 export type DatosConcurso = {
   nombre: string;
   tipo: string;
-  disciplina: string;
   fecha_inicio: string;
   fecha_fin: string;
   provincia: string;
@@ -16,12 +13,12 @@ export type DatosConcurso = {
 };
 
 export const CAMPOS_CONCURSO = [
-  'nombre', 'tipo', 'disciplina', 'fecha_inicio', 'fecha_fin', 'provincia', 'ubicacion', 'organizador', 'federacion',
+  'nombre', 'tipo', 'fecha_inicio', 'fecha_fin', 'provincia', 'ubicacion', 'organizador', 'federacion',
 ] as const;
 
 export function concursoVacio(): DatosConcurso {
   return {
-    nombre: '', tipo: '', disciplina: '', fecha_inicio: '', fecha_fin: '',
+    nombre: '', tipo: '', fecha_inicio: '', fecha_fin: '',
     provincia: '', ubicacion: '', organizador: '', federacion: '',
   };
 }
@@ -34,7 +31,6 @@ export function datosParaGuardar(datos: DatosConcurso) {
     fecha_inicio: datos.fecha_inicio,
     fecha_fin: datos.fecha_fin,
     tipo: limpio(datos.tipo),
-    disciplina: limpio(datos.disciplina),
     provincia: limpio(datos.provincia),
     ubicacion: limpio(datos.ubicacion),
     organizador: limpio(datos.organizador),
@@ -63,9 +59,6 @@ export function ConcursoCampos({ datos, onChange }: {
   const etiqueta = (nombre: keyof DatosConcurso, texto: string) => (
     <label htmlFor={`concurso-${nombre}`} className="mb-1.5 block text-sm font-bold">{texto}</label>
   );
-  const disciplinas = datos.disciplina && !ESPECIALIDADES.includes(datos.disciplina)
-    ? [datos.disciplina, ...ESPECIALIDADES]
-    : ESPECIALIDADES;
 
   return (
     <div className="grid gap-4 md:grid-cols-2">
@@ -73,16 +66,9 @@ export function ConcursoCampos({ datos, onChange }: {
         {etiqueta('nombre', 'Nombre del concurso *')}
         <input type="text" required {...campo('nombre')} />
       </div>
-      <div>
+      <div className="md:col-span-2">
         {etiqueta('tipo', 'Tipo')}
         <input type="text" placeholder="Ej. CDN***, CDI*" {...campo('tipo')} />
-      </div>
-      <div>
-        {etiqueta('disciplina', 'Disciplina')}
-        <select {...campo('disciplina')}>
-          <option value="">-- Seleccionar disciplina --</option>
-          {disciplinas.map((d) => <option key={d} value={d}>{d}</option>)}
-        </select>
       </div>
       <div>
         {etiqueta('fecha_inicio', 'Fecha de inicio *')}

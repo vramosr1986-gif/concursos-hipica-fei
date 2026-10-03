@@ -210,7 +210,6 @@ export default function EditarConcursoPage() {
         setFormData({
           nombre: data.nombre,
           tipo: data.tipo || '',
-          disciplina: data.disciplina || '',
           fecha_inicio: data.fecha_inicio,
           fecha_fin: data.fecha_fin,
           provincia: data.provincia || '',

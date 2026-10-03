@@ -595,7 +595,6 @@ export default function RfheExtractionPage() {
                             href={`/admin/concursos/nuevo?${new URLSearchParams({
                               nombre: contest.nombre,
                               tipo: contest.categoria,
-                              disciplina: 'Doma clásica (Dressage)',
                               fecha_inicio: contest.fecha_inicio,
                               fecha_fin: contest.fecha_fin,
                               provincia: contest.provincia,
