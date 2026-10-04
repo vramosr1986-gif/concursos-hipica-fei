@@ -254,44 +254,34 @@ export default function PuntuarPruebaPage() {
 
       {participaciones.length > 0 && (
         <div className="card overflow-hidden">
-          <div className="table-responsive">
-              <table className="table">
-                <thead>
+          <div className="overflow-x-auto">
+              <table className="w-full text-left text-sm">
+                <thead className="bg-[#f4f0e6] text-xs uppercase text-[#466257]">
                   <tr>
-                    <th className="text-center w-16">Orden</th>
-                    <th className="text-center w-16">Dorsal</th>
-                    <th>Jinete</th>
-                    <th>Caballo</th>
-                    <th>Concurso</th>
-                    <th className="text-center">Estado</th>
-                    <th className="text-right">Acciones</th>
+                    <th className="w-12 px-2 py-2 text-center" title="Orden de salida">Orden</th>
+                    <th className="w-14 px-2 py-2 text-center">Dorsal</th>
+                    <th className="px-2 py-2">Jinete / caballo</th>
+                    <th className="px-2 py-2 text-right">
+                      <span className="sr-only">Estado y puntuar</span>
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
                   {participaciones.map((p) => (
-                    <tr key={p.id} className="hover:bg-gray-50">
-                      <td className="text-center font-bold text-lg">{p.orden_salida}</td>
-                      <td className="text-center font-bold">{p.dorsal}</td>
-                      <td className="font-medium">{nombreConMarca(p.jinete, p.pendiente)}</td>
-                      <td><CaballoConBandera nombre={p.caballo} fh={p.fh_caballo} /></td>
-                      <td className="text-sm text-gray-600">
-                        {prueba.concurso?.nombre || '-'}
+                    <tr key={p.id} className="border-t border-[#eee9df] hover:bg-gray-50">
+                      <td className="px-2 py-2 text-center text-lg font-bold">{p.orden_salida}</td>
+                      <td className="px-2 py-2 text-center font-bold">{p.dorsal}</td>
+                      <td className="px-2 py-2">
+                        <span className="block font-medium">{nombreConMarca(p.jinete, p.pendiente)}</span>
+                        <span className="block text-gray-600"><CaballoConBandera nombre={p.caballo} fh={p.fh_caballo} /></span>
                       </td>
-                      <td className="text-center">
-                        {p.puntuada ? (
-                          <span className="px-2 py-1 rounded text-xs bg-green-100 text-green-800 font-medium">
-                            Puntuada
-                          </span>
-                        ) : (
-                          <span className="px-2 py-1 rounded text-xs bg-amber-100 text-amber-800 font-medium">
-                            Pendiente
-                          </span>
-                        )}
-                      </td>
-                      <td className="text-right">
+                      <td className="whitespace-nowrap px-2 py-2 text-right">
+                        <span className={`mr-2 hidden rounded px-2 py-1 text-xs font-medium sm:inline-block ${p.puntuada ? 'bg-green-100 text-green-800' : 'bg-amber-100 text-amber-800'}`}>
+                          {p.puntuada ? 'Puntuada' : 'Pendiente'}
+                        </span>
                         <Link
                           href={'/juez/prueba/' + pruebaId + '/binomio/' + p.id + (esAdmin && pjActual ? '?pj=' + pjActual : '')}
-                          className="btn btn-primary text-sm"
+                          className={`btn text-sm ${p.puntuada ? 'btn-outline' : 'btn-primary'}`}
                         >
                           {p.puntuada ? 'Editar' : 'Puntuar'}
                         </Link>
