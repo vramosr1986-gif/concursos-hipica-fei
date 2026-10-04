@@ -39,7 +39,7 @@ export default function PanelJuezPage() {
       const admin = perfil?.rol === 'admin';
       setEsAdmin(admin);
 
-      const camposPrueba = 'id, concurso_id, nombre, fecha, hora_inicio, pista, categoria, estado, concurso:concurso_id (nombre), reprise:reprise_id (nombre, codigo), participaciones (id)';
+      const camposPrueba = 'id, concurso_id, nombre, fecha, hora_inicio, pista, categoria, estado, concurso:concurso_id (nombre), reprise_id, reprise:reprise_id (nombre, codigo), participaciones (id), prueba_jueces (id)';
 
       // Juez: sus asignaciones. Admin: todas las pruebas (puede puntuar en nombre de cualquier juez).
       let filas: { letra: string; pruebaJuezId: string | null; prueba: any }[];
@@ -61,19 +61,33 @@ export default function PanelJuezPage() {
         for (const p of prueba.participaciones || []) participacionAPrueba.set(p.id, prueba.id);
       }
 
-      // Binomios ya puntuados por prueba (las notas se guardan por ejercicio: se cuentan binomios distintos).
-      const puntuadosPorPrueba = new Map<string, Set<string>>();
+      // Ejercicios de cada reprise: un binomio está puntuado solo con todas sus notas.
+      const repriseIds = Array.from(new Set(filas.map((f) => f.prueba.reprise_id).filter(Boolean)));
+      const ejerciciosPorReprise = new Map<string, number>();
+      if (repriseIds.length > 0) {
+        const { data: ejs } = await supabase.from('ejercicios_reprise').select('reprise_id').in('reprise_id', repriseIds);
+        for (const e of ejs || []) ejerciciosPorReprise.set(e.reprise_id, (ejerciciosPorReprise.get(e.reprise_id) || 0) + 1);
+      }
+
+      // Notas por binomio (del juez; el admin, de todos los jueces de la prueba).
+      const notasPorBinomio = new Map<string, number>();
       const ids = Array.from(participacionAPrueba.keys());
       for (let i = 0; i < ids.length; i += 300) {
         let consulta = supabase.from('puntuaciones').select('participacion_id').in('participacion_id', ids.slice(i, i + 300));
         if (!admin) consulta = consulta.in('prueba_juez_id', filas.map((f) => f.pruebaJuezId as string));
         const { data: notas } = await consulta;
-        for (const n of notas || []) {
-          const pruebaId = participacionAPrueba.get(n.participacion_id);
-          if (!pruebaId) continue;
-          if (!puntuadosPorPrueba.has(pruebaId)) puntuadosPorPrueba.set(pruebaId, new Set());
-          puntuadosPorPrueba.get(pruebaId)!.add(n.participacion_id);
+        for (const n of notas || []) notasPorBinomio.set(n.participacion_id, (notasPorBinomio.get(n.participacion_id) || 0) + 1);
+      }
+      const puntuadosPorPrueba = new Map<string, Set<string>>();
+      for (const { prueba } of filas) {
+        const ejercicios = ejerciciosPorReprise.get(prueba.reprise_id) || 0;
+        const jueces = admin ? (prueba.prueba_jueces || []).length : 1;
+        const necesarias = ejercicios * jueces;
+        const completos = new Set<string>();
+        for (const p of prueba.participaciones || []) {
+          if (necesarias > 0 && (notasPorBinomio.get(p.id) || 0) >= necesarias) completos.add(p.id);
         }
+        puntuadosPorPrueba.set(prueba.id, completos);
       }
 
       setPruebas(filas.map(({ letra, prueba }) => ({

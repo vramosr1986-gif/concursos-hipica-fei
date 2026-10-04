@@ -6,6 +6,14 @@ import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 import { JuezDeLaPrueba, pruebaJuezDeLaUrl, resolverPuntuador } from '@/lib/juez-actual';
 import { CaballoConBandera } from '@/components/BanderaFH';
+
+/** Pendiente: ninguna nota. Puntuando: le faltan notas. Puntuada: todos los ejercicios con nota. */
+type EstadoNotas = 'pendiente' | 'puntuando' | 'puntuada';
+const ESTADO_NOTAS: Record<EstadoNotas, { texto: string; clase: string }> = {
+  pendiente: { texto: 'Pendiente', clase: 'bg-gray-100 text-gray-700' },
+  puntuando: { texto: 'Puntuando', clase: 'bg-amber-100 text-amber-800' },
+  puntuada: { texto: 'Puntuada', clase: 'bg-green-100 text-green-800' },
+};
 import { esPendienteConfirmacion, nombreConMarca } from '@/lib/rfhe-pruebas';
 
 type Concurso = {
@@ -47,7 +55,9 @@ type Participacion = {
   jinete: string;
   caballo: string;
   fh_caballo: string | null;
-  puntuada: boolean;
+  /** Notas puestas por este juez / ejercicios de la reprise. */
+  notas: number;
+  estado: EstadoNotas;
   pendiente: boolean;
 };
 
@@ -58,6 +68,7 @@ export default function PuntuarPruebaPage() {
   const [prueba, setPrueba] = useState<Prueba | null>(null);
   const [participaciones, setParticipaciones] = useState<Participacion[]>([]);
   const [loading, setLoading] = useState(true);
+  const [ejerciciosReprise, setEjerciciosReprise] = useState(0);
   const [error, setError] = useState('');
   // Admin: con qué juez puntúa (?pj= en la URL) y lista de jueces de la prueba.
   const [pj, setPj] = useState<string | null>(null);
@@ -147,10 +158,19 @@ export default function PuntuarPruebaPage() {
 
         const parts: Participacion[] = [];
         const ids = (partsData || []).map((p) => p.id);
-        const { data: hechas } = ids.length > 0
-          ? await supabase.from('puntuaciones').select('participacion_id').eq('prueba_juez_id', pruebaJuez.id).in('participacion_id', ids)
-          : { data: [] as { participacion_id: string }[] };
-        const puntuadas = new Set((hechas || []).map((h) => h.participacion_id));
+        const [{ data: hechas }, { count: totalEjercicios }] = await Promise.all([
+          ids.length > 0
+            ? supabase.from('puntuaciones').select('participacion_id').eq('prueba_juez_id', pruebaJuez.id).in('participacion_id', ids)
+            : Promise.resolve({ data: [] as { participacion_id: string }[] }),
+          (pruebaData as any).reprise_id
+            ? supabase.from('ejercicios_reprise').select('id', { count: 'exact', head: true }).eq('reprise_id', (pruebaData as any).reprise_id)
+            : Promise.resolve({ count: 0 }),
+        ]);
+        const notasPorBinomio = new Map<string, number>();
+        for (const h of hechas || []) notasPorBinomio.set(h.participacion_id, (notasPorBinomio.get(h.participacion_id) || 0) + 1);
+        const estadoDe = (notas: number): EstadoNotas =>
+          notas === 0 ? 'pendiente' : totalEjercicios && notas >= totalEjercicios ? 'puntuada' : 'puntuando';
+        setEjerciciosReprise(totalEjercicios || 0);
 
         for (const p of partsData || []) {
           parts.push({
@@ -160,7 +180,8 @@ export default function PuntuarPruebaPage() {
             jinete: (p as any).inscripcion?.binomio?.nombre_jinete || '-',
             caballo: (p as any).inscripcion?.binomio?.nombre_caballo || '-',
             fh_caballo: (p as any).inscripcion?.binomio?.fh_caballo || null,
-            puntuada: puntuadas.has(p.id),
+            notas: notasPorBinomio.get(p.id) || 0,
+            estado: estadoDe(notasPorBinomio.get(p.id) || 0),
             pendiente: esPendienteConfirmacion((p as any).observaciones),
           });
         }
@@ -205,7 +226,7 @@ export default function PuntuarPruebaPage() {
   }
   if (!prueba) return <div className="container py-8 text-center">Prueba no encontrada</div>;
 
-  const totalPuntuadas = participaciones.filter((p) => p.puntuada).length;
+  const totalPuntuadas = participaciones.filter((p) => p.estado === 'puntuada').length;
 
   return (
     <div className="container max-w-5xl py-8">
@@ -276,14 +297,15 @@ export default function PuntuarPruebaPage() {
                         <span className="block text-gray-600"><CaballoConBandera nombre={p.caballo} fh={p.fh_caballo} /></span>
                       </td>
                       <td className="whitespace-nowrap px-2 py-2 text-right">
-                        <span className={`mr-2 hidden rounded px-2 py-1 text-xs font-medium sm:inline-block ${p.puntuada ? 'bg-green-100 text-green-800' : 'bg-amber-100 text-amber-800'}`}>
-                          {p.puntuada ? 'Puntuada' : 'Pendiente'}
+                        <span className={`mr-2 hidden rounded px-2 py-1 text-xs font-medium sm:inline-block ${ESTADO_NOTAS[p.estado].clase}`}>
+                          {ESTADO_NOTAS[p.estado].texto}
+                          {p.estado === 'puntuando' && ejerciciosReprise > 0 && ` ${p.notas}/${ejerciciosReprise}`}
                         </span>
                         <Link
                           href={'/juez/prueba/' + pruebaId + '/binomio/' + p.id + (esAdmin && pjActual ? '?pj=' + pjActual : '')}
-                          className={`btn text-sm ${p.puntuada ? 'btn-outline' : 'btn-primary'}`}
+                          className={`btn text-sm ${p.estado === 'puntuada' ? 'btn-outline' : 'btn-primary'}`}
                         >
-                          {p.puntuada ? 'Editar' : 'Puntuar'}
+                          {p.estado === 'puntuada' ? 'Editar' : p.estado === 'puntuando' ? 'Seguir' : 'Puntuar'}
                         </Link>
                       </td>
                     </tr>
