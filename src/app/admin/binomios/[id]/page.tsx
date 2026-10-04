@@ -13,7 +13,6 @@ type Binomio = {
   id: string;
   nombre_jinete: string;
   nombre_caballo: string;
-  licencia_federativa: string | null;
   ldn_jinete: string | null;
   lac_caballo: string | null;
 };
@@ -29,7 +28,6 @@ export default function EditarBinomioPage() {
   const [formData, setFormData] = useState({
     nombre_jinete: '',
     nombre_caballo: '',
-    licencia_federativa: '',
     ldn_jinete: '',
     lac_caballo: '',
     fh_jinete: '',
@@ -44,7 +42,7 @@ export default function EditarBinomioPage() {
       try {
         const { data, error: dbErr } = await supabase
           .from('binomios')
-          .select('id, nombre_jinete, nombre_caballo, licencia_federativa, ldn_jinete, lac_caballo, fh_jinete, fh_caballo, fecha_nacimiento_jinete, anio_nacimiento_caballo, consentimiento_datos_at')
+          .select('id, nombre_jinete, nombre_caballo, ldn_jinete, lac_caballo, fh_jinete, fh_caballo, fecha_nacimiento_jinete, anio_nacimiento_caballo, consentimiento_datos_at')
           .eq('id', binomioId)
           .single();
 
@@ -54,7 +52,6 @@ export default function EditarBinomioPage() {
         setFormData({
           nombre_jinete: data.nombre_jinete || '',
           nombre_caballo: data.nombre_caballo || '',
-          licencia_federativa: data.licencia_federativa || '',
           ldn_jinete: data.ldn_jinete || '',
           lac_caballo: data.lac_caballo || '',
           fh_jinete: data.fh_jinete || '',
@@ -95,7 +92,6 @@ export default function EditarBinomioPage() {
           id: binomioId,
           nombre_jinete: formData.nombre_jinete.trim(),
           nombre_caballo: formData.nombre_caballo.trim(),
-          licencia_federativa: formData.licencia_federativa.trim() || null,
           ldn_jinete: formData.ldn_jinete.trim() || null,
           lac_caballo: formData.lac_caballo.trim() || null,
           fh_jinete: formData.fh_jinete || null,
@@ -164,20 +160,6 @@ export default function EditarBinomioPage() {
             />
           </div>
 
-          <div>
-            <label className="block text-sm font-bold mb-2">
-              Licencia federativa
-            </label>
-            <input
-              type="text"
-              value={formData.licencia_federativa}
-              onChange={(e) =>
-                setFormData({ ...formData, licencia_federativa: e.target.value })
-              }
-              className="input w-full"
-            />
-          </div>
-
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div>
               <label className="block text-sm font-bold mb-2">
@@ -193,7 +175,7 @@ export default function EditarBinomioPage() {
                 className="input w-full"
               />
               <ComprobarRfhe tipo="jinete" nombre={formData.nombre_jinete} codigo={formData.ldn_jinete}
-                onUsar={(ldn_jinete) => setFormData((f) => ({ ...f, ldn_jinete }))} />
+                onUsar={(ldn_jinete, nombre_jinete) => setFormData((f) => ({ ...f, ldn_jinete, nombre_jinete }))} />
             </div>
 
             <div>
@@ -210,7 +192,7 @@ export default function EditarBinomioPage() {
                 className="input w-full"
               />
               <ComprobarRfhe tipo="caballo" nombre={formData.nombre_caballo} codigo={formData.lac_caballo}
-                onUsar={(lac_caballo) => setFormData((f) => ({ ...f, lac_caballo }))} />
+                onUsar={(lac_caballo, nombre_caballo) => setFormData((f) => ({ ...f, lac_caballo, nombre_caballo }))} />
             </div>
           </div>
 

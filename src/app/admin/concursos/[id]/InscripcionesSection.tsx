@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { supabase } from '@/lib/supabase';
+import { inscribirEnConcurso } from '@/lib/inscribir';
 import { esPendienteConfirmacion, nombreConMarca } from '@/lib/rfhe-pruebas';
 import { CaballoConBandera } from '@/components/BanderaFH';
 
@@ -101,39 +102,12 @@ export function InscripcionesSection({ concursoId, esRfhe }: { concursoId: strin
     setError('');
     setOcupado(true);
     try {
-      const headers = await cabecerasAdmin();
-      let dorsal = Math.max(0, ...inscripciones.map((i) => i.dorsal || 0));
-      // La categoría la marca la prueba (su reprise) en la que se inscribe.
-      const primeraPrueba = pruebasConcurso.find((p) => pruebasElegidas.has(p.id));
+      const pruebas = pruebasConcurso.filter((p) => pruebasElegidas.has(p.id));
       for (const b of binomios) {
-        dorsal += 1;
-        const res = await fetch('/api/inscripciones', {
-          method: 'POST',
-          headers,
-          body: JSON.stringify({
-            binomio_id: b.id,
-            concurso_id: concursoId,
-            dorsal,
-            orden_salida: dorsal,
-            categoria: primeraPrueba?.categoria || null,
-            categoria_edad_id: primeraPrueba?.categoria_edad_id || null,
-          }),
-        });
-        const creada = await res.json().catch(() => ({}));
-        if (!res.ok) {
-          throw new Error(`${b.nombre_jinete} / ${b.nombre_caballo}: ${creada.error || 'no se pudo inscribir'}`);
-        }
-        for (const pruebaId of pruebasElegidas) {
-          const { data: ultimos } = await supabase
-            .from('participaciones').select('orden_salida').eq('prueba_id', pruebaId)
-            .order('orden_salida', { ascending: false }).limit(1);
-          const { error: errPart } = await supabase.from('participaciones').insert({
-            prueba_id: pruebaId,
-            inscripcion_id: creada.id,
-            orden_salida: (ultimos?.[0]?.orden_salida || 0) + 1,
-            estado: 'pendiente',
-          });
-          if (errPart) throw new Error(`${b.nombre_jinete}: inscrito, pero no se pudo meter en una prueba (${errPart.message})`);
+        try {
+          await inscribirEnConcurso(concursoId, b.id, pruebas);
+        } catch (err) {
+          throw new Error(`${b.nombre_jinete} / ${b.nombre_caballo}: ${err instanceof Error ? err.message : 'no se pudo inscribir'}`);
         }
       }
       setMarcados(new Set());

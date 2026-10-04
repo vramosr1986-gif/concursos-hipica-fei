@@ -14,8 +14,8 @@ type Props = {
   nombre: string;
   /** LDN (jinete) o LAC (caballo) escrito en el formulario. */
   codigo: string;
-  /** Rellena el código con el de la RFHE. */
-  onUsar: (codigo: string) => void;
+  /** Rellena el código y el nombre con los de la RFHE. */
+  onUsar: (codigo: string, nombre: string) => void;
 };
 
 /** Coincide si todas las palabras de un nombre están en el otro ("Lucía Gonzalez-Sabariegos" ⊂ "Gonzalez-Sabariegos Hdez., Lucía"). */
@@ -76,7 +76,7 @@ export function ComprobarRfhe({ tipo, nombre, codigo, onUsar }: Props) {
     } else if (cod) {
       veredicto = { ok: false, texto: `No coincide: la RFHE no devuelve el ${etiqueta} ${cod} al buscar «${busqueda}».` };
     } else if (porNombre.length === 1) {
-      veredicto = { ok: true, texto: `Encontrado en la RFHE: ${porNombre[0].nombre} · ${etiqueta} ${porNombre[0].codigo}. Falta ponerlo en el formulario.` };
+      veredicto = { ok: true, texto: `Encontrado en la RFHE: ${porNombre[0].nombre} · ${etiqueta} ${porNombre[0].codigo}. Pulsa «Usar estos datos» para ponerlo en el formulario.` };
     } else if (resultados.length === 0) {
       veredicto = { ok: false, texto: `La RFHE no tiene ningún ${tipo} al buscar «${busqueda}». Revisa cómo está escrito.` };
     }
@@ -124,11 +124,11 @@ export function ComprobarRfhe({ tipo, nombre, codigo, onUsar }: Props) {
                     <strong className="font-mono">{r.codigo}</strong> · {r.nombre}
                     {r.detalle && <span className="block text-xs text-gray-500">{r.detalle}</span>}
                   </span>
-                  {elegido ? (
+                  {elegido && r.nombre === nombre.trim() ? (
                     <span className="flex items-center gap-1 text-xs text-green-700"><CheckCircle2 className="size-3.5" aria-hidden="true" /> El puesto</span>
                   ) : (
-                    <button type="button" onClick={() => onUsar(r.codigo)} className="btn btn-outline btn-sm whitespace-nowrap">
-                      Usar este {etiqueta}
+                    <button type="button" onClick={() => onUsar(r.codigo, r.nombre)} className="btn btn-outline btn-sm whitespace-nowrap" title={`Pone el ${etiqueta} ${r.codigo} y el nombre «${r.nombre}» en el formulario`}>
+                      Usar estos datos
                     </button>
                   )}
                 </li>
