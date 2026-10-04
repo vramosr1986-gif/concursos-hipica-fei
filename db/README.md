@@ -1,5 +1,22 @@
 # Reconstruccion de la Base de Datos
 
+## Esquema actual (la referencia buena)
+
+`db/esquema_actual.sql` refleja la estructura **real** de la base de datos de Supabase
+(tablas, columnas, tipos, valores por defecto y claves). Se genera leyendo la base de
+datos, no a mano. Para actualizarlo despues de cualquier migracion:
+
+    node scripts/exportar-esquema.mjs
+
+No incluye politicas RLS, funciones ni el codigo de las vistas: esos estan en las
+migraciones numeradas de la raiz (`006_...sql` a `049_...sql`), que son el historial
+de cambios aplicado sobre los scripts de este directorio.
+
+> Los scripts `00`–`08` de este directorio son anteriores a esas migraciones: para
+> recrear la base de datos hay que ejecutarlos y despues las migraciones en orden.
+
+---
+
 Este directorio contiene todos los scripts necesarios para **recrear la base de datos desde cero** en caso de desastre.
 
 ## Antes de empezar
