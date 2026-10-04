@@ -29,14 +29,16 @@ Este directorio contiene todos los scripts necesarios para **recrear la base de 
 2. Pulsa "Add user" -> "Create new user"
 3. Crea uno a uno estos usuarios (marca "Auto Confirm User"):
 
-| Email | Password | Rol |
-|---|---|---|
-| vramosr1986@gmail.com | 2ndLevel.1986! | admin |
-| juez1@test.com | test1234 | juez |
-| juez2@test.com | test1234 | juez |
-| juez3@test.com | test1234 | juez |
-| juez4@test.com | test1234 | juez |
-| juez5@test.com | test1234 | juez |
+| Email | Rol |
+|---|---|
+| vramosr1986@gmail.com | admin |
+| juez1@test.com | juez |
+| juez2@test.com | juez |
+| juez3@test.com | juez |
+| juez4@test.com | juez |
+| juez5@test.com | juez |
+
+Elige para cada uno una contraseña segura en el momento de crearlo. No la escribas en ningún fichero del proyecto.
 
 ## Recrear la base de datos
 

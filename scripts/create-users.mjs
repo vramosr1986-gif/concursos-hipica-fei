@@ -32,16 +32,22 @@ if (!supabaseUrl || !serviceRoleKey) {
 
 const supabase = createClient(supabaseUrl, serviceRoleKey);
 
+// Las contraseñas NO se guardan en el código: CREATE_ADMIN_PASSWORD y CREATE_JUEZ_PASSWORD.
+if (!process.env.CREATE_ADMIN_PASSWORD || !process.env.CREATE_JUEZ_PASSWORD) {
+  console.error('Define CREATE_ADMIN_PASSWORD y CREATE_JUEZ_PASSWORD antes de ejecutar este script.');
+  process.exit(1);
+}
+
 const usuarios = [
   {
     email: 'admin@concursosfei.com',
-    password: 'Admin123!',
+    password: process.env.CREATE_ADMIN_PASSWORD,
     nombre: 'Administrador FEI',
     role: 'admin',
   },
   {
     email: 'juez@concursosfei.com',
-    password: 'Juez123!',
+    password: process.env.CREATE_JUEZ_PASSWORD,
     nombre: 'Juez de Prueba',
     role: 'judge',
   },

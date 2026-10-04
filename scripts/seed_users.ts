@@ -37,13 +37,22 @@ type SeedUser = {
   rol: 'admin' | 'juez';
 };
 
+// Las contraseñas NO se guardan en el código: se pasan por variables de entorno.
+//   SEED_ADMIN_PASSWORD=... SEED_JUEZ_PASSWORD=... npx tsx scripts/seed_users.ts
+const ADMIN_PASSWORD = process.env.SEED_ADMIN_PASSWORD || '';
+const JUEZ_PASSWORD = process.env.SEED_JUEZ_PASSWORD || '';
+if (!ADMIN_PASSWORD || !JUEZ_PASSWORD) {
+  console.error('Define SEED_ADMIN_PASSWORD y SEED_JUEZ_PASSWORD antes de ejecutar este script.');
+  process.exit(1);
+}
+
 const USERS: SeedUser[] = [
-  { email: 'vramosr1986@gmail.com', password: '2ndLevel.1986!', nombre: 'Victor Ramos', rol: 'admin' },
-  { email: 'juez1@test.com', password: 'test1234', nombre: 'Ana Garcia', rol: 'juez' },
-  { email: 'juez2@test.com', password: 'test1234', nombre: 'Luis Perez', rol: 'juez' },
-  { email: 'juez3@test.com', password: 'test1234', nombre: 'Carlos Ruiz', rol: 'juez' },
-  { email: 'juez4@test.com', password: 'test1234', nombre: 'Marta Lopez', rol: 'juez' },
-  { email: 'juez5@test.com', password: 'test1234', nombre: 'Pedro Sanchez', rol: 'juez' },
+  { email: 'vramosr1986@gmail.com', password: ADMIN_PASSWORD, nombre: 'Victor Ramos', rol: 'admin' },
+  { email: 'juez1@test.com', password: JUEZ_PASSWORD, nombre: 'Ana Garcia', rol: 'juez' },
+  { email: 'juez2@test.com', password: JUEZ_PASSWORD, nombre: 'Luis Perez', rol: 'juez' },
+  { email: 'juez3@test.com', password: JUEZ_PASSWORD, nombre: 'Carlos Ruiz', rol: 'juez' },
+  { email: 'juez4@test.com', password: JUEZ_PASSWORD, nombre: 'Marta Lopez', rol: 'juez' },
+  { email: 'juez5@test.com', password: JUEZ_PASSWORD, nombre: 'Pedro Sanchez', rol: 'juez' },
 ];
 
 async function crearUsuario(u: SeedUser) {
@@ -98,12 +107,12 @@ async function main() {
 
   console.log('\n=== COMPLETADO ===');
   console.log('\nUsuarios creados:');
-  console.log('  admin: vramosr1986@gmail.com / 2ndLevel.1986!');
-  console.log('  juez1: juez1@test.com / test1234');
-  console.log('  juez2: juez2@test.com / test1234');
-  console.log('  juez3: juez3@test.com / test1234');
-  console.log('  juez4: juez4@test.com / test1234');
-  console.log('  juez5: juez5@test.com / test1234');
+  console.log('  admin: vramosr1986@gmail.com');
+  console.log('  juez1: juez1@test.com');
+  console.log('  juez2: juez2@test.com');
+  console.log('  juez3: juez3@test.com');
+  console.log('  juez4: juez4@test.com');
+  console.log('  juez5: juez5@test.com');
 }
 
 main().catch(console.error);

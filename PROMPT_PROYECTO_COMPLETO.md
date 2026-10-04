@@ -161,7 +161,7 @@ Plataforma serverless full-stack para gestión completa de concursos de doma cl�
 
 ## 🐛 Problemas Conocidos Pendientes (a fecha 2026-09-07)
 - [ ] Login de juez/admin: reportado como "no va" desde el navegador; pendiente de diagnosticar
-  paso a paso (verificar que `admin@concursosfei.com` / `Admin123!` autentica y que el Navbar
+  paso a paso (verificar que `admin@concursosfei.com` (con su contraseña) autentica y que el Navbar
   resuelve el rol correctamente vía `users`)
 - [ ] `/admin/concursos/[id]` (Editar Concurso) solo tiene el formulario básico
   (nombre, fechas, ubicación, organizador). **Faltan las secciones de gestión de:**
@@ -305,8 +305,8 @@ Usuarios de prueba creados con `scripts/create-users.mjs` (cambiar la contraseñ
 
 | Rol | Email | Contraseña |
 |-----|-------|------------|
-| Admin | admin@concursosfei.com | Admin123! |
-| Juez | juez@concursosfei.com | Juez123! |
+| Admin | admin@concursosfei.com | (no se guarda aquí) |
+| Juez | juez@concursosfei.com | (no se guarda aquí) |
 
 > El registro público (`/signup`) está deshabilitado. Nuevos jueces/admins se crean
 > exclusivamente desde `/admin/usuarios`, estando logueado como admin.
