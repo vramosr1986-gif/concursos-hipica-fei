@@ -88,14 +88,34 @@ export function validarUrl(valor: unknown, campo: string): URL {
 
 const CA_RFHE = [...rootCertificates, RAPIDSSL_INTERMEDIATE_PEM];
 
-export function descargar(url: URL): Promise<{ bytes: Buffer; contentType: string }> {
+/**
+ * Formulario codificado en Latin-1 (windows-1252), como lo envía la web de la
+ * RFHE: con UTF-8 no encuentra apellidos con tilde o ñ ("Pérez", "Muñoz").
+ */
+function codificarLatin1(campos: Record<string, string>): string {
+  const codificar = (texto: string) => Array.from(texto).map((c) => {
+    const n = c.charCodeAt(0);
+    if (/[A-Za-z0-9\-_.~]/.test(c)) return c;
+    if (c === ' ') return '+';
+    return n < 256 ? `%${n.toString(16).toUpperCase().padStart(2, '0')}` : '';
+  }).join('');
+  return Object.entries(campos).map(([k, v]) => `${codificar(k)}=${codificar(v)}`).join('&');
+}
+
+/** GET de una página RFHE; con `formulario`, POST como lo envía su web. */
+export function descargar(url: URL, formulario?: Record<string, string>): Promise<{ bytes: Buffer; contentType: string }> {
+  const cuerpo = formulario ? codificarLatin1(formulario) : null;
   return new Promise((resolve, reject) => {
     const req = httpsRequest(
       url,
       {
+        method: cuerpo ? 'POST' : 'GET',
         ca: CA_RFHE,
         timeout: TIMEOUT_MS,
-        headers: { 'User-Agent': 'ConcursosHipica/1.0 (RFHE import preview)' },
+        headers: {
+          'User-Agent': 'ConcursosHipica/1.0 (RFHE import preview)',
+          ...(cuerpo ? { 'Content-Type': 'application/x-www-form-urlencoded', 'Content-Length': String(Buffer.byteLength(cuerpo)) } : {}),
+        },
       },
       (res) => {
         const status = res.statusCode || 0;
@@ -136,7 +156,7 @@ export function descargar(url: URL): Promise<{ bytes: Buffer; contentType: strin
       req.destroy(new Error('La consulta a RFHE agotó el tiempo de espera'));
     });
     req.on('error', reject);
-    req.end();
+    req.end(cuerpo ?? undefined);
   });
 }
 
@@ -361,7 +381,11 @@ export function decodificarHtml(bytes: Buffer, contentType: string): string {
   const encabezado = bytes.subarray(0, 2048).toString('ascii');
   const codificacionLatin = /charset\s*=\s*["']?(?:iso-8859-1|latin-1|latin1|windows-1252)/i;
   const esLatin = codificacionLatin.test(contentType) || codificacionLatin.test(encabezado);
-  return new TextDecoder(esLatin ? 'windows-1252' : 'utf-8').decode(bytes);
+  if (esLatin) return new TextDecoder('windows-1252').decode(bytes);
+  // Algunas páginas de CashBox no declaran codificación y vienen en Latin-1:
+  // si como UTF-8 salen caracteres inválidos, se leen como windows-1252.
+  const utf8 = new TextDecoder('utf-8').decode(bytes);
+  return utf8.includes('�') ? new TextDecoder('windows-1252').decode(bytes) : utf8;
 }
 
 // Algunas páginas RFHE (p. ej. RFHECONLISINS) solo contienen un salto por JavaScript
@@ -392,4 +416,38 @@ export async function extraer(url: URL) {
     }
     return { tipo: 'html' as const, datos: extraerHtml(actual.toString(), html) };
   }
+}
+
+// ---------------------------------------------------------------------------
+// Buscadores públicos de licencias de la RFHE (jinetes por apellidos, caballos
+// por el principio del nombre). Los resultados vienen en <input value="...">.
+// ---------------------------------------------------------------------------
+
+export type LicenciaJinete = { ldn: string; anio: string; nombre: string; categoria: string };
+export type LicenciaCaballo = { lac: string; anio: string; nombre: string; edad: string; capa: string; raza: string; sexo: string };
+
+const BUSCADOR = new URL('https://www.cbservicios.net/Magic94Scripts/mgrqispi94.dll');
+
+function filasDeResultados(html: string): string[][] {
+  const $ = load(html);
+  return $('tr').toArray()
+    .map((row) => $(row).children('td').toArray().map((td) => ($(td).find('input').attr('value') ?? $(td).text()).replace(/\s+/g, ' ').trim()))
+    .filter((celdas) => celdas.length >= 4 && /^\d{3,}$/.test(celdas[0]));
+}
+
+export async function buscarJinetes(apellidos: string): Promise<LicenciaJinete[]> {
+  const { bytes, contentType } = await descargar(BUSCADOR, {
+    APPNAME: 'CBRFHE', PRGNAME: 'RFHEBUSJIN02', ARGUMENTS: 'APE,FIN', FIN: 'FIN', APE: apellidos,
+  });
+  // No se devuelven identificación ni nacimiento (la RFHE los muestra recortados).
+  return filasDeResultados(decodificarHtml(bytes, contentType))
+    .map(([ldn, anio, nombre, categoria]) => ({ ldn, anio, nombre, categoria }));
+}
+
+export async function buscarCaballos(nombre: string): Promise<LicenciaCaballo[]> {
+  const { bytes, contentType } = await descargar(BUSCADOR, {
+    APPNAME: 'CBRFHE', PRGNAME: 'RFHEBUSCAB02', ARGUMENTS: 'NOM,EDD,EDH,FIN', FIN: 'FIN', NOM: nombre, EDD: '0', EDH: '999',
+  });
+  return filasDeResultados(decodificarHtml(bytes, contentType))
+    .map(([lac, anio, nom, edad, capa, raza, sexo]) => ({ lac, anio, nombre: nom, edad, capa, raza, sexo }));
 }

@@ -7,7 +7,7 @@ import { SelectorFederacion } from '@/components/BanderaFH';
 import { fetchConSesion } from '@/lib/juez-actual';
 import { FechasConPermiso, FechasNacimiento, fechasParaGuardar } from '@/components/FechasConPermiso';
 import { supabase } from '@/lib/supabase';
-import { ConsultaRfhe } from '@/components/ConsultaRfhe';
+import { ComprobarRfhe } from '@/components/ComprobarRfhe';
 
 type Binomio = {
   id: string;
@@ -178,7 +178,7 @@ export default function EditarBinomioPage() {
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div>
               <label className="block text-sm font-bold mb-2">
                 LDN del jinete
@@ -192,9 +192,8 @@ export default function EditarBinomioPage() {
                 }
                 className="input w-full"
               />
-              <p className="text-xs text-gray-500 mt-1">
-                Número de licencia de RFHE
-              </p>
+              <ComprobarRfhe tipo="jinete" nombre={formData.nombre_jinete} codigo={formData.ldn_jinete}
+                onUsar={(ldn_jinete) => setFormData((f) => ({ ...f, ldn_jinete }))} />
             </div>
 
             <div>
@@ -210,9 +209,8 @@ export default function EditarBinomioPage() {
                 }
                 className="input w-full"
               />
-              <p className="text-xs text-gray-500 mt-1">
-                Número de registro de RFHE
-              </p>
+              <ComprobarRfhe tipo="caballo" nombre={formData.nombre_caballo} codigo={formData.lac_caballo}
+                onUsar={(lac_caballo) => setFormData((f) => ({ ...f, lac_caballo }))} />
             </div>
           </div>
 
@@ -246,7 +244,6 @@ export default function EditarBinomioPage() {
                 🔍 Buscar LAC
               </button>
             </div>
-            <ConsultaRfhe />
           </div>
 
           <div className="flex justify-end gap-3 pt-6">

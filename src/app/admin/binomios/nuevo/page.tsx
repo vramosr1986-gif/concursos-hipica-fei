@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { SelectorFederacion } from '@/components/BanderaFH';
 import { fetchConSesion } from '@/lib/juez-actual';
-import { buscarCaballoEnRfhe } from '@/lib/rfhe-busqueda';
+import { ComprobarRfhe } from '@/components/ComprobarRfhe';
 import { FechasConPermiso, FechasNacimiento, fechasParaGuardar } from '@/components/FechasConPermiso';
 
 export default function NuevoBinomioPage() {
@@ -25,55 +25,6 @@ export default function NuevoBinomioPage() {
 
   const [error, setError] = useState('');
   const [guardando, setGuardando] = useState(false);
-
-  const buscarJineteRfhe = () => {
-    const nombre = formData.nombre_jinete.trim();
-    if (!nombre) {
-      setError('Escribe el nombre del jinete antes de buscarlo en RFHE');
-      return;
-    }
-
-    const apellidos = nombre.includes(',')
-      ? nombre.split(',')[0].trim()
-      : nombre.split(/\s+/).slice(-1)[0];
-    const target = `rfhe-jinete-${Date.now()}`;
-    window.open('', target);
-
-    const form = document.createElement('form');
-    form.method = 'POST';
-    form.action = 'https://www.cbservicios.net/Magic94Scripts/mgrqispi94.dll?';
-    form.target = target;
-
-    const campos = {
-      APPNAME: 'CBRFHE',
-      PRGNAME: 'RFHEBUSJIN02',
-      ARGUMENTS: 'APE,FIN',
-      FIN: 'FIN',
-      APE: apellidos,
-    };
-
-    Object.entries(campos).forEach(([key, value]) => {
-      const input = document.createElement('input');
-      input.type = 'hidden';
-      input.name = key;
-      input.value = value;
-      form.appendChild(input);
-    });
-
-    document.body.appendChild(form);
-    form.submit();
-    form.remove();
-  };
-
-  const abrirBusquedaCaballoRfhe = () => {
-    const nombre = formData.nombre_caballo.trim();
-    if (!nombre) {
-      setError('Escribe el nombre del caballo antes de buscarlo en RFHE');
-      return;
-    }
-    setError('');
-    buscarCaballoEnRfhe(nombre);
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -184,14 +135,12 @@ export default function NuevoBinomioPage() {
                 <label className="text-sm font-bold" htmlFor="ldn_jinete">
                   LDN del jinete
                 </label>
-                <button type="button" onClick={buscarJineteRfhe} className="btn btn-sm btn-outline">
-                  Buscar RFHE
-                </button>
               </div>
               <input id="ldn_jinete" type="text" placeholder="Ej. 283953" value={formData.ldn_jinete}
                 onChange={(e) => setFormData({ ...formData, ldn_jinete: e.target.value })}
                 className="input w-full" />
-              <p className="mt-1 text-xs text-gray-500">Busca usando los apellidos y copia la LDN del resultado correcto.</p>
+              <ComprobarRfhe tipo="jinete" nombre={formData.nombre_jinete} codigo={formData.ldn_jinete}
+                onUsar={(ldn_jinete) => setFormData((f) => ({ ...f, ldn_jinete }))} />
             </div>
 
             <div>
@@ -199,14 +148,12 @@ export default function NuevoBinomioPage() {
                 <label className="text-sm font-bold" htmlFor="lac_caballo">
                   LAC del caballo
                 </label>
-                <button type="button" onClick={abrirBusquedaCaballoRfhe} className="btn btn-sm btn-outline">
-                  Buscar RFHE
-                </button>
               </div>
               <input id="lac_caballo" type="text" placeholder="Ej. 080640" value={formData.lac_caballo}
                 onChange={(e) => setFormData({ ...formData, lac_caballo: e.target.value })}
                 className="input w-full" />
-              <p className="mt-1 text-xs text-gray-500">Abre la búsqueda con el nombre del caballo ya puesto; copia el LAC del resultado correcto.</p>
+              <ComprobarRfhe tipo="caballo" nombre={formData.nombre_caballo} codigo={formData.lac_caballo}
+                onUsar={(lac_caballo) => setFormData((f) => ({ ...f, lac_caballo }))} />
             </div>
           </div>
 
