@@ -106,25 +106,35 @@ export function nombreFederacion(codigo: string | null | undefined): string | nu
   return codigo ? FEDERACIONES[codigo.toUpperCase()]?.nombre || null : null;
 }
 
-/** Bandera pequeña de la comunidad; si el código no se conoce, muestra el código. */
-export function BanderaFH({ codigo, className = '' }: { codigo: string | null | undefined; className?: string }) {
+/**
+ * Bandera pequeña de la comunidad con su código (VA, AR, CT...) al lado:
+ * varias banderas se parecen mucho en pequeño. Si el código no se conoce, solo el código.
+ */
+export function BanderaFH({ codigo, conCodigo = true, className = '' }: {
+  codigo: string | null | undefined;
+  conCodigo?: boolean;
+  className?: string;
+}) {
   if (!codigo) return null;
-  const fed = FEDERACIONES[codigo.toUpperCase()];
+  const cod = codigo.toUpperCase();
+  const fed = FEDERACIONES[cod];
   if (!fed) {
-    return <span className={`inline-block rounded border border-gray-300 px-1 text-[0.65rem] font-semibold text-gray-600 ${className}`} title={`Federación ${codigo}`}>{codigo}</span>;
+    return <span className={`inline-block rounded border border-gray-300 px-1 text-[0.65rem] font-semibold text-gray-600 ${className}`} title={`Federación ${cod}`}>{cod}</span>;
   }
   return (
-    <svg
-      viewBox="0 0 24 16"
-      width="21"
-      height="14"
-      role="img"
-      aria-label={fed.nombre}
-      className={`inline-block shrink-0 rounded-[2px] align-[-2px] ring-1 ring-black/15 ${className}`}
-    >
-      <title>{fed.nombre}</title>
-      {fed.dibujo}
-    </svg>
+    <span className={`inline-flex shrink-0 items-center gap-1 ${className}`} title={fed.nombre}>
+      <svg
+        viewBox="0 0 24 16"
+        width="21"
+        height="14"
+        role="img"
+        aria-label={fed.nombre}
+        className="inline-block shrink-0 rounded-[2px] ring-1 ring-black/15"
+      >
+        {fed.dibujo}
+      </svg>
+      {conCodigo && <span className="text-[0.7rem] font-semibold leading-none opacity-70" aria-hidden="true">{cod}</span>}
+    </span>
   );
 }
 
@@ -144,7 +154,7 @@ export function SelectorFederacion({ id, etiqueta, valor, onChange }: {
           <option value="">-- Sin indicar --</option>
           {opciones.map(([codigo, f]) => <option key={codigo} value={codigo}>{f.nombre} ({codigo})</option>)}
         </select>
-        <BanderaFH codigo={valor} />
+        <BanderaFH codigo={valor} conCodigo={false} />
       </div>
     </div>
   );
