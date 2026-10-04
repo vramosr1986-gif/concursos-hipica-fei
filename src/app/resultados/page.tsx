@@ -33,7 +33,11 @@ type EjercicioDetalle = {
 
 type Clasificacion = {
   participacion_id: string;
+  /** 0 si todavía no ha salido (sin notas). */
   posicion: number;
+  orden_salida: number;
+  /** Sin salir: sin notas. Puntuando: le faltan notas. Puntuada: todas. */
+  estado: 'pendiente' | 'puntuando' | 'puntuada';
   dorsal: number;
   jinete: string;
   caballo: string;
@@ -79,6 +83,9 @@ function ResultadosContent() {
   const [filtroCategoria, setFiltroCategoria] = useState<string>('');
   const [filtroEstado, setFiltroEstado] = useState<'todos' | 'en_curso' | 'finalizada' | 'programada'>('todos');
   const [filtroReprise, setFiltroReprise] = useState<string>('');
+  const [filtroPrueba, setFiltroPrueba] = useState<string>('');
+  const [filtroJinete, setFiltroJinete] = useState<string>('');
+  const [filtroCaballo, setFiltroCaballo] = useState<string>('');
   const [filtroFecha, setFiltroFecha] = useState<string>('');
   const [filtroResultados, setFiltroResultados] = useState<'todas' | 'con' | 'sin'>('todas');
   const [busqueda, setBusqueda] = useState('');
@@ -238,6 +245,14 @@ try {
           });
         }
 
+        // Ejercicios de cada reprise: puntuado = todas las notas de todos los jueces.
+        const repriseIds = Array.from(new Set((pruebas as any[]).map((p) => p.reprise_id).filter(Boolean)));
+        const ejerciciosPorReprise: Record<string, number> = {};
+        if (repriseIds.length > 0) {
+          const { data: ejs } = await supabase.from('ejercicios_reprise').select('reprise_id').in('reprise_id', repriseIds);
+          (ejs || []).forEach((e: any) => { ejerciciosPorReprise[e.reprise_id] = (ejerciciosPorReprise[e.reprise_id] || 0) + 1; });
+        }
+
         // Agrupar por prueba
         const partesPorPrueba: Record<string, any[]> = {};
         const puntosPorPrueba: Record<string, any[]> = {};
@@ -274,7 +289,21 @@ try {
               (p) => p.participacion_id === part.id
             );
 
-            if (!puntuaciones || puntuaciones.length === 0) continue;
+            const inscripcionBase = (part as any).inscripcion;
+            const datosBinomio = {
+              participacion_id: part.id,
+              orden_salida: (part as any).orden_salida || 0,
+              dorsal: inscripcionBase?.dorsal || 0,
+              jinete: inscripcionBase?.binomio?.nombre_jinete || '-',
+              caballo: inscripcionBase?.binomio?.nombre_caballo || '-',
+              fh_caballo: inscripcionBase?.binomio?.fh_caballo || null,
+              pendiente: esPendienteConfirmacion((part as any).observaciones),
+            };
+
+            if (!puntuaciones || puntuaciones.length === 0) {
+              clasificaciones.push({ ...datosBinomio, posicion: 0, estado: 'pendiente', media: 0, numJueces: 0, puntuaciones: [], ejercicios: [] });
+              continue;
+            }
 
             // Agrupar por juez
             const porJuez: Record<string, { suma: number; sumaCoef: number; numEjs: number }> = {};
@@ -301,9 +330,6 @@ try {
               puntuacionesPorJuez.reduce((acc, p) => acc + p.puntuacion, 0) /
               puntuacionesPorJuez.length;
 
-            const inscripcion = (part as any).inscripcion;
-            const binomio = inscripcion?.binomio;
-
             // Agrupar notas por ejercicio
             const ejerciciosPorId: Record<string, EjercicioDetalle> = {};
             for (const p of puntuaciones as any[]) {
@@ -328,14 +354,11 @@ try {
               (a, b) => a.numero_orden - b.numero_orden
             );
 
+            const necesarias = (ejerciciosPorReprise[prueba.reprise_id] || 0) * juecesDePrueba.length;
             clasificaciones.push({
-              participacion_id: part.id,
+              ...datosBinomio,
               posicion: 0,
-              dorsal: inscripcion?.dorsal || 0,
-              jinete: binomio?.nombre_jinete || '-',
-              caballo: binomio?.nombre_caballo || '-',
-              fh_caballo: binomio?.fh_caballo || null,
-              pendiente: esPendienteConfirmacion((part as any).observaciones),
+              estado: necesarias > 0 && puntuaciones.length >= necesarias ? 'puntuada' : 'puntuando',
               media: Math.round(media * 100) / 100,
               numJueces: puntuacionesPorJuez.length,
               puntuaciones: puntuacionesPorJuez,
@@ -344,7 +367,7 @@ try {
           }
 
           // Ordenar y asignar posiciones
-          const ordenados = [...clasificaciones].sort((a, b) => b.media - a.media);
+          const ordenados = clasificaciones.filter((c) => c.estado !== 'pendiente').sort((a, b) => b.media - a.media);
           ordenados.forEach((c, i) => {
             const original = clasificaciones.find(
               (x) => x.participacion_id === c.participacion_id
@@ -400,11 +423,12 @@ try {
   };
 
   const ordenarClasificaciones = (cls: Clasificacion[]) => {
-    const copia = [...cls];
+    const copia = cls.filter((c) => c.estado !== 'pendiente');
+    const sinSalir = cls.filter((c) => c.estado === 'pendiente').sort((a, b) => a.orden_salida - b.orden_salida);
     if (ordenacion === 'media') copia.sort((a, b) => b.media - a.media);
     else if (ordenacion === 'dorsal') copia.sort((a, b) => a.dorsal - b.dorsal);
     else if (ordenacion === 'jinete') copia.sort((a, b) => a.jinete.localeCompare(b.jinete));
-    return copia;
+    return [...copia, ...sinSalir];
   };
 
 const categorias = Array.from(
@@ -415,15 +439,27 @@ const categorias = Array.from(
     new Set(pruebasConResultados.map((p) => p.reprise_nombre).filter(Boolean))
   ).sort() as string[];
 
+  const nombresPrueba = Array.from(new Set(pruebasConResultados.map((p) => p.prueba_nombre))).sort((a, b) => a.localeCompare(b, 'es'));
+  const sinAcentos = (t: string) => t.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+  const jineteBuscado = sinAcentos(filtroJinete.trim());
+  const caballoBuscado = sinAcentos(filtroCaballo.trim());
+  /** Con filtro de jinete o caballo, en cada prueba solo salen sus filas. */
+  const coincideBinomio = (c: Clasificacion) =>
+    (!jineteBuscado || sinAcentos(c.jinete).includes(jineteBuscado)) &&
+    (!caballoBuscado || sinAcentos(c.caballo).includes(caballoBuscado));
+
   const textoBusqueda = busqueda.trim().toLowerCase();
 
   const pruebasFiltradas = pruebasConResultados.filter((p) => {
     if (filtroCategoria && p.categoria !== filtroCategoria) return false;
     if (filtroEstado !== 'todos' && estadoTemporal(p.fecha, p.hora_inicio) !== filtroEstado) return false;
     if (filtroReprise && p.reprise_nombre !== filtroReprise) return false;
+    if (filtroPrueba && p.prueba_nombre !== filtroPrueba) return false;
+    if ((jineteBuscado || caballoBuscado) && !p.clasificaciones.some(coincideBinomio)) return false;
     if (filtroFecha && p.fecha !== filtroFecha) return false;
-    if (filtroResultados === 'con' && p.clasificaciones.length === 0) return false;
-    if (filtroResultados === 'sin' && p.clasificaciones.length > 0) return false;
+    const conNotas = p.clasificaciones.some((c) => c.estado !== 'pendiente');
+    if (filtroResultados === 'con' && !conNotas) return false;
+    if (filtroResultados === 'sin' && conNotas) return false;
     if (textoBusqueda) {
       const coincide =
         p.prueba_nombre.toLowerCase().includes(textoBusqueda) ||
@@ -510,6 +546,9 @@ const categorias = Array.from(
                 setFiltroCategoria('');
                 setFiltroEstado('todos');
                 setFiltroReprise('');
+                setFiltroPrueba('');
+                setFiltroJinete('');
+                setFiltroCaballo('');
                 setFiltroFecha('');
                 setFiltroResultados('todas');
                 setBusqueda('');
@@ -565,6 +604,24 @@ const categorias = Array.from(
                 <option key={c} value={c}>{c}</option>
               ))}
             </select>
+          </div>
+
+          <div>
+            <label htmlFor="filtro-prueba" className="block text-sm font-bold mb-2">Prueba:</label>
+            <select id="filtro-prueba" value={filtroPrueba} onChange={(e) => setFiltroPrueba(e.target.value)} className="input w-full">
+              <option value="">Todas</option>
+              {nombresPrueba.map((n) => <option key={n} value={n}>{n}</option>)}
+            </select>
+          </div>
+
+          <div>
+            <label htmlFor="filtro-jinete" className="block text-sm font-bold mb-2">Jinete:</label>
+            <input id="filtro-jinete" type="search" value={filtroJinete} onChange={(e) => setFiltroJinete(e.target.value)} placeholder="Nombre o apellido" className="input w-full" />
+          </div>
+
+          <div>
+            <label htmlFor="filtro-caballo" className="block text-sm font-bold mb-2">Caballo:</label>
+            <input id="filtro-caballo" type="search" value={filtroCaballo} onChange={(e) => setFiltroCaballo(e.target.value)} placeholder="Nombre del caballo" className="input w-full" />
           </div>
 
           <div>
@@ -627,7 +684,7 @@ const categorias = Array.from(
       ) : (
         <div className="space-y-8">
 {pruebasFiltradas.map((prueba) => {
-            const conPuntuacion = prueba.clasificaciones.filter((c) => c.numJueces > 0);
+            const conPuntuacion = prueba.clasificaciones.filter((c) => c.estado !== 'pendiente');
             const top3Individual = [...conPuntuacion].sort((a, b) => b.media - a.media).slice(0, 3);
 
             return (
@@ -679,7 +736,10 @@ const categorias = Array.from(
                     </div>
 <div className="text-right">
                       <p className="text-xs opacity-75">Binomios puntuados</p>
-                      <p className="text-2xl font-bold">{prueba.clasificaciones.length}</p>
+                      <p className="text-2xl font-bold">
+                        {prueba.clasificaciones.filter((c) => c.estado === 'puntuada').length}
+                        <span className="text-base font-normal opacity-75"> de {prueba.clasificaciones.length}</span>
+                      </p>
                     </div>
                   </div>
                 </div>
@@ -766,7 +826,7 @@ const categorias = Array.from(
 
                     {prueba.clasificaciones.length === 0 ? (
                       <div className="p-6 text-center text-gray-600">
-                        No hay binomios puntuados en esta prueba todavia.
+                        Esta prueba todavía no tiene binomios.
                       </div>
                     ) : (
                       <div className="table-responsive">
@@ -789,7 +849,7 @@ const categorias = Array.from(
                             </tr>
                           </thead>
                           <tbody>
-                            {ordenarClasificaciones(prueba.clasificaciones).map((c) => {
+                            {ordenarClasificaciones(prueba.clasificaciones).filter(coincideBinomio).map((c) => {
                               const puntuacionPorLetra: Record<string, number | null> = {};
                               letrasJueces.forEach((l) => {
                                 const p = c.puntuaciones.find((pu) => pu.letra === l);
@@ -802,7 +862,7 @@ const categorias = Array.from(
                                 <Fragment key={c.participacion_id}>
                                   <tr className={colorPuesto(c.posicion)}>
 <td className="text-center font-bold">
-                                      {medallaEmoji(c.posicion)} {c.posicion}º
+                                      {c.posicion > 0 ? <>{medallaEmoji(c.posicion)} {c.posicion}º</> : <span className="text-gray-400">—</span>}
                                       <span className="sm:hidden text-[0.65rem] font-normal text-gray-500">
                                         {' '}· {c.dorsal}
                                       </span>
@@ -810,10 +870,20 @@ const categorias = Array.from(
                                     <td className="hidden sm:table-cell text-center font-bold">
                                       {c.dorsal}
                                     </td>
-                                    <td className="hidden sm:table-cell">{nombreConMarca(c.jinete, c.pendiente)}</td>
+                                    <td className="hidden sm:table-cell">
+                                      {nombreConMarca(c.jinete, c.pendiente)}
+                                      {c.estado !== 'puntuada' && (
+                                        <span className={`ml-2 rounded px-1.5 py-0.5 text-xs ${c.estado === 'pendiente' ? 'bg-gray-100 text-gray-600' : 'bg-amber-100 text-amber-800'}`}>
+                                          {c.estado === 'pendiente' ? 'Sin salir' : 'Puntuando'}
+                                        </span>
+                                      )}
+                                    </td>
                                     <td className="hidden sm:table-cell"><CaballoConBandera nombre={c.caballo} fh={c.fh_caballo} /></td>
                                     <td className="sm:hidden">
-                                      <span className="block">{nombreConMarca(c.jinete, c.pendiente)}</span>
+                                      <span className="block">
+                                        {nombreConMarca(c.jinete, c.pendiente)}
+                                        {c.estado !== 'puntuada' && <span className="ml-1 text-xs font-normal text-gray-500">({c.estado === 'pendiente' ? 'sin salir' : 'puntuando'})</span>}
+                                      </span>
                                       <span className="block text-xs font-normal text-gray-500">
                                         <CaballoConBandera nombre={c.caballo} fh={c.fh_caballo} />
                                       </span>
@@ -827,17 +897,17 @@ const categorias = Array.from(
                                       </td>
                                     ))}
                                     <td className="text-right font-bold text-lg">
-                                      {c.media.toFixed(2)}%
+                                      {c.estado === 'pendiente' ? <span className="text-gray-400">—</span> : `${c.media.toFixed(2)}%`}
                                     </td>
                                     <td className="text-center">
-                                      <button
+                                      {c.ejercicios.length > 0 && <button
                                         onClick={() =>
                                           setExpandidos((prev) => abierto ? prev.filter((x) => x !== c.participacion_id) : [...prev, c.participacion_id])
                                         }
                                         className="text-primary hover:underline text-sm font-medium"
                                       >
                                         {abierto ? 'Ocultar' : 'Ver detalle'}
-                                      </button>
+                                      </button>}
                                     </td>
                                   </tr>
 
