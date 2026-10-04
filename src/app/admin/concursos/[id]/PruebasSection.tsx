@@ -2,6 +2,7 @@
 
 import { FormEvent, useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
+import { ArrowDown, ArrowDownUp, ArrowUp } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { compararRfhe } from '@/lib/orden-reprises';
 import { formatearFecha } from '@/lib/fechas';
@@ -50,6 +51,10 @@ export function PruebasSection({ concursoId, esRfhe, fechaInicio, fechaFin }: Pr
   const [nueva, setNueva] = useState({ reprise_id: '', nombre: '', fecha: fechaInicio, hora: '09:00', pista: '' });
   const [marcadas, setMarcadas] = useState<Set<string>>(new Set());
   const [pistaMasiva, setPistaMasiva] = useState('');
+  const [busqueda, setBusqueda] = useState('');
+  const [filtroDia, setFiltroDia] = useState('');
+  const [filtroPista, setFiltroPista] = useState('');
+  const [orden, setOrden] = useState<{ campo: 'dia' | 'prueba' | 'hora' | 'pista'; direccion: 'asc' | 'desc' }>({ campo: 'dia', direccion: 'asc' });
 
   const cargarPruebas = useCallback(async () => {
     setError('');
@@ -133,6 +138,42 @@ export function PruebasSection({ concursoId, esRfhe, fechaInicio, fechaFin }: Pr
   };
 
   const dias = Array.from(new Set(pruebas.map((p) => p.fecha))).sort();
+  const pistas = Array.from(new Set(pruebas.map((p) => p.pista).filter(Boolean))).sort() as string[];
+
+  const normalizar = (t: string | null | undefined) => (t || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+  const comparar = (a: string, b: string) => a.localeCompare(b, 'es', { numeric: true, sensitivity: 'base' });
+  const valor = (p: Prueba, campo: typeof orden.campo) =>
+    campo === 'dia' ? `${p.fecha} ${p.hora_inicio || ''} ${String(p.orden ?? 0).padStart(4, '0')}`
+      : campo === 'hora' ? `${p.hora_inicio || ''} ${p.fecha}`
+        : campo === 'pista' ? p.pista || '\uffff'
+          : p.nombre;
+  const termino = normalizar(busqueda.trim());
+  const visibles = pruebas
+    .filter((p) =>
+      (!termino || [p.nombre, p.reprise_nombre, p.pista].some((v) => normalizar(v).includes(termino))) &&
+      (!filtroDia || p.fecha === filtroDia) &&
+      (!filtroPista || (filtroPista === '__sin' ? !p.pista : p.pista === filtroPista)))
+    .sort((a, b) => {
+      const c = comparar(valor(a, orden.campo), valor(b, orden.campo)) || comparar(valor(a, 'dia'), valor(b, 'dia'));
+      return orden.direccion === 'asc' ? c : -c;
+    });
+  const hayFiltros = Boolean(busqueda || filtroDia || filtroPista);
+
+  const cabecera = (campo: typeof orden.campo, titulo: string) => (
+    <th className="px-3 py-2" aria-sort={orden.campo === campo ? (orden.direccion === 'asc' ? 'ascending' : 'descending') : 'none'}>
+      <button
+        type="button"
+        onClick={() => setOrden((o) => ({ campo, direccion: o.campo === campo && o.direccion === 'asc' ? 'desc' : 'asc' }))}
+        className="inline-flex items-center gap-1 uppercase"
+        title={`Ordenar por ${titulo.toLowerCase()}`}
+      >
+        {titulo}
+        {orden.campo === campo
+          ? orden.direccion === 'asc' ? <ArrowUp className="size-3.5" aria-hidden="true" /> : <ArrowDown className="size-3.5" aria-hidden="true" />
+          : <ArrowDownUp className="size-3.5 opacity-50" aria-hidden="true" />}
+      </button>
+    </th>
+  );
 
   const anadirPrueba = async (e: FormEvent) => {
     e.preventDefault();
@@ -236,10 +277,35 @@ export function PruebasSection({ concursoId, esRfhe, fechaInicio, fechaFin }: Pr
         <p className="mt-4 text-gray-600">Todavía no hay pruebas.</p>
       ) : (
         <>
-        <div className="mt-4 flex flex-wrap items-end gap-3 rounded border border-[#e4dfd4] bg-[#f8f7f3] p-3">
+        <div className="mt-4 flex flex-wrap items-end gap-3">
+          <div className="min-w-48 flex-1">
+            <label htmlFor="pruebas-concurso-busqueda" className="mb-1 block text-xs font-bold">Buscar</label>
+            <input id="pruebas-concurso-busqueda" type="search" value={busqueda} onChange={(e) => setBusqueda(e.target.value)} placeholder="Prueba, reprise o pista…" className="input w-full" />
+          </div>
+          <div>
+            <label htmlFor="pruebas-concurso-dia" className="mb-1 block text-xs font-bold">Día</label>
+            <select id="pruebas-concurso-dia" value={filtroDia} onChange={(e) => setFiltroDia(e.target.value)} className="input">
+              <option value="">Todos</option>
+              {dias.map((d) => <option key={d} value={d}>{diaSemana(d)} {formatearFecha(d)}</option>)}
+            </select>
+          </div>
+          <div>
+            <label htmlFor="pruebas-concurso-pista" className="mb-1 block text-xs font-bold">Pista</label>
+            <select id="pruebas-concurso-pista" value={filtroPista} onChange={(e) => setFiltroPista(e.target.value)} className="input">
+              <option value="">Todas</option>
+              {pistas.map((p) => <option key={p} value={p}>{p}</option>)}
+              <option value="__sin">Sin pista</option>
+            </select>
+          </div>
+          {hayFiltros && (
+            <button type="button" onClick={() => { setBusqueda(''); setFiltroDia(''); setFiltroPista(''); }} className="btn btn-outline btn-sm">Limpiar filtros</button>
+          )}
+          <p className="ml-auto pb-2 text-sm text-gray-600">{visibles.length} de {pruebas.length} pruebas</p>
+        </div>
+        <div className="mt-3 flex flex-wrap items-end gap-3 rounded border border-[#e4dfd4] bg-[#f8f7f3] p-3">
           <div className="flex flex-wrap items-center gap-2 text-sm">
             <span className="font-semibold">Marcar:</span>
-            <button type="button" onClick={() => setMarcadas(new Set(pruebas.map((p) => p.id)))} className="btn btn-outline btn-sm">Todas</button>
+            <button type="button" onClick={() => setMarcadas(new Set(visibles.map((p) => p.id)))} className="btn btn-outline btn-sm">{hayFiltros ? 'Las que se ven' : 'Todas'}</button>
             {dias.length > 1 && dias.map((d) => (
               <button
                 key={d}
@@ -265,17 +331,20 @@ export function PruebasSection({ concursoId, esRfhe, fechaInicio, fechaFin }: Pr
             <thead className="bg-[#f4f0e6] text-xs uppercase text-[#466257]">
               <tr>
                 <th className="px-3 py-2"><span className="sr-only">Marcar</span></th>
-                <th className="px-3 py-2">Día</th>
-                <th className="px-3 py-2">Prueba</th>
-                <th className="px-3 py-2">Hora</th>
-                <th className="px-3 py-2">Pista</th>
+                {cabecera('dia', 'Día')}
+                {cabecera('prueba', 'Prueba')}
+                {cabecera('hora', 'Hora')}
+                {cabecera('pista', 'Pista')}
                 <th className="px-3 py-2 text-center">Jueces</th>
                 <th className="px-3 py-2 text-center">Binomios</th>
                 <th className="px-3 py-2" />
               </tr>
             </thead>
             <tbody>
-              {pruebas.map((p) => (
+              {visibles.length === 0 && (
+                <tr><td colSpan={8} className="px-3 py-6 text-center text-gray-600">Ninguna prueba coincide con los filtros.</td></tr>
+              )}
+              {visibles.map((p) => (
                 <tr key={p.id} className="border-t border-[#eee9df] align-middle even:bg-[#fffdfa]">
                   <td className="px-3 py-2">
                     <input type="checkbox" aria-label={`Marcar ${p.nombre}`} checked={marcadas.has(p.id)} onChange={() => alternar(p.id)} />
