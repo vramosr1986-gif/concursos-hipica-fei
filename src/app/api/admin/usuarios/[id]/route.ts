@@ -80,7 +80,24 @@ export async function PATCH(
   }
 
   const body = await request.json();
-  const { rol } = body;
+  const { rol, password } = body;
+
+  if (password !== undefined) {
+    if (typeof password !== 'string' || password.length < 8) {
+      return NextResponse.json(
+        { error: 'La contraseña debe tener al menos 8 caracteres' },
+        { status: 400 }
+      );
+    }
+    const { error: pwdError } = await supabaseAdmin.auth.admin.updateUserById(
+      params.id,
+      { password }
+    );
+    if (pwdError) {
+      return NextResponse.json({ error: pwdError.message }, { status: 500 });
+    }
+    return NextResponse.json({ ok: true });
+  }
 
   if (rol !== 'admin' && rol !== 'juez') {
     return NextResponse.json({ error: 'Rol invalido' }, { status: 400 });

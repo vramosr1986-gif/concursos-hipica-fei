@@ -89,6 +89,30 @@ export default function UsuariosPage() {
     }
   };
 
+  const cambiarPassword = async (id: string, email: string) => {
+    const password = window.prompt(`Nueva contraseña para ${email} (mínimo 8 caracteres):`);
+    if (!password) return;
+
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) throw new Error('Sesion no valida.');
+
+      const response = await fetch(`/api/admin/usuarios/${id}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({ password }),
+      });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || 'Error al cambiar la contraseña.');
+      alert('Contraseña actualizada.');
+    } catch (err: any) {
+      alert(err.message || 'Error al cambiar la contraseña.');
+    }
+  };
+
   const cambiarRol = async (id: string, nuevoRol: 'admin' | 'juez') => {
     try {
       const { data: { session } } = await supabase.auth.getSession();
@@ -204,7 +228,13 @@ export default function UsuariosPage() {
                         </select>
                       </td>
 
-                      <td className="p-4 text-right">
+                      <td className="p-4 text-right space-x-2">
+                        <button
+                          onClick={() => cambiarPassword(usuario.id, usuario.email)}
+                          className="btn btn-outline"
+                        >
+                          Cambiar contraseña
+                        </button>
                         <button
                           onClick={() => eliminarUsuario(usuario.id, usuario.email)}
                           disabled={esYoMismo}
